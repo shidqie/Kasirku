@@ -1,0 +1,808 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import {
+  Users,
+  UserPlus,
+  Search,
+  AlertCircle,
+  CheckCircle,
+  RefreshCw,
+  Pencil,
+  Trash2,
+  X,
+  CreditCard,
+  UserCheck,
+  FileText,
+  Phone,
+  Check,
+} from "lucide-react";
+import { formatRupiah } from "@/lib/formatters";
+import { Pagination } from "@/components/shared/Pagination";
+
+interface MemberItem {
+  id: string;
+  nama: string;
+  telepon: string | null;
+  alamat: string | null;
+  batasKasbon: number;
+  saldoUtangCache: number;
+  sisaLimit: number;
+  hasOldDebt: boolean;
+  aktif: boolean;
+}
+
+type DebtFilter = "ALL" | "DEBT" | "CLEARED";
+
+export default function MemberListPage() {
+  const [members, setMembers] = useState<MemberItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterDebt, setFilterDebt] = useState<DebtFilter>("ALL");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Modal Tambah Member (CREATE)
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newNama, setNewNama] = useState("");
+  const [newTelepon, setNewTelepon] = useState("");
+  const [newAlamat, setNewAlamat] = useState("");
+  const [newSaldoAwal, setNewSaldoAwal] = useState<number>(0);
+  const [submittingAdd, setSubmittingAdd] = useState(false);
+
+  // Modal Edit Member (UPDATE)
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<MemberItem | null>(null);
+  const [editNama, setEditNama] = useState("");
+  const [editTelepon, setEditTelepon] = useState("");
+  const [editAlamat, setEditAlamat] = useState("");
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  // Modal Hapus Member (DELETE)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<MemberItem | null>(null);
+  const [submittingDelete, setSubmittingDelete] = useState(false);
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/members?search=${encodeURIComponent(search)}`);
+      const data = await res.json();
+      if (res.ok) setMembers(data.members || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, [search]);
+
+  // Auto-dismiss Toast Notifications
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Statistik Ringkasan Piutang
+  const totalPelanggan = members.length;
+  const totalPiutang = members.reduce((acc, m) => acc + (m.saldoUtangCache || 0), 0);
+  const memberBerutang = members.filter((m) => (m.saldoUtangCache || 0) > 0).length;
+  const memberLunas = totalPelanggan - memberBerutang;
+
+  // Filter Data Berdasarkan Status Utang
+  const filteredMembers = useMemo(() => {
+    return members.filter((m) => {
+      const debt = m.saldoUtangCache || 0;
+      if (filterDebt === "DEBT") return debt > 0;
+      if (filterDebt === "CLEARED") return debt <= 0;
+      return true;
+    });
+  }, [members, filterDebt]);
+
+  // 1. CREATE: Tambah Member Baru
+  const handleCreateMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNama.trim()) {
+      setError("Nama pelanggan wajib diisi");
+      return;
+    }
+
+    setSubmittingAdd(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: newNama.trim(),
+          telepon: newTelepon.trim() || null,
+          alamat: newAlamat.trim() || null,
+          batasKasbon: 1000000,
+          saldoAwal: Number(newSaldoAwal),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mendaftarkan pelanggan piutang");
+
+      setSuccess(`Pelanggan "${newNama}" berhasil ditambahkan!`);
+      setIsAddOpen(false);
+      setNewNama("");
+      setNewTelepon("");
+      setNewAlamat("");
+      setNewSaldoAwal(0);
+      fetchMembers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmittingAdd(false);
+    }
+  };
+
+  // 2. UPDATE: Edit Member
+  const handleOpenEdit = (m: MemberItem) => {
+    setEditingMember(m);
+    setEditNama(m.nama);
+    setEditTelepon(m.telepon || "");
+    setEditAlamat(m.alamat || "");
+    setError(null);
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    if (!editNama.trim()) {
+      setError("Nama pelanggan tidak boleh kosong");
+      return;
+    }
+
+    setSubmittingEdit(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/members/${editingMember.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: editNama.trim(),
+          telepon: editTelepon.trim() || null,
+          alamat: editAlamat.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memperbarui data pelanggan");
+
+      setSuccess(`Data "${editNama}" berhasil diperbarui!`);
+      setIsEditOpen(false);
+      setEditingMember(null);
+      fetchMembers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  // 3. DELETE: Hapus / Nonaktifkan Member
+  const handleOpenDelete = (m: MemberItem) => {
+    setDeletingMember(m);
+    setError(null);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteMember = async () => {
+    if (!deletingMember) return;
+    setSubmittingDelete(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/members/${deletingMember.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus pelanggan");
+
+      setSuccess(data.message || `Data "${deletingMember.nama}" berhasil dihapus.`);
+      setIsDeleteOpen(false);
+      setDeletingMember(null);
+      fetchMembers();
+    } catch (err: any) {
+      setError(err.message);
+      setIsDeleteOpen(false);
+    } finally {
+      setSubmittingDelete(false);
+    }
+  };
+
+  const paginatedMembers = filteredMembers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  return (
+    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+      <div className="shrink-0 space-y-2">
+      {/* Header Utama Minimalis (Flat Editorial Style) */}
+      <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+            Data Piutang &amp; Kasbon Pelanggan
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+            Kelola data pelanggan, pantau status kasbon, dan rincian mutasi piutang.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className="h-10 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all text-xs shrink-0 self-start sm:self-auto cursor-pointer"
+        >
+          Tambah pelanggan
+        </button>
+      </div>
+
+      {/* Ringkasan 3 Kolom (Flat, Tanpa Kartu & Ikon) */}
+      <div className="py-6 border-b border-slate-200 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div>
+          <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
+            Total pelanggan
+          </span>
+          <p className="text-xl font-bold text-slate-900 dark:text-zinc-100 mt-1">
+            {totalPelanggan}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-zinc-400">orang</span>
+          </p>
+        </div>
+
+        <div>
+          <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
+            Total saldo piutang
+          </span>
+          <p className="text-xl font-bold text-rose-600 dark:text-rose-500 mt-1 tabular-nums">
+            {formatRupiah(totalPiutang)}
+          </p>
+        </div>
+
+        <div>
+          <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
+            Pelanggan berutang
+          </span>
+          <p className="text-xl font-bold text-slate-900 dark:text-zinc-100 mt-1">
+            {memberBerutang}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-zinc-400">
+              dari {totalPelanggan} orang
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {/* Filter Tab Garis Bawah & Pencarian Minimalis */}
+      <div className="pt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 dark:border-zinc-800">
+        <div className="flex items-center gap-6 text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setFilterDebt("ALL");
+              setCurrentPage(1);
+            }}
+            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+              filterDebt === "ALL"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+            }`}
+          >
+            Semua ({members.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterDebt("DEBT");
+              setCurrentPage(1);
+            }}
+            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+              filterDebt === "DEBT"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+            }`}
+          >
+            Punya utang ({memberBerutang})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterDebt("CLEARED");
+              setCurrentPage(1);
+            }}
+            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+              filterDebt === "CLEARED"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+            }`}
+          >
+            Lunas ({memberLunas})
+          </button>
+        </div>
+
+        {/* Input Pencarian Garis Bawah & Muat Ulang */}
+        <div className="flex items-center gap-4 pb-2.5">
+          <div className="relative w-full sm:w-56">
+            <input
+              type="text"
+              placeholder="Cari pelanggan"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchMembers}
+            title="Muat ulang"
+            aria-label="Muat ulang"
+            className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Toast Notification Popup di Pojok Kanan Atas */}
+      <div className="fixed top-5 right-5 z-50 max-w-sm w-full space-y-2.5 pointer-events-none">
+        {success && (
+          <div className="pointer-events-auto p-4 bg-white/95 backdrop-blur-md border border-emerald-200/90 rounded-2xl shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100">
+              <CheckCircle className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-xs">
+              <p className="font-bold text-slate-900 mb-0.5">Berhasil!</p>
+              <p className="text-slate-600 leading-relaxed font-medium">{success}</p>
+            </div>
+            <button
+              onClick={() => setSuccess(null)}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+              title="Tutup"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <div className="pointer-events-auto p-4 bg-white/95 backdrop-blur-md border border-rose-200/90 rounded-2xl shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5 border border-rose-100">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-xs">
+              <p className="font-bold text-slate-900 mb-0.5">Terjadi Kendala</p>
+              <p className="text-slate-600 leading-relaxed font-medium">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+              title="Tutup"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+      </div>
+
+      {/* Tabel Daftar Member Minimalist (Scrollable Internal, Fixed Header) */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+              <tr>
+                <th className="py-3 pr-4">Nama pelanggan</th>
+                <th className="py-3 px-4">No. HP / WA</th>
+                <th className="py-3 px-4">Alamat</th>
+                <th className="py-3 px-4 text-right">Total utang</th>
+                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-sans">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-300" />
+                    Memuat data piutang pelanggan...
+                  </td>
+                </tr>
+              ) : filteredMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-slate-400">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
+                    {search
+                      ? "Tidak ada pelanggan yang cocok dengan pencarian."
+                      : filterDebt === "DEBT"
+                      ? "Tidak ada pelanggan yang memiliki utang aktif saat ini."
+                      : "Belum ada data pelanggan piutang."}
+                  </td>
+                </tr>
+              ) : (
+                paginatedMembers.map((m) => {
+                  const hasDebt = (m.saldoUtangCache || 0) > 0;
+
+                  return (
+                    <tr key={m.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150 group">
+                      {/* Nama Pelanggan */}
+                      <td className="py-3.5 px-4">
+                        <Link
+                          href={`/member/${m.id}`}
+                          className="font-semibold text-slate-900 hover:text-blue-600 transition-colors truncate block"
+                          title={`Lihat detail ${m.nama}`}
+                        >
+                          {m.nama}
+                        </Link>
+                      </td>
+
+                      {/* No HP */}
+                      <td className="py-3.5 px-4 text-slate-500 font-medium font-mono text-[11px]">
+                        {m.telepon ? (
+                          <span className="flex items-center gap-1.5">
+                            <Phone className="w-3 h-3 text-slate-300" />
+                            <span>{m.telepon}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+
+                      {/* Alamat */}
+                      <td className="py-3.5 px-4 text-slate-400 max-w-[200px] truncate" title={m.alamat || ""}>
+                        {m.alamat || <span className="text-slate-300">-</span>}
+                      </td>
+
+                      {/* Total Utang */}
+                      <td className="py-3.5 px-4 text-right tabular-nums">
+                        {hasDebt ? (
+                          <span className="font-bold text-rose-600 text-xs">
+                            {formatRupiah(m.saldoUtangCache)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal text-xs">
+                            Rp 0
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Tombol Aksi Minimalist Berwarna & Rata Tengah */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 justify-center">
+                          <Link
+                            href={`/member/${m.id}`}
+                            className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95"
+                            title="Buka Rincian Nota Bon"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Detail Bon</span>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(m)}
+                            className="h-7 px-2.5 rounded-lg text-amber-600 hover:bg-amber-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                            title="Edit Data Pelanggan"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDelete(m)}
+                            className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                            title="Hapus Pelanggan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {filteredMembers.length > 0 && (
+        <div className="shrink-0">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredMembers.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+      )}
+
+      {/* MODAL TAMBAH DATA PIUTANG (CREATE) */}
+      {isAddOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 animate-in fade-in zoom-in-95 space-y-4 font-sans">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-slate-700" />
+                Tambah Pelanggan Baru
+              </h3>
+              <button
+                onClick={() => setIsAddOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateMember} className="space-y-3.5">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  Nama Pelanggan <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newNama}
+                  onChange={(e) => setNewNama(e.target.value)}
+                  placeholder="Contoh: Pak Slamet / Warung Berkah"
+                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  No. Telepon / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  value={newTelepon}
+                  onChange={(e) => setNewTelepon(e.target.value)}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  Alamat Lengkap
+                </label>
+                <textarea
+                  rows={2}
+                  value={newAlamat}
+                  onChange={(e) => setNewAlamat(e.target.value)}
+                  placeholder="Alamat domisili atau toko pelanggan"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs resize-none focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  Saldo Awal Catatan Lama (Rp)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                    Rp
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={newSaldoAwal ? newSaldoAwal.toLocaleString("id-ID") : ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setNewSaldoAwal(digits ? parseInt(digits, 10) : 0);
+                    }}
+                    placeholder="0"
+                    className="w-full pl-9 pr-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold text-right focus:bg-white focus:outline-none focus:border-slate-400"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Kosongkan atau isi 0 jika tidak ada piutang buku fisik lama
+                </span>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddOpen(false)}
+                  className="w-1/2 h-9 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAdd}
+                  className="w-1/2 h-9 bg-slate-900 hover:bg-blue-600 active:scale-95 disabled:opacity-50 text-white font-medium rounded-xl text-xs shadow-2xs transition-all duration-150 cursor-pointer"
+                >
+                  {submittingAdd ? "Menyimpan..." : "Simpan Pelanggan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT DATA PIUTANG (UPDATE) */}
+      {isEditOpen && editingMember && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 animate-in fade-in zoom-in-95 space-y-4 font-sans">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-slate-700" />
+                Ubah Data Pelanggan
+              </h3>
+              <button
+                onClick={() => {
+                  setIsEditOpen(false);
+                  setEditingMember(null);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateMember} className="space-y-3.5">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  Nama Pelanggan <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editNama}
+                  onChange={(e) => setEditNama(e.target.value)}
+                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  No. Telepon / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  value={editTelepon}
+                  onChange={(e) => setEditTelepon(e.target.value)}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
+                  Alamat Lengkap
+                </label>
+                <textarea
+                  rows={2}
+                  value={editAlamat}
+                  onChange={(e) => setEditAlamat(e.target.value)}
+                  placeholder="Alamat domisili atau toko pelanggan"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs resize-none focus:bg-white focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingMember(null);
+                  }}
+                  className="w-1/2 h-9 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="w-1/2 h-9 bg-slate-900 hover:bg-amber-600 active:scale-95 disabled:opacity-50 text-white font-medium rounded-xl text-xs shadow-2xs transition-all duration-150 cursor-pointer"
+                >
+                  {submittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS (DELETE) */}
+      {isDeleteOpen && deletingMember && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 animate-in fade-in zoom-in-95 space-y-4 font-sans">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">Konfirmasi Hapus Data</h3>
+                <p className="text-xs text-slate-500">{deletingMember.nama}</p>
+              </div>
+            </div>
+
+            {deletingMember.saldoUtangCache > 0 ? (
+              <div className="p-3 bg-rose-50 border border-rose-200/80 rounded-xl space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-700">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Pelanggan Memiliki Utang Aktif</span>
+                </div>
+                <p className="text-xs text-rose-600 leading-relaxed">
+                  Member ini masih memiliki saldo utang sebesar{" "}
+                  <strong>{formatRupiah(deletingMember.saldoUtangCache)}</strong>. Pelanggan tidak dapat
+                  dihapus sebelum utang dilunasi atau disesuaikan ke Rp 0.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Apakah Anda yakin ingin menghapus data pelanggan <strong>{deletingMember.nama}</strong>? Jika
+                memiliki riwayat mutasi lama, akun akan dinonaktifkan secara aman.
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteOpen(false);
+                  setDeletingMember(null);
+                }}
+                className="w-1/2 h-9 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={submittingDelete || deletingMember.saldoUtangCache > 0}
+                onClick={handleDeleteMember}
+                className="w-1/2 h-9 bg-rose-600 hover:bg-rose-700 active:scale-95 disabled:opacity-40 text-white font-medium rounded-xl text-xs shadow-2xs hover:shadow-xs transition-all duration-150 cursor-pointer"
+              >
+                {submittingDelete ? "Menyimpan..." : "Ya, Hapus Data"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

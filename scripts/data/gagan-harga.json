@@ -1,0 +1,8192 @@
+[
+ {
+  "nama": "Energen Kacang Hijau",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Energen Vanila",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Energen Coklat",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Energen Malkist",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Energen Beng-Beng",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Milo",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Zee",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Hilo",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Hilo Calcium",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Dancow Coklat",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Dancow Vanila",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Champion",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chocolatos Coklat",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chocolatos Matcha",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Beng-Beng Drink",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Putih Enak",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "kaleng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Sachet / Kaleng",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Coklat Enak",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "kaleng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Sachet / Kaleng",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Putih Frisian Flag",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pack",
+    "faktorKeDasar": 4.0,
+    "hargaJual": 8500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 / 1 Pack",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Coklat Frisian Flag",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chocolatos Kurma",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Cappucino",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 22000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Mocaccino Merah",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Coolin Biru",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Chococino Coklat",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Caribbean Biru Tua",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Freeze",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 24000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "ABC Kopi Susu",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "ABC Plus Gula",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "ABC Es Kopi Gula Aren",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kapal Api Spesial",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kapal Api Special Mix",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "besar",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Latte Original",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Good Day Latte Butterscotch",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Liong Bulan",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Indocaffe Mix",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Top Gula Aren",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Torabika Cappucino",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 22000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Creamy Latte",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Torabika Susu",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "White Koffie (Luak)",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bintang Lima",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nescafe",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bonteh",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tehcap Botol",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Sari Wangi",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Hijau",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Maxtea",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 24000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Jahe",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 12500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "W'Dank",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Adem Sari",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Segar Dingin C-1000",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Marimas",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "1 : 500 1R : 3.500 3 : 10.000"
+ },
+ {
+  "nama": "Jas-Jus",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "1 : 500 1R : 3.500 3 : 10.000"
+ },
+ {
+  "nama": "AHM",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bandrek",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nutrisari",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Innilo",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "Beli 2 gratis 1"
+ },
+ {
+  "nama": "ABC Klepon",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 22500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Adem Sari Sachet",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Extra Joss",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Vegeta Herbal",
+  "kategori": "Minuman Sachet",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Le Minerale",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "tanggung (dus)",
+    "faktorKeDasar": 16.0,
+    "hargaJual": 48000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 / Tanggung",
+  "catatan": ""
+ },
+ {
+  "nama": "Aqua",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "tanggung (dus)",
+    "faktorKeDasar": 16.0,
+    "hargaJual": 50000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 / Tanggung",
+  "catatan": ""
+ },
+ {
+  "nama": "Pristine",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "La Vida",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cleo",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sprite",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Fanta",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Coca-Cola",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Pocari",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.14,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Isoplus",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mizone",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Pucuk",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Fruit Tea",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ichitan",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Botol",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Kotak",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Tarik",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Hanaang",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Gelas",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Semesta",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Teh Rio",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mount Tea",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kopi ABC Choco Malt Coffee",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kopi Good Day Funtastic M.",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kopi Golda Coffee",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kopi Naga",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kopi Nongkrong",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Oat Side",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Niu Yogurt Tea",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bear Brand",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 11000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tujuh Kurma",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Ultra",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.43,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Indomilk",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.67,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Botol",
+  "catatan": ""
+ },
+ {
+  "nama": "Cimory Yogurt / Drink",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Botol",
+  "catatan": ""
+ },
+ {
+  "nama": "Yakult",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cimory Matcha / Cokelat",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Indomilk Matcha",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cimory Fruit",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cimory Fresh Milk",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Niu",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Minute Maid / Pulpy Orange",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Orange Water",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sunkist",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Floridina / Cico",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mogu-Mogu",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nutriboost",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nataku",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Buavita",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Adem Sari",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Botol / Kaleng",
+  "catatan": ""
+ },
+ {
+  "nama": "Larutan Botol",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol sedang",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Sedang / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Sari Asem Kacang Ijo",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sari Asem Asli",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Larutan Kaleng",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "kaleng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kaleng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Lasegar",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Nipis Madu",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Lasegar SP",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kratingdaeng",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Yoo C1000",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol kaca",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kaca",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Kaca botol",
+  "catatan": ""
+ },
+ {
+  "nama": "Vita",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tifa",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 30000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tess",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kite",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 13000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Crodon",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol kaca",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kaca",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Botol kaca / Kaleng",
+  "catatan": ""
+ },
+ {
+  "nama": "Nobo",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Power F",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Okky Maxx",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Okky",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ale-Ale",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Lavonte",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ming Coco",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Hydro Coco",
+  "kategori": "Minuman Dingin",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Jarum Super",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 25000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Jarum Coklat Kretek",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "setengah pak",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Coklat Extra",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Coklat Elite",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "76 Apple",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 16000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tebu",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 13000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "L.A",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 35000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "L.A Bold",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 38000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "76 Apple Royal",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Evo Biru",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Evo Ungu",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 28000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Evo Click (Hijau)",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 28000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Class Mild",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 30000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Camel Biru",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 25000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Camel Ungu",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "SAE",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sejati",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 11000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sampoerna Mild",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 37000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sampoerna Minthol",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 37000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sampoerna Hijau",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sampoerna Kretek Prima",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Magnum Kretek",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Magnum Filter",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 28000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "setengah pak",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Magnum Bintang",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 25000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Raden",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Dji Samsu 12 (Kuning)",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "setengah pak",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 10500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "Eceran 1 pcs = 2.000"
+ },
+ {
+  "nama": "Dji Samsu Refill (Hitam)",
+  "kategori": "Rokok",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pouch",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 23000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Duff Bold",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 28000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Duff Bold Red",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 25000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Avolution",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 45000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Marlboro Merah / Putih",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 54000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Marlboro Filter Black",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 40000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "TW122",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Gudang Garam Filter",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Gudang Garam Signature",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Surya 16",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 38000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.062,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Surya 12",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 27000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Gudang Garam Kretek",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Helium",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 0.083,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Djarum Black Matcha",
+  "kategori": "Rokok",
+  "satuanDasar": "bungkus",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "bungkus",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Batang Giv",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Batang Lux",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Batang Detol",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Batang Lifebuoy",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Batang Nuvo",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Cair Lux",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "380 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 22000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "380 ml pouch",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Cair Lifebuoy",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pouch",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Pouch",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Cair Nuvo",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "250 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "550 ml",
+    "faktorKeDasar": 2.2,
+    "hargaJual": 37000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "800 ml",
+    "faktorKeDasar": 3.2,
+    "hargaJual": 34000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "400 ml",
+    "faktorKeDasar": 1.6,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "250 ml / 550 ml / 800 ml / 400ml",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Cair Giv",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "sedang",
+    "faktorKeDasar": 1.67,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Sedang / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Sabun Cair Kodomo",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Pantene",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Lifebuoy",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Sunsilk",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Zinc",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 biji / 1 R",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Head n Shoulders",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 R",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Rejoice",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Clear",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Shampo Emeron",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 RC / 1 biji",
+  "catatan": ""
+ },
+ {
+  "nama": "Pasta Gigi Pepsodent",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "72 g",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "72 g",
+  "catatan": ""
+ },
+ {
+  "nama": "Pasta Gigi Ciptadent",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "190 g",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 11000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "75 g",
+    "faktorKeDasar": 0.39,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "190 g / 75 g",
+  "catatan": ""
+ },
+ {
+  "nama": "Pasta Gigi Baraat",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sikat Gigi Ciptadent",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Kecil / Sedang / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Sikat Gigi Kodomo",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cotton Buds",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Dewasa / Kids",
+  "catatan": ""
+ },
+ {
+  "nama": "Posh Men",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Fres",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Rexona",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cussons Baby",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Johnson",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Marina",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Seger Snow",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kuning",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pink",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "isi 3",
+    "faktorKeDasar": 3.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kuning / Pink",
+  "catatan": ""
+ },
+ {
+  "nama": "Gillette",
+  "kategori": "Perawatan Diri",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Pemutih",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Softergent",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Daia",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 Renceng",
+  "catatan": ""
+ },
+ {
+  "nama": "Boom",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Royale Pouch Refil",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "600 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 17000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "600 ml",
+  "catatan": ""
+ },
+ {
+  "nama": "Royale Renceng",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Liquid Perfume Refil",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "700 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "700 ml",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Liquid Renceng",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 0.1,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "500 / 1000",
+  "catatan": ""
+ },
+ {
+  "nama": "Sayang",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "3 pcs",
+    "faktorKeDasar": 3.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "Harga 10.000 untuk 3 pcs"
+ },
+ {
+  "nama": "Molto",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Proclin",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Rapika",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Soft",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "R",
+  "catatan": ""
+ },
+ {
+  "nama": "So Klin Antisep",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ekonomi",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mama Lemon",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sunlight",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ekonomi Botol",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bio+",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Cling Pembersih Kaca",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Wipol",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pouch",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pouch",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Refil pouch / Botol",
+  "catatan": ""
+ },
+ {
+  "nama": "Stella / Pocket",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "stella",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pocket",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Soffel",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "renceng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 R",
+  "catatan": ""
+ },
+ {
+  "nama": "Baygon",
+  "kategori": "Pembersih & Pewangi",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Komix (Hijau, Biru Muda)",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Komix OBH (Biru Tua)",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Komix Kids",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Komix OBH Kids (Biru)",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mixagrip Flu n Batuk",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pak",
+    "faktorKeDasar": 3.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mixagrip Flu",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pak",
+    "faktorKeDasar": 3.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bodrexin Flu n Batuk PE",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Contexyn",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "tablet",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pack / 1 tablet",
+  "catatan": ""
+ },
+ {
+  "nama": "Ultra Flu",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bodrexin Demam",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bodrexin Paracetamol",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Neo Rheumacyl",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bodrexin Extra",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Paramex",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Paramex Nyeri Otot",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Puyer Bintang Toedjoe 16",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Biogesic Paracetamol",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Oskadon Sakit Kepala",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Oskadon SP Nyeri Otot",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Panadol Extra",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Panadol Paracetamol",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Naspro",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sanmol",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tolak Angin",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tolak Angin Anak",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tolak Linu",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Antangin",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Antangin Junior",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Antangin Tablet",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "tablet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "tablet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Madurasa",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Diapet",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "tablet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "tablet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 tablet / Pax",
+  "catatan": ""
+ },
+ {
+  "nama": "Obat Setelan",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Promag Herbal",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Promag Kunyah",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Antimo",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Urut GPU",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Kayu Putih",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "15 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "30 ml",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "60 ml",
+    "faktorKeDasar": 4.0,
+    "hargaJual": 24000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "15 ml / 30 ml / 60 ml / 120 ml",
+  "catatan": ""
+ },
+ {
+  "nama": "Geliga Hot",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Besar / Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "So Fresh",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Inhaler Lang",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Salon Pas / Koyo Cabe",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "pak",
+    "faktorKeDasar": 1.5,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Hansaplast",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Koolviver",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Koolviver Bayi",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Fatigon",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 gebet",
+  "catatan": ""
+ },
+ {
+  "nama": "Lemayung",
+  "kategori": "Obat & Kesehatan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Stapless",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tiger",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nota",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Amplop",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Jarum Pentul",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Paku Payung",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Lem Glee",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Lem Tembak",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Solatip",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Solasi",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Bening / Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Solasi Listrik",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Baterai ABC",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Baterai Alkalin",
+  "kategori": "ATK & Perkakas",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Rizki",
+  "kategori": "Sembako",
+  "satuanDasar": "liter",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "liter",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 19000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 L",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Tropical",
+  "kategori": "Sembako",
+  "satuanDasar": "liter",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "liter",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 23000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "2 liter",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 45000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 L / 2 L",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Fitri",
+  "kategori": "Sembako",
+  "satuanDasar": "botol kecil",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "botol kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Kita",
+  "kategori": "Sembako",
+  "satuanDasar": "liter",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "liter",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 21000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 L",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak Bimoli",
+  "kategori": "Sembako",
+  "satuanDasar": "liter",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "liter",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 22500,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "2 liter",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 45000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "2 L / 1 L",
+  "catatan": ""
+ },
+ {
+  "nama": "Minyak (curah)",
+  "kategori": "Sembako",
+  "satuanDasar": "liter",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "1/4 liter",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 5500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1/4",
+  "catatan": ""
+ },
+ {
+  "nama": "Gulaku",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Gula Pasir Nona",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "500 g",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "250 g / 500 g",
+  "catatan": ""
+ },
+ {
+  "nama": "Gula",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "1/4 kg",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1/4",
+  "catatan": ""
+ },
+ {
+  "nama": "Gula Merah",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Garam Cap Jempol",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "1/4 kg",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1/4 / 1 kg",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Segitiga Biru",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 13000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 kg",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Tulip",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 kg",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Cakra Kembar",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Beras Putih Rose Brand",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "500 g",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Ketan Putih",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Ketan Hitam",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tepung Tapioka P. Tani",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Aci",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Beras",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 13000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "500 g",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 L / 500",
+  "catatan": ""
+ },
+ {
+  "nama": "Telor",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 25000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "500 g",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 12500,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 6500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 Kg / 500 / 250 / 1",
+  "catatan": ""
+ },
+ {
+  "nama": "Bihun",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 22000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "500 g",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 11000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 5500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 Kg / 500 / 250",
+  "catatan": ""
+ },
+ {
+  "nama": "Mi Telor",
+  "kategori": "Sembako",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 20000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1 kg",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Kaleng Tiga Sapi",
+  "kategori": "Sembako",
+  "satuanDasar": "kaleng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kaleng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Susu Kaleng Enak",
+  "kategori": "Sembako",
+  "satuanDasar": "kaleng",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kaleng",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 15000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kacang",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kg",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 50000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 Kg / 1/4",
+  "catatan": ""
+ },
+ {
+  "nama": "Sinti",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kacang Hijau",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "1/4 kg",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1/4",
+  "catatan": ""
+ },
+ {
+  "nama": "Kemiri",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "1 ons",
+    "faktorKeDasar": 0.1,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "1ons",
+  "catatan": ""
+ },
+ {
+  "nama": "Bawang Merah",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "250",
+  "catatan": ""
+ },
+ {
+  "nama": "Bawang Putih",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "kg",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 0.25,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "250",
+  "catatan": ""
+ },
+ {
+  "nama": "Cabe Kering / Congek",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bawang Goreng",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Asem",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Terasi",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kapa (Son)",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kotak",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "segitiga",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kotak / Segitiga",
+  "catatan": ""
+ },
+ {
+  "nama": "Kapa (Koko)",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sasa",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "14 g",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "85 g",
+    "faktorKeDasar": 6.07,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "250 g",
+    "faktorKeDasar": 17.86,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "14 g / 85 g / 250 g",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Sayur Lodeh",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Sayur Asem",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "setengah renceng",
+    "faktorKeDasar": 5.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 / 1/2 rc / 1 rc",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Ikan Goreng",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Rendang",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Soto Ayam",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Racik Gulai",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 7000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Sasa Bakwan",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Sasa Serbaguna",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bumbu Sasa Kentucky",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kobe Nasi Kuning",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Balado",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Opor",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Santan Bubuk",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ladaku",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Pala Bubuk",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Kunyit Bubuk",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Cabe Tabur",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Bawang Putih",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Marinasi",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Desaku Ketumbar Bubuk",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Royco Ayam / Sapi",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "besar",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "sedang",
+    "faktorKeDasar": 0.5,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "kecil",
+    "faktorKeDasar": 0.05,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Besar / Sedang / Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Sedap Ayam / Sapi",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "sachet",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng (3 biji)",
+    "faktorKeDasar": 3.0,
+    "hargaJual": 5500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "Di kertas: 1.000 / 3 biji. 1R 5.500"
+ },
+ {
+  "nama": "Boncabe",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap Sedap (Box)",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "box",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "box",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap Sedap",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap ABC",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap Bango",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol besar",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 24000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap Indofood",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kecap Asin ABC",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chili Sauce Hot (MC)",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chili Sauce Value",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Chili Sauce Cipta Selera",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Mayonais",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos Tomat",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos Tomat ABC",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos ABC",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol 240 ml",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 0.17,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "kecil",
+    "faktorKeDasar": 0.03,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Botol 240 ml / Sachet / Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos ABC Terasi",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos ABC Extra Pedas",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Saos ABC Sambal Asli",
+  "kategori": "Bumbu & Saus",
+  "satuanDasar": "botol",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "botol kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "Kecil",
+  "catatan": ""
+ },
+ {
+  "nama": "Cap Lily Walattepung A",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Glaris Gula Halus",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Miki",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Fermipan",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Margarin Palma",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Margarin Blue Band",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Prochiz Batang",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "batang",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "batang",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 16000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Keju Craft",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Prochiz Slice",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "slice",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "slice",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Koepoe Soda Kue",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Koepoe Pewarna Pangan",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ovalet",
+  "kategori": "Bahan Kue",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "So Yumie",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R",
+  "catatan": ""
+ },
+ {
+  "nama": "Indomie Goreng",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 40)",
+    "faktorKeDasar": 40.0,
+    "hargaJual": 116000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus",
+  "catatan": "Harga pc di kertas: 3.000 / 2.900"
+ },
+ {
+  "nama": "Indomie Kuah (Soto / AB Kari)",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 40)",
+    "faktorKeDasar": 40.0,
+    "hargaJual": 114000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "dus (isi 40) 2",
+    "faktorKeDasar": 40.0,
+    "hargaJual": 120000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus",
+  "catatan": "Harga pc di kertas: 3.000 / 3.800 / 3.000"
+ },
+ {
+  "nama": "Sedap Goreng",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 40)",
+    "faktorKeDasar": 40.0,
+    "hargaJual": 114000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus",
+  "catatan": "Harga pc di kertas: 3.000 / 2.800"
+ },
+ {
+  "nama": "Sedap Kuah",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 40)",
+    "faktorKeDasar": 40.0,
+    "hargaJual": 114000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus",
+  "catatan": "Harga pc di kertas: 3.000 / 2.800"
+ },
+ {
+  "nama": "Top Ramen",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": "Harga pc di kertas: 1.500 / 2.000"
+ },
+ {
+  "nama": "Sakura",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sukses Kuah",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "isi 2",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "isi 2",
+  "catatan": "Harga pc di kertas: 4.000 / 3.500"
+ },
+ {
+  "nama": "Sukses Goreng",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "isi 2",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "isi 2",
+  "catatan": ""
+ },
+ {
+  "nama": "Bihunku",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Spaghetti",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sarimi Gelas",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Sarimi",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "isi 2",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "isi 2",
+  "catatan": ""
+ },
+ {
+  "nama": "Sarimi Goreng",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "isi 2",
+    "faktorKeDasar": 2.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "isi 2",
+  "catatan": ""
+ },
+ {
+  "nama": "Sarimi Kuah",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Indomie Kocok / Empal",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Pop Mie Kuah",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 24)",
+    "faktorKeDasar": 24.0,
+    "hargaJual": 105000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus (isi 24)",
+  "catatan": "Harga pc di kertas: 5.000 / 4.500"
+ },
+ {
+  "nama": "Pop Goreng",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 12)",
+    "faktorKeDasar": 12.0,
+    "hargaJual": 60000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus (isi 12)",
+  "catatan": ""
+ },
+ {
+  "nama": "Pop Power",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 12)",
+    "faktorKeDasar": 12.0,
+    "hargaJual": 60000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus (isi 12)",
+  "catatan": ""
+ },
+ {
+  "nama": "Pop Kari Lava / Baso Lava",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "dus (isi 12)",
+    "faktorKeDasar": 12.0,
+    "hargaJual": 60000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 dus (isi 12)",
+  "catatan": ""
+ },
+ {
+  "nama": "Bubur Sun Kacang Hijau",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Bubur Sun Pisang Susu",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Bubur Sun Pisang",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Promina Kacang Hijau",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Promina Pisang Susu",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 18000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R (isi 10)",
+  "catatan": ""
+ },
+ {
+  "nama": "Buriyam",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "renceng",
+    "faktorKeDasar": 10.0,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "1 pc / 1 R",
+  "catatan": ""
+ },
+ {
+  "nama": "Buriyam Kuah Kari",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Bubur Abon Sapi",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 600,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kitkat",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 13000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Ritz Cheese",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Oreo Big",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Better Cheese",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sari Gandum",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Roma Kelapa Cream",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Roma Kelapa Biasa",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Hatari",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Selai O'lai",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 11000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Malkist",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 6500,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Crispy Crackers",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Nabati",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 4000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sarden",
+  "kategori": "Mie & Makanan",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Paseo (kering / basah)",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "besar",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "sachet",
+    "faktorKeDasar": 0.1,
+    "hargaJual": 1000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Besar / Kecil; Sachet / 100",
+  "catatan": ""
+ },
+ {
+  "nama": "Tessa",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kecil",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "besar",
+    "faktorKeDasar": 3.33,
+    "hargaJual": 10000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kecil / Besar",
+  "catatan": ""
+ },
+ {
+  "nama": "Jolly",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Multi",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "toilet",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 3000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "160 lembar",
+    "faktorKeDasar": 1.67,
+    "hargaJual": 5000,
+    "hargaBeli": 0,
+    "isDefault": false
+   },
+   {
+    "namaSatuan": "500 lembar",
+    "faktorKeDasar": 2.67,
+    "hargaJual": 8000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Toilet / 160 / 500",
+  "catatan": ""
+ },
+ {
+  "nama": "Mitu",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kodomo Baby",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Gelas Cup Kopi",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "kertas",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 14000,
+    "hargaBeli": 0,
+    "isDefault": true
+   },
+   {
+    "namaSatuan": "plastik",
+    "faktorKeDasar": 0.64,
+    "hargaJual": 9000,
+    "hargaBeli": 0,
+    "isDefault": false
+   }
+  ],
+  "sumber_satuan": "Kertas / Plastik",
+  "catatan": ""
+ },
+ {
+  "nama": "Gelas Cup Pop Ice",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Sedotan",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kertas Nasi",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Tusuk Sate",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pcs",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pcs",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kantong Ya",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kantong Tulip",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack (29)",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 12000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "29",
+  "catatan": ""
+ },
+ {
+  "nama": "Kantong Dutch",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack (15)",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "15",
+  "catatan": ""
+ },
+ {
+  "nama": "Kantong Bravo",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 0,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ },
+ {
+  "nama": "Kantong Trash Bag",
+  "kategori": "Tisu & Plastik",
+  "satuanDasar": "pack",
+  "stokMinimum": 0,
+  "satuan": [
+   {
+    "namaSatuan": "pack",
+    "faktorKeDasar": 1.0,
+    "hargaJual": 2000,
+    "hargaBeli": 0,
+    "isDefault": true
+   }
+  ],
+  "sumber_satuan": "",
+  "catatan": ""
+ }
+]

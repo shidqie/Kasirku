@@ -1,0 +1,649 @@
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  ClipboardCheck,
+  Check,
+  X,
+  AlertCircle,
+  CheckCircle,
+  RefreshCw,
+} from "lucide-react";
+import { formatRupiah, formatDecimal, formatDateTime } from "@/lib/formatters";
+
+interface ProductItem {
+  id: string;
+  nama: string;
+  satuanDasar: string;
+  stokCache: number;
+}
+
+function TabHitungFisik() {
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [opnameList, setOpnameList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [draftItems, setDraftItems] = useState<{ [produkId: string]: number }>({});
+  const [catatan, setCatatan] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [pRes, oRes] = await Promise.all([
+        fetch("/api/products"),
+        fetch("/api/opname"),
+      ]);
+
+      const pData = await pRes.json();
+      const oData = await oRes.json();
+
+      if (pRes.ok) {
+        setProducts(pData.products || []);
+        const initialDraft: { [key: string]: number } = {};
+        (pData.products || []).forEach((p: any) => {
+          initialDraft[p.id] = Number(p.stokCache);
+        });
+        setDraftItems(initialDraft);
+      }
+      if (oRes.ok) setOpnameList(oData.list || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleStokFisikChange = (produkId: string, val: number) => {
+    setDraftItems((prev) => ({
+      ...prev,
+      [produkId]: val,
+    }));
+  };
+
+  const handleSubmitOpname = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
+    const items = products.map((p) => ({
+      produkId: p.id,
+      stokFisik: draftItems[p.id] ?? Number(p.stokCache),
+    }));
+
+    try {
+      const res = await fetch("/api/opname", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          catatan: catatan.trim() || null,
+          items,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengajukan stok opname");
+
+      setSuccess(
+        `Pengajuan stok opname no. ${data.result.opname.nomor} berhasil dikirim! Menunggu persetujuan Pemilik Toko.`
+      );
+      setCatatan("");
+      fetchData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+            Input Hitungan Fisik Stok Opname
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+            Hitung fisik barang di rak/gudang toko, masukkan angka riil. Sistem akan menghitung selisih dan mengirimkannya ke Pemilik Toko untuk ditinjau. Stok belum berubah sampai disetujui.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchData}
+          title="Muat ulang"
+          aria-label="Muat ulang"
+          className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+      {success && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-xs">
+          <CheckCircle className="w-4 h-4 shrink-0" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      <div className="pt-2 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-3">
+          <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">
+            Formulir penghitungan fisik ({products.length} produk)
+          </h3>
+        </div>
+
+        <form onSubmit={handleSubmitOpname} className="space-y-5">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+              <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                <tr>
+                  <th className="py-3 pr-3">Nama produk</th>
+                  <th className="py-3 px-3 text-center">Stok sistem</th>
+                  <th className="py-3 px-3 text-center w-48">Stok fisik nyata</th>
+                  <th className="py-3 pl-3 text-center">Selisih</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+                {products.map((p) => {
+                  const sistem = Number(p.stokCache);
+                  const fisik = draftItems[p.id] ?? sistem;
+                  const selisih = fisik - sistem;
+
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
+                      <td className="py-3 px-3 font-bold text-slate-800">
+                        {p.nama}
+                        <span className="text-xs text-slate-400 font-sans block">
+                          Satuan: {p.satuanDasar}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-center font-sans font-semibold text-slate-700">
+                        {formatDecimal(sistem)} {p.satuanDasar}
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <input
+                            type="number"
+                            step="any"
+                            min={0}
+                            required
+                            value={fisik}
+                            onChange={(e) =>
+                              handleStokFisikChange(p.id, parseFloat(e.target.value || "0"))
+                            }
+                            className="w-28 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl text-center font-sans font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-[#F0090F]"
+                          />
+                          <span className="text-xs font-sans text-slate-400">{p.satuanDasar}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-center font-sans font-bold">
+                        {selisih === 0 ? (
+                          <span className="text-slate-400">Cocok (0)</span>
+                        ) : selisih > 0 ? (
+                          <span className="text-emerald-600">+{formatDecimal(selisih)}</span>
+                        ) : (
+                          <span className="text-rose-600">{formatDecimal(selisih)}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans block mb-1">
+              Catatan / Periode Opname (Opsional):
+            </label>
+            <input
+              type="text"
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              placeholder="Contoh: Stok opname akhir pekan rak depan"
+              className="w-full px-3.5 h-11 bg-white border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting || products.length === 0}
+            className="h-10 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {submitting ? "Mengirim..." : "Ajukan hasil hitung fisik ke Pemilik Toko"}
+          </button>
+        </form>
+      </div>
+
+      <div className="pt-4">
+        <div className="pb-3 border-b border-slate-200 dark:border-zinc-800">
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm">Riwayat pengajuan stok opname</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+            <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+              <tr>
+                <th className="py-3 pr-4">No. Opname</th>
+                <th className="py-3 px-4">Waktu</th>
+                <th className="py-3 px-4">Diajukan oleh</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 pl-4">Disetujui / Ditolak oleh</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
+              {opnameList.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-6 text-slate-400">
+                    Belum ada pengajuan stok opname.
+                  </td>
+                </tr>
+              ) : (
+                opnameList.map((op) => (
+                  <tr key={op.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
+                    <td className="py-3 px-4 font-sans font-bold text-[#F0090F]">{op.nomor}</td>
+                    <td className="py-3 px-4 text-slate-500">{formatDateTime(op.createdAt)}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-800">
+                      {op.dibuatOleh?.nama || "Staff"}
+                    </td>
+                    <td className="py-3 px-4">
+                      {op.status === "MENUNGGU" && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                          Menunggu Persetujuan
+                        </span>
+                      )}
+                      {op.status === "DISETUJUI" && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                          Disetujui Owner
+                        </span>
+                      )}
+                      {op.status === "DITOLAK" && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
+                          Ditolak
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      {op.disetujuiOleh?.nama ? (
+                        <span>
+                          {op.disetujuiOleh.nama} ({formatDateTime(op.tanggalPersetujuan)})
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabPersetujuan() {
+  const [opnameList, setOpnameList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [alasanTolak, setAlasanTolak] = useState("");
+  const [processing, setProcessing] = useState(false);
+
+  const fetchOpnames = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/opname?status=MENUNGGU");
+      const data = await res.json();
+      if (res.ok) setOpnameList(data.list || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOpnames();
+  }, []);
+
+  const handleApprove = async (opnameId: string) => {
+    if (!confirm("Setujui opname ini? Stok produk akan otomatis disesuaikan dengan mutasi OPNAME.")) return;
+
+    setProcessing(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/opname/${opnameId}/approve`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyetujui opname");
+
+      setSuccess("Stok opname berhasil disetujui! Seluruh saldo stok telah diperbarui.");
+      fetchOpnames();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectingId || !alasanTolak.trim()) return;
+
+    setProcessing(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/opname/${rejectingId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alasan: alasanTolak }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menolak opname");
+
+      setSuccess("Pengajuan stok opname berhasil ditolak.");
+      setRejectingId(null);
+      setAlasanTolak("");
+      fetchOpnames();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+            Persetujuan Stok Opname
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+            Tinjau selisih hitungan fisik staff beserta nilai rupiahnya. Stok hanya berubah setelah Anda menekan tombol Setujui.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchOpnames}
+          title="Muat ulang"
+          aria-label="Muat ulang"
+          className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+      {success && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm">
+          <CheckCircle className="w-5 h-5 shrink-0" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+          Memeriksa pengajuan opname...
+        </div>
+      ) : opnameList.length === 0 ? (
+        <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+          <p className="text-base font-bold text-slate-700">Tidak ada pengajuan opname yang menunggu</p>
+          <p className="text-xs text-slate-400 mt-1">Semua hitungan fisik telah diproses.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {opnameList.map((op) => {
+            const totalNilaiSelisih = op.items.reduce(
+              (sum: number, it: any) => sum + (it.nilaiSelisih || 0),
+              0
+            );
+
+            return (
+              <div
+                key={op.id}
+                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black font-sans text-primary-700">
+                        {op.nomor}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                        Menunggu Persetujuan
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Diajukan oleh: <strong>{op.dibuatOleh?.nama}</strong> · Waktu:{" "}
+                      {formatDateTime(op.createdAt)}
+                    </p>
+                    {op.catatan && (
+                      <p className="text-xs text-slate-600 mt-1 italic">&ldquo;{op.catatan}&rdquo;</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      disabled={processing}
+                      onClick={() => setRejectingId(op.id)}
+                      className="h-10 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Tolak</span>
+                    </button>
+                    <button
+                      disabled={processing}
+                      onClick={() => handleApprove(op.id)}
+                      className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Setujui Opname</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-600">
+                    <thead className="bg-slate-50 uppercase font-sans tracking-wider text-slate-500">
+                      <tr>
+                        <th className="py-2.5 px-3">Nama Produk</th>
+                        <th className="py-2.5 px-3 text-center">Stok Sistem</th>
+                        <th className="py-2.5 px-3 text-center">Hitung Fisik Staff</th>
+                        <th className="py-2.5 px-3 text-center font-bold">Selisih Kuantitas</th>
+                        <th className="py-2.5 px-3 text-right">Nilai Rupiah Selisih</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-sans">
+                      {op.items.map((it: any) => {
+                        const selisih = Number(it.selisih);
+                        return (
+                          <tr key={it.id}>
+                            <td className="py-2.5 px-3 font-sans font-bold text-slate-800">
+                              {it.produk?.nama}
+                            </td>
+                            <td className="py-2.5 px-3 text-center text-slate-500">
+                              {formatDecimal(it.stokSistem)} {it.produk?.satuanDasar}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-bold text-slate-900">
+                              {formatDecimal(it.stokFisik)} {it.produk?.satuanDasar}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-black">
+                              {selisih === 0 ? (
+                                <span className="text-slate-400">0</span>
+                              ) : selisih > 0 ? (
+                                <span className="text-emerald-600">+{formatDecimal(selisih)}</span>
+                              ) : (
+                                <span className="text-rose-600">{formatDecimal(selisih)}</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold">
+                              <span
+                                className={
+                                  it.nilaiSelisih < 0
+                                    ? "text-rose-600"
+                                    : it.nilaiSelisih > 0
+                                    ? "text-emerald-600"
+                                    : "text-slate-400"
+                                }
+                              >
+                                {it.nilaiSelisih !== 0 ? formatRupiah(it.nilaiSelisih) : "Rp 0"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="border-t border-slate-200 font-sans text-xs">
+                      <tr>
+                        <td colSpan={4} className="py-3 px-3 font-bold text-right text-slate-700">
+                          Total Estimasi Selisih Nilai Barang:
+                        </td>
+                        <td className="py-3 px-3 text-right font-black text-sm">
+                          <span className={totalNilaiSelisih < 0 ? "text-rose-600" : "text-emerald-600"}>
+                            {formatRupiah(totalNilaiSelisih)}
+                          </span>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {rejectingId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 space-y-4">
+            <h3 className="font-bold text-lg text-rose-600">Tolak Pengajuan Stok Opname</h3>
+            <p className="text-xs text-slate-500">
+              Pengajuan ini akan ditolak dan stok barang di sistem tidak akan diubah.
+            </p>
+
+            <form onSubmit={handleReject} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                  Alasan Penolakan (Wajib):
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={alasanTolak}
+                  onChange={(e) => setAlasanTolak(e.target.value)}
+                  placeholder="Contoh: Salah rak hitung, lakukan hitung ulang"
+                  className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectingId(null)}
+                  className="w-1/2 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={processing || !alasanTolak.trim()}
+                  className="w-1/2 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md"
+                >
+                  {processing ? "Menolak..." : "Tolak Pengajuan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StokOpnameContent() {
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTab = searchParams.get("tab") || "hitung";
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setUserRole(d.user?.role || null))
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="space-y-4 w-full pb-12 select-none">
+      {userRole === "OWNER" && (
+        <div className="flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs">
+          <button
+            onClick={() => router.push("/stok/opname")}
+            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+              activeTab !== "persetujuan"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+            }`}
+          >
+            Hitung fisik
+          </button>
+          <button
+            onClick={() => router.push("/stok/opname?tab=persetujuan")}
+            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+              activeTab === "persetujuan"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+            }`}
+          >
+            Persetujuan Owner
+          </button>
+        </div>
+      )}
+
+      {activeTab === "persetujuan" && userRole === "OWNER" ? (
+        <TabPersetujuan />
+      ) : (
+        <TabHitungFisik />
+      )}
+    </div>
+  );
+}
+
+export default function StokOpnamePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat stok opname...</div>}>
+      <StokOpnameContent />
+    </Suspense>
+  );
+}

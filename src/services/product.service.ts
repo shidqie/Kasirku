@@ -1,0 +1,395 @@
+import { prisma } from "@/lib/db";
+import { logActivity } from "./activity-log.service";
+import { Prisma } from "@prisma/client";
+
+export interface CreateProductInput {
+  nama: string;
+  kategoriId?: string | null;
+  barcode?: string | null;
+  satuanDasar: string;
+  stokMinimum: number;
+  satuanList: {
+    namaSatuan: string;
+    faktorKeDasar: number;
+    hargaJual: number;
+    hargaBeli: number;
+    isDefault?: boolean;
+  }[];
+}
+
+export interface UpdateProductInput {
+  nama?: string;
+  kategoriId?: string | null;
+  barcode?: string | null;
+  satuanDasar?: string;
+  stokMinimum?: number;
+  aktif?: boolean;
+  satuanList?: {
+    id?: string;
+    namaSatuan: string;
+    faktorKeDasar: number;
+    hargaJual: number;
+    hargaBeli: number;
+    isDefault?: boolean;
+  }[];
+}
+
+// 1. Kategori Services
+export async function getCategories() {
+  return prisma.kategori.findMany({
+    orderBy: { nama: "asc" },
+    include: {
+      _count: {
+        select: { produk: true },
+      },
+    },
+  });
+}
+
+export async function createCategory(nama: string, userId: string, ip?: string) {
+  const existing = await prisma.kategori.findUnique({ where: { nama } });
+  if (existing) throw new Error(`Kategori '${nama}' sudah ada`);
+
+  const category = await prisma.kategori.create({ data: { nama } });
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "BUAT_KATEGORI",
+    entitas: "Kategori",
+    entitasId: category.id,
+    sesudahJson: { nama },
+    ip,
+  });
+  return category;
+}
+
+export async function updateCategory(id: string, nama: string, userId: string, ip?: string) {
+  const sebelum = await prisma.kategori.findUnique({ where: { id } });
+  if (!sebelum) throw new Error("Kategori tidak ditemukan");
+
+  const category = await prisma.kategori.update({
+    where: { id },
+    data: { nama },
+  });
+
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "UBAH_KATEGORI",
+    entitas: "Kategori",
+    entitasId: id,
+    sebelumJson: { nama: sebelum.nama },
+    sesudahJson: { nama },
+    ip,
+  });
+  return category;
+}
+
+export async function deleteCategory(id: string, userId: string, ip?: string) {
+  const count = await prisma.produk.count({ where: { kategoriId: id } });
+  if (count > 0) {
+    throw new Error(`Tidak dapat menghapus kategori karena masih digunakan oleh ${count} produk`);
+  }
+
+  const deleted = await prisma.kategori.delete({ where: { id } });
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "HAPUS_KATEGORI",
+    entitas: "Kategori",
+    entitasId: id,
+    sebelumJson: { nama: deleted.nama },
+    ip,
+  });
+  return deleted;
+}
+
+// 2. Produk Services
+export async function getProducts(params?: {
+  search?: string;
+  kategoriId?: string;
+  aktifOnly?: boolean;
+}) {
+  const where: Prisma.ProdukWhereInput = {};
+
+  if (params?.aktifOnly !== false) {
+    where.aktif = true;
+  }
+
+  if (params?.kategoriId) {
+    where.kategoriId = params.kategoriId;
+  }
+
+  if (params?.search) {
+    const q = params.search.trim();
+    where.OR = [
+      { nama: { contains: q, mode: "insensitive" } },
+      { barcode: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  return prisma.produk.findMany({
+    where,
+    orderBy: { nama: "asc" },
+    include: {
+      kategori: true,
+      satuanProduk: {
+        orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
+      },
+    },
+  });
+}
+
+export async function getProductById(id: string) {
+  return prisma.produk.findUnique({
+    where: { id },
+    include: {
+      kategori: true,
+      satuanProduk: {
+        orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
+      },
+    },
+  });
+}
+
+export async function createProduct(input: CreateProductInput, userId: string, ip?: string) {
+  if (input.barcode) {
+    const existingBarcode = await prisma.produk.findUnique({
+      where: { barcode: input.barcode },
+    });
+    if (existingBarcode) {
+      throw new Error(`Barcode '${input.barcode}' sudah digunakan oleh produk lain`);
+    }
+  }
+
+  // Pastikan setidaknya satu satuan adalah default
+  const hasDefault = input.satuanList.some((s) => s.isDefault);
+  const unitsToCreate = input.satuanList.map((s, idx) => ({
+    namaSatuan: s.namaSatuan,
+    faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
+    hargaJual: s.hargaJual,
+    hargaBeli: s.hargaBeli,
+    isDefault: hasDefault ? !!s.isDefault : idx === 0,
+  }));
+
+  const product = await prisma.$transaction(async (tx) => {
+    const p = await tx.produk.create({
+      data: {
+        nama: input.nama,
+        kategoriId: input.kategoriId || null,
+        barcode: input.barcode ? input.barcode.trim() : null,
+        satuanDasar: input.satuanDasar,
+        stokMinimum: new Prisma.Decimal(input.stokMinimum),
+        stokCache: new Prisma.Decimal(0),
+        satuanProduk: {
+          create: unitsToCreate,
+        },
+      },
+      include: {
+        satuanProduk: true,
+        kategori: true,
+      },
+    });
+
+    return p;
+  });
+
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "BUAT_PRODUK",
+    entitas: "Produk",
+    entitasId: product.id,
+    sesudahJson: {
+      nama: product.nama,
+      barcode: product.barcode,
+      satuanDasar: product.satuanDasar,
+      satuan: unitsToCreate,
+    },
+    ip,
+  });
+
+  return product;
+}
+
+export async function updateProduct(
+  id: string,
+  input: UpdateProductInput,
+  userId: string,
+  ip?: string
+) {
+  const sebelum = await prisma.produk.findUnique({
+    where: { id },
+    include: { satuanProduk: true },
+  });
+
+  if (!sebelum) throw new Error("Produk tidak ditemukan");
+
+  if (input.barcode && input.barcode !== sebelum.barcode) {
+    const existing = await prisma.produk.findUnique({
+      where: { barcode: input.barcode },
+    });
+    if (existing && existing.id !== id) {
+      throw new Error(`Barcode '${input.barcode}' sudah digunakan oleh produk lain`);
+    }
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    // 1. Update data pokok produk
+    await tx.produk.update({
+      where: { id },
+      data: {
+        ...(input.nama ? { nama: input.nama } : {}),
+        ...(input.kategoriId !== undefined ? { kategoriId: input.kategoriId } : {}),
+        ...(input.barcode !== undefined ? { barcode: input.barcode ? input.barcode.trim() : null } : {}),
+        ...(input.satuanDasar ? { satuanDasar: input.satuanDasar } : {}),
+        ...(input.stokMinimum !== undefined ? { stokMinimum: new Prisma.Decimal(input.stokMinimum) } : {}),
+        ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
+      },
+    });
+
+    // 2. Update satuan & harga jika disertakan
+    if (input.satuanList && input.satuanList.length > 0) {
+      // Hapus satuan lama lalu ganti dengan yang baru
+      await tx.satuanProduk.deleteMany({ where: { produkId: id } });
+
+      const hasDefault = input.satuanList.some((s) => s.isDefault);
+      await tx.satuanProduk.createMany({
+        data: input.satuanList.map((s, idx) => ({
+          produkId: id,
+          namaSatuan: s.namaSatuan,
+          faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
+          hargaJual: s.hargaJual,
+          hargaBeli: s.hargaBeli,
+          isDefault: hasDefault ? !!s.isDefault : idx === 0,
+        })),
+      });
+    }
+
+    return tx.produk.findUnique({
+      where: { id },
+      include: {
+        kategori: true,
+        satuanProduk: {
+          orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
+        },
+      },
+    });
+  });
+
+  // Catat riwayat perubahan harga ke log (User Story B5)
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "UBAH_PRODUK",
+    entitas: "Produk",
+    entitasId: id,
+    sebelumJson: {
+      nama: sebelum.nama,
+      barcode: sebelum.barcode,
+      satuanList: sebelum.satuanProduk.map((s) => ({
+        satuan: s.namaSatuan,
+        jual: s.hargaJual,
+        beli: s.hargaBeli,
+      })),
+    },
+    sesudahJson: {
+      nama: updated?.nama,
+      barcode: updated?.barcode,
+      satuanList: updated?.satuanProduk.map((s) => ({
+        satuan: s.namaSatuan,
+        jual: s.hargaJual,
+        beli: s.hargaBeli,
+      })),
+    },
+    ip,
+  });
+
+  return updated;
+}
+
+export async function deleteProduct(id: string, userId: string, ip?: string) {
+  // Soft delete: status aktif = false
+  const updated = await prisma.produk.update({
+    where: { id },
+    data: { aktif: false },
+  });
+
+  await logActivity({
+    userId,
+    role: "OWNER",
+    aksi: "NONAKTIFKAN_PRODUK",
+    entitas: "Produk",
+    entitasId: id,
+    ip,
+  });
+
+  return updated;
+}
+
+// 3. User Story B3: Cek Harga (Read-only untuk Staff dan Owner)
+export async function checkPrice(query: string) {
+  const q = query.trim();
+  if (!q) return [];
+
+  // Cari berdasarkan barcode persis atau nama produk
+  const products = await prisma.produk.findMany({
+    where: {
+      aktif: true,
+      OR: [
+        { barcode: q },
+        { nama: { contains: q, mode: "insensitive" } },
+      ],
+    },
+    include: {
+      kategori: true,
+      satuanProduk: {
+        orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
+      },
+    },
+    take: 20,
+  });
+
+  // Hitung status warna stok (User Story E3):
+  // Merah: stok <= 0
+  // Kuning: stok <= stokMinimum
+  // Hijau: stok > stokMinimum
+  return products.map((p) => {
+    const stok = Number(p.stokCache);
+    const min = Number(p.stokMinimum);
+    let statusStok: "HABIS" | "MENIPIS" | "AMAN";
+    let warnaStatus: "red" | "yellow" | "green";
+
+    if (stok <= 0) {
+      statusStok = "HABIS";
+      warnaStatus = "red";
+    } else if (stok <= min) {
+      statusStok = "MENIPIS";
+      warnaStatus = "yellow";
+    } else {
+      statusStok = "AMAN";
+      warnaStatus = "green";
+    }
+
+    return {
+      id: p.id,
+      nama: p.nama,
+      barcode: p.barcode,
+      kategori: p.kategori?.nama || "Tanpa Kategori",
+      satuanDasar: p.satuanDasar,
+      stokSaatIni: stok,
+      stokMinimum: min,
+      statusStok,
+      warnaStatus,
+      satuanList: p.satuanProduk.map((s) => ({
+        id: s.id,
+        namaSatuan: s.namaSatuan,
+        faktorKeDasar: Number(s.faktorKeDasar),
+        hargaJual: s.hargaJual,
+        hargaBeli: s.hargaBeli,
+        isDefault: s.isDefault,
+      })),
+    };
+  });
+}
+

@@ -1,0 +1,386 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+enum Pembulatan {
+  BULAT_0
+  BULAT_100
+  BULAT_500
+}
+
+enum TipeMutasiStok {
+  MASUK
+  JUAL
+  BATAL_JUAL
+  PENYESUAIAN
+  OPNAME
+  SALDO_AWAL
+}
+
+enum StatusOpname {
+  DRAFT
+  MENUNGGU
+  DISETUJUI
+  DITOLAK
+}
+
+enum TipeMutasiKasbon {
+  SALDO_AWAL
+  KASBON
+  PEMBAYARAN
+  PEMBALIKAN
+  PENYESUAIAN
+}
+
+enum StatusTransaksi {
+  SELESAI
+  BATAL
+}
+
+enum MetodePembayaran {
+  TUNAI
+  TRANSFER
+  KASBON
+}
+
+// 1. Pengguna & Keamanan
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  nama         String
+  role         Role
+  passwordHash String   @map("password_hash")
+  aktif        Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  stokMutasi         StokMutasi[]
+  barangMasuk        BarangMasuk[]
+  opnameDibuat       StokOpname[]        @relation("OpnameDibuat")
+  opnameDisetujui    StokOpname[]        @relation("OpnameDisetujui")
+  kasbonMutasi       KasbonMutasi[]
+  transaksiKasir     Transaksi[]         @relation("TransaksiKasir")
+  transaksiBatal     Transaksi[]         @relation("TransaksiDibatalkan")
+  activityLogs       ActivityLog[]
+  kasbonPembayaran   KasbonPembayaran[]
+
+  @@map("user")
+}
+
+// 2. Pengaturan Toko (Single-row singleton)
+model PengaturanToko {
+  id                  String     @id @default("default")
+  namaToko            String     @map("nama_toko")
+  alamat              String?
+  telepon             String?
+  footerStruk         String?    @map("footer_struk")
+  pesanWhatsApp       String?    @map("pesan_whatsapp")
+  pembulatan          Pembulatan @default(BULAT_0)
+  batasDiskonStaff    Int        @default(0) @map("batas_diskon_staff")
+  pinOwnerHash        String     @map("pin_owner_hash")
+  pinFailedAttempts   Int        @default(0) @map("pin_failed_attempts")
+  pinLockedUntil      DateTime?  @map("pin_locked_until")
+  ambangUtangLamaHari Int        @default(30) @map("ambang_utang_lama_hari")
+  bolehJualStokNol    Boolean    @default(false) @map("boleh_jual_stok_nol")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@map("pengaturan_toko")
+}
+
+// 3. Kategori Produk
+model Kategori {
+  id        String    @id @default(cuid())
+  nama      String    @unique
+  produk    Produk[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("kategori")
+}
+
+// 4. Master Produk & Satuan
+model Produk {
+  id           String         @id @default(cuid())
+  nama         String
+  kategoriId   String?        @map("kategori_id")
+  barcode      String?        @unique
+  satuanDasar  String         @map("satuan_dasar")
+  stokMinimum  Decimal        @default(0) @map("stok_minimum") @db.Decimal(12, 3)
+  aktif        Boolean        @default(true)
+  stokCache    Decimal        @default(0) @map("stok_cache") @db.Decimal(12, 3)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  kategori        Kategori?         @relation(fields: [kategoriId], references: [id])
+  satuanProduk    SatuanProduk[]
+  stokMutasi      StokMutasi[]
+  barangMasukItem BarangMasukItem[]
+  opnameItem      StokOpnameItem[]
+  transaksiItem   TransaksiItem[]
+
+  @@index([nama])
+  @@index([barcode])
+  @@map("produk")
+}
+
+model SatuanProduk {
+  id            String   @id @default(cuid())
+  produkId      String   @map("produk_id")
+  namaSatuan    String   @map("nama_satuan")
+  faktorKeDasar Decimal  @map("faktor_ke_dasar") @db.Decimal(12, 3)
+  hargaJual     Int      @map("harga_jual")
+  hargaBeli     Int      @map("harga_beli")
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  produk Produk @relation(fields: [produkId], references: [id], onDelete: Cascade)
+
+  @@unique([produkId, namaSatuan])
+  @@map("satuan_produk")
+}
+
+// 5. Stok Mutasi (Append-Only Ledger)
+model StokMutasi {
+  id         String         @id @default(cuid())
+  produkId   String         @map("produk_id")
+  tipe       TipeMutasiStok
+  qtyDasar   Decimal        @map("qty_dasar") @db.Decimal(12, 3)
+  refTipe    String?        @map("ref_tipe")
+  refId      String?        @map("ref_id")
+  userId     String         @map("user_id")
+  catatan    String?
+  dibuatPada DateTime       @default(now()) @map("dibuat_pada")
+
+  produk Produk @relation(fields: [produkId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([produkId, dibuatPada])
+  @@map("stok_mutasi")
+}
+
+// 6. Barang Masuk
+model BarangMasuk {
+  id        String            @id @default(cuid())
+  nomor     String            @unique
+  tanggal   DateTime          @default(now())
+  userId    String            @map("user_id")
+  catatan   String?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  user  User              @relation(fields: [userId], references: [id])
+  items BarangMasukItem[]
+
+  @@map("barang_masuk")
+}
+
+model BarangMasukItem {
+  id                 String   @id @default(cuid())
+  barangMasukId      String   @map("barang_masuk_id")
+  produkId           String   @map("produk_id")
+  namaSatuan         String   @map("nama_satuan")
+  faktorKeDasar      Decimal  @map("faktor_ke_dasar") @db.Decimal(12, 3)
+  qty                Decimal  @db.Decimal(12, 3)
+  qtyDasar           Decimal  @map("qty_dasar") @db.Decimal(12, 3)
+  hargaBeliPerSatuan Int      @map("harga_beli_per_satuan")
+  subtotal           Int
+
+  barangMasuk BarangMasuk @relation(fields: [barangMasukId], references: [id], onDelete: Cascade)
+  produk      Produk      @relation(fields: [produkId], references: [id])
+
+  @@map("barang_masuk_item")
+}
+
+// 7. Stok Opname
+model StokOpname {
+  id                 String         @id @default(cuid())
+  nomor              String         @unique
+  tanggal            DateTime       @default(now())
+  status             StatusOpname   @default(MENUNGGU)
+  dibuatOlehId       String         @map("dibuat_oleh_id")
+  disetujuiOlehId    String?        @map("disetujui_oleh_id")
+  catatan            String?
+  tanggalPersetujuan DateTime?      @map("tanggal_persetujuan")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  dibuatOleh    User             @relation("OpnameDibuat", fields: [dibuatOlehId], references: [id])
+  disetujuiOleh User?            @relation("OpnameDisetujui", fields: [disetujuiOlehId], references: [id])
+  items         StokOpnameItem[]
+
+  @@map("stok_opname")
+}
+
+model StokOpnameItem {
+  id           String  @id @default(cuid())
+  stokOpnameId String  @map("stok_opname_id")
+  produkId     String  @map("produk_id")
+  stokSistem   Decimal @map("stok_sistem") @db.Decimal(12, 3)
+  stokFisik    Decimal @map("stok_fisik") @db.Decimal(12, 3)
+  selisih      Decimal @db.Decimal(12, 3)
+  nilaiSelisih Int     @map("nilai_selisih")
+  catatan      String?
+
+  stokOpname StokOpname @relation(fields: [stokOpnameId], references: [id], onDelete: Cascade)
+  produk     Produk     @relation(fields: [produkId], references: [id])
+
+  @@map("stok_opname_item")
+}
+
+// 8. Member & Kasbon
+model Member {
+  id              String   @id @default(cuid())
+  nama            String
+  telepon         String?
+  alamat          String?
+  batasKasbon     Int      @default(0) @map("batas_kasbon")
+  saldoUtangCache Int      @default(0) @map("saldo_utang_cache")
+  aktif           Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  kasbonMutasi     KasbonMutasi[]
+  transaksi        Transaksi[]
+  kasbonPembayaran KasbonPembayaran[]
+
+  @@index([nama])
+  @@index([telepon])
+  @@map("member")
+}
+
+model KasbonMutasi {
+  id          String           @id @default(cuid())
+  memberId    String           @map("member_id")
+  tipe        TipeMutasiKasbon
+  jumlah      Int
+  transaksiId String?          @map("transaksi_id")
+  userId      String           @map("user_id")
+  catatan     String?
+  dibuatPada  DateTime         @default(now()) @map("dibuat_pada")
+
+  member    Member     @relation(fields: [memberId], references: [id])
+  transaksi Transaksi? @relation(fields: [transaksiId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@index([memberId, dibuatPada])
+  @@map("kasbon_mutasi")
+}
+
+model KasbonPembayaran {
+  id           String           @id @default(cuid())
+  nomorBukti   String           @unique @map("nomor_bukti")
+  memberId     String           @map("member_id")
+  metode       MetodePembayaran
+  jumlah       Int
+  uangDiterima Int?             @map("uang_diterima")
+  kembalian    Int?
+  kasirId      String           @map("kasir_id")
+  catatan      String?
+  dibuatPada   DateTime         @default(now()) @map("dibuat_pada")
+
+  member Member @relation(fields: [memberId], references: [id])
+  kasir  User   @relation(fields: [kasirId], references: [id])
+
+  @@map("kasbon_pembayaran")
+}
+
+// 9. Transaksi Kasir & Checkout Atomik
+model Transaksi {
+  id               String          @id @default(cuid())
+  nomorStruk       String          @unique @map("nomor_struk")
+  idempotencyKey   String          @unique @map("idempotency_key")
+  kasirId          String          @map("kasir_id")
+  memberId         String?         @map("member_id")
+  subtotal         Int
+  diskon           Int             @default(0)
+  pembulatan       Int             @default(0)
+  total            Int
+  status           StatusTransaksi @default(SELESAI)
+  alasanBatal      String?         @map("alasan_batal")
+  dibatalkanOlehId String?         @map("dibatalkan_oleh_id")
+  dibatalkanPada   DateTime?       @map("dibatalkan_pada")
+  dibuatPada       DateTime        @default(now()) @map("dibuat_pada")
+
+  kasir          User            @relation("TransaksiKasir", fields: [kasirId], references: [id])
+  dibatalkanOleh User?           @relation("TransaksiDibatalkan", fields: [dibatalkanOlehId], references: [id])
+  member         Member?         @relation(fields: [memberId], references: [id])
+  items          TransaksiItem[]
+  pembayaran     Pembayaran[]
+  kasbonMutasi   KasbonMutasi[]
+
+  @@index([dibuatPada])
+  @@index([status])
+  @@map("transaksi")
+}
+
+model TransaksiItem {
+  id                    String   @id @default(cuid())
+  transaksiId           String   @map("transaksi_id")
+  produkId              String   @map("produk_id")
+  namaSnapshot          String   @map("nama_snapshot")
+  satuanSnapshot        String   @map("satuan_snapshot")
+  faktorKeDasarSnapshot Decimal  @map("faktor_ke_dasar_snapshot") @db.Decimal(12, 3)
+  qty                   Decimal  @db.Decimal(12, 3)
+  qtyDasar              Decimal  @map("qty_dasar") @db.Decimal(12, 3)
+  hargaJualSnapshot     Int      @map("harga_jual_snapshot")
+  hargaBeliSnapshot     Int      @map("harga_beli_snapshot")
+  subtotal              Int
+
+  transaksi Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+  produk    Produk    @relation(fields: [produkId], references: [id])
+
+  @@map("transaksi_item")
+}
+
+model Pembayaran {
+  id           String           @id @default(cuid())
+  transaksiId  String           @map("transaksi_id")
+  metode       MetodePembayaran
+  jumlah       Int
+  uangDiterima Int?             @map("uang_diterima")
+  kembalian    Int?
+  dibuatPada   DateTime         @default(now()) @map("dibuat_pada")
+
+  transaksi Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+
+  @@map("pembayaran")
+}
+
+// 10. Sequence Struk Anti-Balapan
+model ReceiptSequence {
+  tanggal String @id @db.VarChar(8)
+  counter Int    @default(0)
+
+  @@map("receipt_sequence")
+}
+
+// 11. Activity Log
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  role        String?
+  aksi        String
+  entitas     String
+  entitasId   String?  @map("entitas_id")
+  sebelumJson Json?    @map("sebelum_json")
+  sesudahJson Json?    @map("sesudah_json")
+  ip          String?
+  dibuatPada  DateTime @default(now()) @map("dibuat_pada")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([dibuatPada])
+  @@index([entitas, entitasId])
+  @@map("activity_log")
+}
+
