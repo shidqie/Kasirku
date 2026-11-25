@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import { formatRupiah, formatDateTime } from "@/lib/formatters";
+import { CardListSkeleton } from "@/components/shared/Skeleton";
 
 const METODE_LABEL: Record<string, string> = {
   TUNAI: "Tunai",
@@ -165,9 +166,9 @@ export default function OwnerDashboardPage() {
 
             <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-200/70 dark:divide-zinc-800 pr-1">
               {loading ? (
-                <p className="py-6 text-center text-slate-400 text-xs">
-                  Memuat data transaksi...
-                </p>
+                <div className="py-3">
+                  <CardListSkeleton count={4} />
+                </div>
               ) : (data?.recentTrx || []).length === 0 ? (
                 <p className="py-6 text-center text-slate-400 text-xs">
                   Belum ada transaksi.
@@ -212,18 +213,18 @@ export default function OwnerDashboardPage() {
                 Penjualan produk terlaris
               </h3>
               <Link
-                href="/owner/laporan"
+                href="/owner/produk-terlaris"
                 className="text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white underline underline-offset-4"
               >
-                Lihat laporan
+                Lihat Produk Terlaris
               </Link>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-200/70 dark:divide-zinc-800 pr-1">
               {loading ? (
-                <p className="py-6 text-center text-slate-400 text-xs">
-                  Memuat produk terlaris...
-                </p>
+                <div className="py-3">
+                  <CardListSkeleton count={4} />
+                </div>
               ) : (data?.topProducts || []).length === 0 ? (
                 <p className="py-6 text-center text-slate-400 text-xs">
                   Belum ada data penjualan produk.

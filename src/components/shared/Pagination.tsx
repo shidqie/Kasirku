@@ -52,7 +52,7 @@ export function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-start gap-2.5 py-4 bg-transparent border-t border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-zinc-400 select-none font-sans">
+    <div className="relative z-10 flex items-center justify-start gap-2.5 py-3 bg-white dark:bg-[#121214] border-t border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-zinc-400 select-none font-sans">
       <button
         type="button"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}

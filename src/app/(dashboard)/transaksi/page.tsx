@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TableSkeletonRows } from "@/components/shared/Skeleton";
+import { PopupAlert } from "@/components/shared/ToastProvider";
 import {
   Receipt,
   Search,
@@ -134,191 +136,176 @@ export default function RiwayatTransaksiPage() {
   return (
     <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
       {/* Header & Filter Fixed at Top */}
-      <div className="shrink-0">
-        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="shrink-0 space-y-4 pb-4">
+        <div className="pb-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Riwayat Transaksi Penjualan
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+                Riwayat Penjualan
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 tabular-nums">
+                {transactions.length} Transaksi
+              </span>
+            </div>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-              Daftar seluruh transaksi kasir. Cetak ulang struk atau lakukan pembatalan (void) non-destruktif.
+              Daftar transaksi kasir, cetak ulang struk, dan pembatalan (void)
             </p>
           </div>
         </div>
 
-        {/* Filter Bar Minimalis */}
-        <div className="pt-4 pb-2.5 border-b border-slate-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6 text-xs">
-            {[
-              { val: "", label: "Semua" },
-              { val: "SELESAI", label: "Selesai" },
-              { val: "BATAL", label: "Dibatalkan (Void)" },
-            ].map((tab) => (
+        {/* Search & Filter Bar (Sama dengan Modal Riwayat Kasir) */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari nomor transaksi atau nama pelanggan..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-8 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+            />
+            {search && (
               <button
-                key={tab.val}
                 type="button"
                 onClick={() => {
-                  setStatusFilter(tab.val);
+                  setSearch("");
                   setCurrentPage(1);
                 }}
-                className={`pb-2.5 -mb-[11px] border-b-2 transition-colors cursor-pointer ${
-                  statusFilter === tab.val
-                    ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                    : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
-                }`}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
               >
-                {tab.label}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
           </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <input
-                type="text"
-                placeholder="Cari nomor struk atau nama member"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
-              />
-              {search && (
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={fetchData}
-              title="Muat ulang"
-              aria-label="Muat ulang"
-              className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-            </button>
-          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-700 dark:text-zinc-300 focus:outline-none"
+          >
+            <option value="">Semua Status</option>
+            <option value="SELESAI">Selesai</option>
+            <option value="BATAL">Batal (Void)</option>
+          </select>
+          <button
+            type="button"
+            onClick={fetchData}
+            title="Muat ulang"
+            aria-label="Muat ulang"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+          </button>
         </div>
 
-        {error && (
-          <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-xs">
-            <CheckCircle className="w-4 h-4 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+        <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
       </div>
 
-      {/* Tabel Transaksi Minimalist (Scrollable Internal) */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      {/* Tabel Transaksi (Sama dengan Modal Riwayat Kasir) */}
+      <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-400">
+            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-zinc-800 uppercase font-sans tracking-wider text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
               <tr>
-                <th className="py-3 pr-4">No. Struk</th>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">Kasir</th>
-                <th className="py-3 px-4">Pelanggan</th>
-                <th className="py-3 px-4">Metode</th>
-                <th className="py-3 px-4 text-right">Total belanja</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                <th className="py-3 px-3">No. Transaksi</th>
+                <th className="py-3 px-3">Waktu</th>
+                <th className="py-3 px-3">Kasir / Pelanggan</th>
+                <th className="py-3 px-3 text-right">Total</th>
+                <th className="py-3 px-3 text-center">Status</th>
+                <th className="py-3 px-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400">
-                    Memuat riwayat transaksi...
-                  </td>
-                </tr>
+                <TableSkeletonRows rows={6} cols={6} />
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400">
-                    Tidak ada transaksi yang cocok.
+                  <td colSpan={6} className="text-center py-12 text-slate-400">
+                    Tidak ada transaksi ditemukan.
                   </td>
                 </tr>
               ) : (
                 transactions
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                   .map((t) => {
-                  const bayar = t.pembayaran?.[0];
-                  const isBatal = t.status === "BATAL";
+                    const bayar = t.pembayaran?.[0];
+                    const isBatal = t.status === "BATAL";
 
-                  return (
-                    <tr key={t.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                      <td className="py-3.5 pr-4 font-semibold text-slate-900 dark:text-zinc-100">
-                        {t.nomorStruk}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                        {formatDateTime(t.dibuatPada)}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-zinc-200">
-                        {t.kasir?.nama || "Kasir"}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {t.member ? (
-                          <span className="font-medium text-slate-900 dark:text-zinc-100">{t.member.nama}</span>
-                        ) : (
-                          <span className="text-slate-400">Umum</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-zinc-300">
-                        {bayar?.metode || "TUNAI"}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-zinc-100 tabular-nums">
-                        {formatRupiah(t.total)}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {isBatal ? (
-                          <span className="text-xs font-semibold text-rose-600">
-                            Batal
+                    return (
+                      <tr
+                        key={t.id}
+                        className={`hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors ${
+                          isBatal ? "bg-rose-50/30 dark:bg-rose-950/20" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-3">
+                          <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 block">
+                            {t.nomorStruk}
                           </span>
-                        ) : (
-                          <span className="text-xs font-semibold text-emerald-600">
-                            Selesai
+                          <span className="text-[10px] text-slate-400 uppercase">
+                            {bayar?.metode || "TUNAI"}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 pl-4 text-center whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => handleOpenStruk(t)}
-                            className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                            title="Cetak Ulang Struk"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Struk</span>
-                          </button>
-                          {!isBatal && (
-                            <button
-                              onClick={() => handleOpenVoidModal(t)}
-                              className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                              title="Batalkan Transaksi (Void)"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                              <span>Void</span>
-                            </button>
+                        </td>
+                        <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                          {formatDateTime(t.dibuatPada)}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-medium text-slate-800 dark:text-zinc-200 block">
+                            {t.kasir?.nama || "Kasir"}
+                          </span>
+                          {t.member ? (
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
+                              {t.member.nama}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">Umum</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        </td>
+                        <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-zinc-100 whitespace-nowrap tabular-nums">
+                          {formatRupiah(t.total)}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          {isBatal ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                              Batal
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                              Selesai
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenStruk(t)}
+                              className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                              title="Cetak Ulang Struk"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Cetak Struk</span>
+                            </button>
+                            {!isBatal && (
+                              <button
+                                onClick={() => handleOpenVoidModal(t)}
+                                className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                title="Batalkan Transaksi (Void)"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                                <span>Void</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
               )}
             </tbody>
           </table>

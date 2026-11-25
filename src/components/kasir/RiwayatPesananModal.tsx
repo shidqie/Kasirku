@@ -198,7 +198,7 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
-                Riwayat Pesanan
+                Riwayat Penjualan
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
                 {transactions.length} Transaksi
@@ -239,7 +239,7 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari nomor struk atau nama member..."
+                placeholder="Cari nomor transaksi atau nama pelanggan..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3.5 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500/20"
@@ -265,13 +265,13 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
 
           {/* Tabel Riwayat */}
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[60vh]">
               <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-400">
-                <thead className="bg-slate-50 dark:bg-zinc-800/60 uppercase font-sans tracking-wider text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-zinc-800 uppercase font-sans tracking-wider text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3 px-3">No. Struk</th>
+                    <th className="py-3 px-3">No. Transaksi</th>
                     <th className="py-3 px-3">Waktu</th>
-                    <th className="py-3 px-3">Kasir / Member</th>
+                    <th className="py-3 px-3">Kasir / Pelanggan</th>
                     <th className="py-3 px-3 text-right">Total</th>
                     <th className="py-3 px-3 text-center">Status</th>
                     <th className="py-3 px-3 text-center">Aksi</th>
@@ -339,22 +339,24 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="inline-flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => handleOpenStruk(t)}
-                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                                 title="Cetak Ulang Struk"
                               >
                                 <Printer className="w-3.5 h-3.5" />
+                                <span>Cetak Struk</span>
                               </button>
                               {!isVoid && (
                                 <button
                                   onClick={() => handleOpenVoidModal(t)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                  className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                                   title="Batalkan Transaksi (Void)"
                                 >
                                   <Ban className="w-3.5 h-3.5" />
+                                  <span>Void</span>
                                 </button>
                               )}
                             </div>

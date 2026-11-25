@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { TableSkeletonRows, DetailPageSkeleton } from "@/components/shared/Skeleton";
+import { PopupAlert } from "@/components/shared/ToastProvider";
 import {
   Package,
   Plus,
@@ -18,6 +20,7 @@ import {
   Tag,
   ListFilter,
   Save,
+  FileText,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
@@ -360,8 +363,8 @@ function TabProduk() {
         </div>
 
         {/* Filter Bar Garis Bawah */}
-        <div className="pt-4 pb-2.5 border-b border-slate-200 dark:border-zinc-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-5 overflow-x-auto text-xs">
+        <div className="pt-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
+          <div className="flex items-center gap-6 overflow-x-auto no-scrollbar text-xs">
             {[
               { id: "SEMUA", label: "Semua" },
               { id: "MENIPIS", label: "Stok menipis" },
@@ -375,7 +378,7 @@ function TabProduk() {
                   setFilterStok(f.id as any);
                   setCurrentPage(1);
                 }}
-                className={`pb-2.5 -mb-[11px] border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer focus:outline-none ${
                   filterStok === f.id
                     ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
                     : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
@@ -386,7 +389,7 @@ function TabProduk() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap pb-2.5">
             <select
               value={selectedKategori}
               onChange={(e) => {
@@ -428,24 +431,13 @@ function TabProduk() {
           </div>
         </div>
 
-        {error && (
-          <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-xs">
-            <CheckCircle className="w-4 h-4 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+        <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
       </div>
 
-      {/* Tabel Produk Minimalist (Scrollable Internal) */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+      {/* Tabel Produk Minimalist (Scrollable Internal, Sticky Header) */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
                 <th className="py-3 pr-4 whitespace-nowrap">ID barang</th>
@@ -460,11 +452,7 @@ function TabProduk() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-8 text-slate-400">
-                    Memuat produk...
-                  </td>
-                </tr>
+                <TableSkeletonRows rows={8} cols={8} />
               ) : products.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="text-center py-8 text-slate-400">
@@ -612,17 +600,30 @@ function TabProduk() {
                         <div className="inline-flex items-center justify-center gap-1 text-xs">
                           <button
                             onClick={() => setDetailProduct({ product: p, idBarang })}
-                            className="h-7 px-2.5 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            className="h-7 px-2.5 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                             title="Lihat detail produk"
                           >
-                            Detail
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Detail</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDetailProduct({ product: p, idBarang });
+                              openEditInDrawer(p);
+                            }}
+                            className="h-7 px-2.5 rounded-lg font-semibold text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                            title="Edit produk & harga"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
                           </button>
                           <button
                             onClick={() => handleDelete(p)}
-                            className="h-7 px-2.5 rounded-lg font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="h-7 px-2.5 rounded-lg font-semibold text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                             title="Nonaktifkan produk"
                           >
-                            Hapus
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
                           </button>
                         </div>
                       </td>
@@ -632,7 +633,6 @@ function TabProduk() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {products.length > 0 && (
@@ -666,14 +666,14 @@ function TabProduk() {
 
         return (
           <div
-            className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
             onClick={() => {
               setDetailProduct(null);
               setIsDrawerEditing(false);
             }}
           >
             <div
-              className="w-full max-w-md h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-300 select-text"
+              className="w-full max-w-md h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 select-text drawer-panel"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header: ID Barang, Nama Barang, Tombol Tutup / Batal */}
@@ -986,9 +986,9 @@ function TabProduk() {
       })()}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop">
           <div
-            className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-300"
+            className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 drawer-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0">
@@ -1415,7 +1415,7 @@ function ProdukContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat produk...</div>}>
+    <Suspense fallback={<DetailPageSkeleton />}>
       <ProdukContent />
     </Suspense>
   );

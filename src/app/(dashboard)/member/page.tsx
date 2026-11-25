@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import Link from "next/link";
 import {
   Users,
@@ -26,6 +27,7 @@ interface MemberItem {
   nama: string;
   telepon: string | null;
   alamat: string | null;
+  subMembers?: string[];
   batasKasbon: number;
   saldoUtangCache: number;
   sisaLimit: number;
@@ -52,6 +54,8 @@ export default function MemberListPage() {
   const [newNama, setNewNama] = useState("");
   const [newTelepon, setNewTelepon] = useState("");
   const [newAlamat, setNewAlamat] = useState("");
+  const [newSubMembers, setNewSubMembers] = useState<string[]>([]);
+  const [newSubInput, setNewSubInput] = useState("");
   const [newSaldoAwal, setNewSaldoAwal] = useState<number>(0);
   const [submittingAdd, setSubmittingAdd] = useState(false);
 
@@ -61,6 +65,8 @@ export default function MemberListPage() {
   const [editNama, setEditNama] = useState("");
   const [editTelepon, setEditTelepon] = useState("");
   const [editAlamat, setEditAlamat] = useState("");
+  const [editSubMembers, setEditSubMembers] = useState<string[]>([]);
+  const [editSubInput, setEditSubInput] = useState("");
   const [submittingEdit, setSubmittingEdit] = useState(false);
 
   // Modal Hapus Member (DELETE)
@@ -136,6 +142,7 @@ export default function MemberListPage() {
           nama: newNama.trim(),
           telepon: newTelepon.trim() || null,
           alamat: newAlamat.trim() || null,
+          subMembers: newSubMembers,
           batasKasbon: 1000000,
           saldoAwal: Number(newSaldoAwal),
         }),
@@ -149,6 +156,8 @@ export default function MemberListPage() {
       setNewNama("");
       setNewTelepon("");
       setNewAlamat("");
+      setNewSubMembers([]);
+      setNewSubInput("");
       setNewSaldoAwal(0);
       fetchMembers();
     } catch (err: any) {
@@ -164,6 +173,8 @@ export default function MemberListPage() {
     setEditNama(m.nama);
     setEditTelepon(m.telepon || "");
     setEditAlamat(m.alamat || "");
+    setEditSubMembers(Array.isArray(m.subMembers) ? m.subMembers : []);
+    setEditSubInput("");
     setError(null);
     setIsEditOpen(true);
   };
@@ -188,6 +199,7 @@ export default function MemberListPage() {
           nama: editNama.trim(),
           telepon: editTelepon.trim() || null,
           alamat: editAlamat.trim() || null,
+          subMembers: editSubMembers,
         }),
       });
 
@@ -265,32 +277,32 @@ export default function MemberListPage() {
         </button>
       </div>
 
-      {/* Ringkasan 3 Kolom (Flat, Tanpa Kartu & Ikon) */}
-      <div className="py-6 border-b border-slate-200 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div>
+      {/* Ringkasan 3 Kolom (Flat Editorial Style + Hairline Dividers) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800 border-b border-slate-200 dark:border-zinc-800">
+        <div className="py-5 sm:pr-6">
           <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
             Total pelanggan
           </span>
-          <p className="text-xl font-bold text-slate-900 dark:text-zinc-100 mt-1">
+          <p className="text-2xl font-bold text-slate-900 dark:text-zinc-100 mt-1 tabular-nums">
             {totalPelanggan}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-zinc-400">orang</span>
           </p>
         </div>
 
-        <div>
+        <div className="py-5 sm:px-6">
           <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
             Total saldo piutang
           </span>
-          <p className="text-xl font-bold text-rose-600 dark:text-rose-500 mt-1 tabular-nums">
+          <p className="text-2xl font-bold text-rose-600 dark:text-rose-500 mt-1 tabular-nums">
             {formatRupiah(totalPiutang)}
           </p>
         </div>
 
-        <div>
+        <div className="py-5 sm:pl-6">
           <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
             Pelanggan berutang
           </span>
-          <p className="text-xl font-bold text-slate-900 dark:text-zinc-100 mt-1">
+          <p className="text-2xl font-bold text-slate-900 dark:text-zinc-100 mt-1 tabular-nums">
             {memberBerutang}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-zinc-400">
               dari {totalPelanggan} orang
@@ -385,7 +397,7 @@ export default function MemberListPage() {
       </div>
 
       {/* Toast Notification Popup di Pojok Kanan Atas */}
-      <div className="fixed top-5 right-5 z-50 max-w-sm w-full space-y-2.5 pointer-events-none">
+      <div className="fixed top-5 right-5 z-[9999] max-w-sm w-full space-y-2.5 pointer-events-none">
         {success && (
           <div className="pointer-events-auto p-4 bg-white/95 backdrop-blur-md border border-emerald-200/90 rounded-2xl shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 duration-200">
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100">
@@ -426,10 +438,9 @@ export default function MemberListPage() {
       </div>
       </div>
 
-      {/* Tabel Daftar Member Minimalist (Scrollable Internal, Fixed Header) */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+      {/* Tabel Daftar Member Minimalist (Scrollable Internal, Sticky Header) */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
                 <th className="py-3 pr-4">Nama pelanggan</th>
@@ -441,12 +452,7 @@ export default function MemberListPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-300" />
-                    Memuat data piutang pelanggan...
-                  </td>
-                </tr>
+                <TableSkeletonRows rows={6} cols={5} />
               ) : filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-slate-400">
@@ -544,7 +550,6 @@ export default function MemberListPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {filteredMembers.length > 0 && (
@@ -559,101 +564,167 @@ export default function MemberListPage() {
         </div>
       )}
 
-      {/* MODAL TAMBAH DATA PIUTANG (CREATE) */}
+      {/* SLIDE DRAWER TAMBAH DATA PIUTANG (CREATE) */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 animate-in fade-in zoom-in-95 space-y-4 font-sans">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-slate-700" />
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => setIsAddOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col font-sans drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-slate-700 dark:text-zinc-300" />
                 Tambah Pelanggan Baru
               </h3>
               <button
+                type="button"
                 onClick={() => setIsAddOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateMember} className="space-y-3.5">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Nama Pelanggan <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newNama}
-                  onChange={(e) => setNewNama(e.target.value)}
-                  placeholder="Contoh: Pak Slamet / Warung Berkah"
-                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:bg-white focus:outline-none focus:border-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  No. Telepon / WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={newTelepon}
-                  onChange={(e) => setNewTelepon(e.target.value)}
-                  placeholder="Contoh: 081234567890"
-                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Alamat Lengkap
-                </label>
-                <textarea
-                  rows={2}
-                  value={newAlamat}
-                  onChange={(e) => setNewAlamat(e.target.value)}
-                  placeholder="Alamat domisili atau toko pelanggan"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs resize-none focus:bg-white focus:outline-none focus:border-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Saldo Awal Catatan Lama (Rp)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
-                    Rp
-                  </span>
+            <form onSubmit={handleCreateMember} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <div>
+                  <label className="field-label">
+                    Nama Pelanggan <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    value={newSaldoAwal ? newSaldoAwal.toLocaleString("id-ID") : ""}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      setNewSaldoAwal(digits ? parseInt(digits, 10) : 0);
-                    }}
-                    placeholder="0"
-                    className="w-full pl-9 pr-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold text-right focus:bg-white focus:outline-none focus:border-slate-400"
+                    required
+                    value={newNama}
+                    onChange={(e) => setNewNama(e.target.value)}
+                    placeholder="Contoh: Pak Slamet / Warung Berkah"
+                    className="ctl"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
-                  Kosongkan atau isi 0 jika tidak ada piutang buku fisik lama
-                </span>
+
+                <div>
+                  <label className="field-label">
+                    No. Telepon / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={newTelepon}
+                    onChange={(e) => setNewTelepon(e.target.value)}
+                    placeholder="Contoh: 081234567890"
+                    className="ctl"
+                  />
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    Alamat Lengkap
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={newAlamat}
+                    onChange={(e) => setNewAlamat(e.target.value)}
+                    placeholder="Alamat domisili atau toko pelanggan"
+                    className="ctl-ta"
+                  />
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    Saldo Awal Catatan Lama (Rp)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none select-none">
+                      Rp
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={newSaldoAwal ? newSaldoAwal.toLocaleString("id-ID") : ""}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        setNewSaldoAwal(digits ? parseInt(digits, 10) : 0);
+                      }}
+                      placeholder="0"
+                      className="ctl pl-10 font-semibold text-right"
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Kosongkan atau isi 0 jika tidak ada piutang buku fisik lama
+                  </span>
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    Anggota Pengambil (Opsional)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubInput}
+                      onChange={(e) => setNewSubInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = newSubInput.trim();
+                          if (val && !newSubMembers.includes(val)) {
+                            setNewSubMembers([...newSubMembers, val]);
+                          }
+                          setNewSubInput("");
+                        }
+                      }}
+                      placeholder="Contoh: Istri / Pak Joko"
+                      className="ctl flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = newSubInput.trim();
+                        if (val && !newSubMembers.includes(val)) {
+                          setNewSubMembers([...newSubMembers, val]);
+                        }
+                        setNewSubInput("");
+                      }}
+                      className="px-3.5 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    >
+                      Tambah
+                    </button>
+                  </div>
+                  {newSubMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {newSubMembers.map((sub, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-medium"
+                        >
+                          <span>{sub}</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewSubMembers(newSubMembers.filter((_, i) => i !== idx))}
+                            className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => setIsAddOpen(false)}
-                  className="w-1/2 h-9 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                  className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAdd}
-                  className="w-1/2 h-9 bg-slate-900 hover:bg-blue-600 active:scale-95 disabled:opacity-50 text-white font-medium rounded-xl text-xs shadow-2xs transition-all duration-150 cursor-pointer"
+                  className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 active:scale-95 disabled:opacity-50 text-white font-semibold rounded-[14px] text-xs shadow-2xs transition-all duration-150 cursor-pointer"
                 >
                   {submittingAdd ? "Menyimpan..." : "Simpan Pelanggan"}
                 </button>
@@ -663,81 +734,150 @@ export default function MemberListPage() {
         </div>
       )}
 
-      {/* MODAL EDIT DATA PIUTANG (UPDATE) */}
+      {/* SLIDE DRAWER EDIT DATA PIUTANG (UPDATE) */}
       {isEditOpen && editingMember && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 animate-in fade-in zoom-in-95 space-y-4 font-sans">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
-                <Pencil className="w-4 h-4 text-slate-700" />
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => {
+            setIsEditOpen(false);
+            setEditingMember(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col font-sans drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-slate-700 dark:text-zinc-300" />
                 Ubah Data Pelanggan
               </h3>
               <button
+                type="button"
                 onClick={() => {
                   setIsEditOpen(false);
                   setEditingMember(null);
                 }}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleUpdateMember} className="space-y-3.5">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Nama Pelanggan <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editNama}
-                  onChange={(e) => setEditNama(e.target.value)}
-                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:bg-white focus:outline-none focus:border-slate-400"
-                />
+            <form onSubmit={handleUpdateMember} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <div>
+                  <label className="field-label">
+                    Nama Pelanggan <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editNama}
+                    onChange={(e) => setEditNama(e.target.value)}
+                    className="ctl"
+                  />
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    No. Telepon / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={editTelepon}
+                    onChange={(e) => setEditTelepon(e.target.value)}
+                    placeholder="Contoh: 081234567890"
+                    className="ctl"
+                  />
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    Alamat Lengkap
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editAlamat}
+                    onChange={(e) => setEditAlamat(e.target.value)}
+                    placeholder="Alamat domisili atau toko pelanggan"
+                    className="ctl-ta"
+                  />
+                </div>
+
+                <div>
+                  <label className="field-label">
+                    Anggota Pengambil (Opsional)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editSubInput}
+                      onChange={(e) => setEditSubInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = editSubInput.trim();
+                          if (val && !editSubMembers.includes(val)) {
+                            setEditSubMembers([...editSubMembers, val]);
+                          }
+                          setEditSubInput("");
+                        }
+                      }}
+                      placeholder="Contoh: Istri / Pak Joko"
+                      className="ctl flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = editSubInput.trim();
+                        if (val && !editSubMembers.includes(val)) {
+                          setEditSubMembers([...editSubMembers, val]);
+                        }
+                        setEditSubInput("");
+                      }}
+                      className="px-3.5 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    >
+                      Tambah
+                    </button>
+                  </div>
+                  {editSubMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {editSubMembers.map((sub, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-medium"
+                        >
+                          <span>{sub}</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditSubMembers(editSubMembers.filter((_, i) => i !== idx))}
+                            className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  No. Telepon / WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={editTelepon}
-                  onChange={(e) => setEditTelepon(e.target.value)}
-                  placeholder="Contoh: 081234567890"
-                  className="w-full px-3 h-9 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:bg-white focus:outline-none focus:border-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Alamat Lengkap
-                </label>
-                <textarea
-                  rows={2}
-                  value={editAlamat}
-                  onChange={(e) => setEditAlamat(e.target.value)}
-                  placeholder="Alamat domisili atau toko pelanggan"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs resize-none focus:bg-white focus:outline-none focus:border-slate-400"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => {
                     setIsEditOpen(false);
                     setEditingMember(null);
                   }}
-                  className="w-1/2 h-9 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                  className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingEdit}
-                  className="w-1/2 h-9 bg-slate-900 hover:bg-amber-600 active:scale-95 disabled:opacity-50 text-white font-medium rounded-xl text-xs shadow-2xs transition-all duration-150 cursor-pointer"
+                  className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 active:scale-95 disabled:opacity-50 text-white font-semibold rounded-[14px] text-xs shadow-2xs transition-all duration-150 cursor-pointer"
                 >
                   {submittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>

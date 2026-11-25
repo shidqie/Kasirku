@@ -28,13 +28,24 @@ import {
   CookingPot,
   CakeSlice,
   Package,
+  Maximize2,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
+import QRCode from "qrcode";
 import { formatRupiah, formatDecimal, generateUUID } from "@/lib/formatters";
+import { KasirGridSkeleton } from "@/components/shared/Skeleton";
+import {
+  convertStaticQrisToDynamic,
+  extractQrisMerchantName,
+  isValidQrisPayload,
+} from "@/lib/qris";
 import { StrukModal } from "@/components/kasir/StrukModal";
 import { PinModal } from "@/components/shared/PinModal";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { RiwayatPesananModal } from "@/components/kasir/RiwayatPesananModal";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface SatuanItem {
   id: string;
@@ -150,8 +161,64 @@ function CategoryIcon({
   return <Icon className={className} strokeWidth={1.75} />;
 }
 
+function QtyStepperInput({
+  value,
+  onCommit,
+  widthClass = "w-9",
+}: {
+  value: number;
+  onCommit: (nextQty: number) => void;
+  widthClass?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const commit = () => {
+    setEditing(false);
+    const normalized = draft.replace(",", ".").trim();
+    if (!normalized) return;
+    const parsed = parseFloat(normalized);
+    if (!isNaN(parsed) && parsed !== value) {
+      onCommit(parsed);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      aria-label="Jumlah barang"
+      value={editing ? draft : formatDecimal(value)}
+      onClick={(e) => e.stopPropagation()}
+      onFocus={(e) => {
+        setEditing(true);
+        setDraft(String(value));
+        requestAnimationFrame(() => e.target.select());
+      }}
+      onChange={(e) => {
+        const cleaned = e.target.value.replace(/[^0-9.,]/g, "");
+        setDraft(cleaned);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        } else if (e.key === "Escape") {
+          setEditing(false);
+          e.currentTarget.blur();
+        }
+      }}
+      className={`${widthClass} text-xs font-bold text-slate-900 dark:text-zinc-100 text-center tabular-nums bg-transparent focus:bg-slate-100 dark:focus:bg-zinc-700 rounded-md focus:outline-none py-0.5`}
+    />
+  );
+}
+
 export default function KasirPOSPage() {
+  const toast = useToast();
+  const [isClearCartConfirmOpen, setIsClearCartConfirmOpen] = useState(false);
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [storeInfo, setStoreInfo] = useState<any>({
@@ -177,6 +244,9 @@ export default function KasirPOSPage() {
 
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [metodeBayar, setMetodeBayar] = useState<"TUNAI" | "TRANSFER" | "KASBON">("TUNAI");
+  const [qrisMode, setQrisMode] = useState<"DINAMIS" | "STATIS">("DINAMIS");
+  const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
+  const [isQrisZoomed, setIsQrisZoomed] = useState(false);
   const [uangDiterima, setUangDiterima] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -211,7 +281,13 @@ export default function KasirPOSPage() {
 
       if (pRes.ok) setProducts(pData.products || []);
       if (cRes.ok) setCategories(cData.categories || []);
-      if (sRes.ok) setStoreInfo(sData.settings || {});
+      if (sRes.ok) {
+        const loadedSettings = sData.settings || {};
+        setStoreInfo(loadedSettings);
+        if (loadedSettings.qrisModeDefault === "STATIS" || loadedSettings.qrisModeDefault === "DINAMIS") {
+          setQrisMode(loadedSettings.qrisModeDefault);
+        }
+      }
 
       const mRes = await fetch("/api/members");
       if (mRes.ok) {
@@ -220,6 +296,8 @@ export default function KasirPOSPage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingProducts(false);
     }
   };
 
@@ -356,7 +434,7 @@ export default function KasirPOSPage() {
 
     if (targetQty > maxAllowedQty) {
       const sisaBisaDitambah = Math.max(0, maxAllowedQty - currentQtyInExisting);
-      alert(`Stok tidak mencukupi. Sisa stok yang bisa ditambahkan: ${Math.floor(sisaBisaDitambah)} ${s.namaSatuan}`);
+      toast.error(`Stok tidak mencukupi. Sisa stok yang bisa ditambahkan: ${Math.floor(sisaBisaDitambah)} ${s.namaSatuan}`);
       return;
     }
 
@@ -427,7 +505,7 @@ export default function KasirPOSPage() {
       const stokTersedia = Number(found.stokCache);
 
       if (usedBase + faktor > stokTersedia) {
-        alert(`Stok produk ${found.nama} sudah pas/maksimal di keranjang (${stokTersedia} ${found.satuanDasar}).`);
+        toast.error(`Stok produk ${found.nama} sudah pas/maksimal di keranjang (${stokTersedia} ${found.satuanDasar}).`);
         return;
       }
 
@@ -474,7 +552,7 @@ export default function KasirPOSPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Gagal mendaftarkan barcode ke barang ini");
+        toast.error(data.error || "Gagal mendaftarkan barcode ke barang ini");
         return;
       }
 
@@ -512,22 +590,27 @@ export default function KasirPOSPage() {
 
       const assignedBarcode = unregisteredBarcode;
       setUnregisteredBarcode(null);
-      alert(`Sukses! Barcode ${assignedBarcode} berhasil didaftarkan ke "${productToAssign.nama}" dan langsung ditambahkan ke pesanan.`);
+      toast.success(`Barcode ${assignedBarcode} berhasil didaftarkan ke "${productToAssign.nama}" dan ditambahkan ke keranjang.`);
     } catch (err: any) {
-      alert(err.message || "Terjadi kesalahan saat menghubungkan barcode");
+      toast.error(err.message || "Terjadi kesalahan saat menghubungkan barcode");
     } finally {
       setIsAssigning(false);
     }
   };
 
   const clearCart = () => {
-    if (cart.length > 0 && confirm("Kosongkan keranjang pesanan?")) {
-      setCart([]);
-      setDiskonPersen(0);
-      setUangDiterima(0);
-      setSelectedMember(null);
-      initTransactionSession();
+    if (cart.length > 0) {
+      setIsClearCartConfirmOpen(true);
     }
+  };
+
+  const confirmClearCart = () => {
+    setCart([]);
+    setDiskonPersen(0);
+    setUangDiterima(0);
+    setSelectedMember(null);
+    initTransactionSession();
+    setIsClearCartConfirmOpen(false);
   };
 
   const subtotal = cart.reduce((sum, item) => sum + Math.round(item.qty * item.hargaJual), 0);
@@ -550,6 +633,69 @@ export default function KasirPOSPage() {
   const grandTotal = subtotalSetelahDiskon + pembulatan;
   const kembalian = uangDiterima >= grandTotal ? uangDiterima - grandTotal : 0;
   const isUangKurang = metodeBayar === "TUNAI" && uangDiterima < grandTotal;
+
+  useEffect(() => {
+    let active = true;
+    const rawPayload = storeInfo?.qrisPayload;
+    if (!isPayModalOpen || metodeBayar !== "TRANSFER") {
+      setQrisDataUrl(null);
+      return;
+    }
+
+    const generateFromPayload = async (payloadStr: string) => {
+      const targetPayload =
+        qrisMode === "DINAMIS"
+          ? convertStaticQrisToDynamic(payloadStr, grandTotal)
+          : payloadStr.trim();
+
+      const url = await QRCode.toDataURL(targetPayload, {
+        width: 560,
+        margin: 2,
+        color: { dark: "#0F172A", light: "#FFFFFF" },
+      });
+      if (active) setQrisDataUrl(url);
+    };
+
+    if (isValidQrisPayload(rawPayload)) {
+      generateFromPayload(rawPayload).catch(() => {
+        if (active) setQrisDataUrl(null);
+      });
+    } else if (storeInfo?.qrisStaticImage) {
+      // Fallback: jika baru foto QRIS yang tersimpan tanpa string payload, decode otomatis dari gambar
+      (async () => {
+        const tempId = `kasir-qris-decode-${Date.now()}`;
+        const tempEl = document.createElement("div");
+        tempEl.id = tempId;
+        tempEl.style.display = "none";
+        document.body.appendChild(tempEl);
+        try {
+          const blobRes = await fetch(storeInfo.qrisStaticImage);
+          const blob = await blobRes.blob();
+          const file = new File([blob], "qris.jpg", { type: blob.type || "image/jpeg" });
+          const { Html5Qrcode } = await import("html5-qrcode");
+          const scanner = new Html5Qrcode(tempId);
+          const decoded = await scanner.scanFile(file, false);
+          scanner.clear();
+          if (decoded && isValidQrisPayload(decoded) && active) {
+            setStoreInfo((prev: any) => ({ ...prev, qrisPayload: decoded.trim() }));
+            await generateFromPayload(decoded.trim());
+            return;
+          }
+        } catch {
+          // ignore
+        } finally {
+          tempEl.remove();
+        }
+        if (active) setQrisDataUrl(null);
+      })();
+    } else {
+      setQrisDataUrl(null);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [isPayModalOpen, metodeBayar, qrisMode, grandTotal, storeInfo?.qrisPayload, storeInfo?.qrisStaticImage]);
 
   const openPaymentModal = () => {
     if (cart.length === 0) return;
@@ -628,19 +774,19 @@ export default function KasirPOSPage() {
                 style={{ "--tw-ring-color": "var(--primary)" } as any}
               />
             </div>
-            {/* Button Riwayat Pesanan */}
+            {/* Button Riwayat Penjualan */}
             <button
               onClick={() => setIsRiwayatOpen(true)}
               className="h-11 px-4 rounded-[14px] text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 shrink-0 transition-all hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 flex items-center gap-2 shadow-2xs"
-              title="Buka Riwayat Pesanan & Transaksi"
+              title="Buka Riwayat Penjualan & Transaksi"
             >
-              <Receipt className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
-              <span>Riwayat Pesanan</span>
+              <History className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+              <span>Riwayat Penjualan</span>
             </button>
           </div>
 
-          {/* Horizontal Rounded Pills Category Bar (Horizontal Scroll, Single Line, Crisp Look) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
+          {/* Horizontal Minimalist Category Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
             {["Semua", "Favorit", ...categories.map((c) => c.nama)].map((cat) => {
               const isSelected = selectedCategory === cat;
               const isFav = cat === "Favorit";
@@ -648,26 +794,25 @@ export default function KasirPOSPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`h-9 px-4 rounded-full text-xs font-semibold shrink-0 transition-all flex items-center gap-1.5 ${
+                  className={`h-8 px-3.5 rounded-full text-xs font-medium shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? "text-white shadow-xs"
-                      : "bg-white dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-750"
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-semibold"
+                      : "bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
                   }`}
-                  style={isSelected ? { background: "var(--primary)" } : {}}
                 >
                   {isFav && (
                     <Star
                       className={`w-3.5 h-3.5 ${
-                        isSelected ? "fill-white text-white" : "fill-amber-400 text-amber-500"
+                        isSelected ? "fill-amber-400 text-amber-400" : "fill-amber-400 text-amber-500"
                       }`}
                     />
                   )}
                   <span>{cat}</span>
                   {isFav && favoriteIds.length > 0 && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                      className={`text-[10px] font-bold px-1.5 rounded-full ${
                         isSelected
-                          ? "bg-white/20 text-white"
+                          ? "bg-white/20 text-white dark:bg-zinc-900/15 dark:text-zinc-900"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
                       }`}
                     >
@@ -682,7 +827,9 @@ export default function KasirPOSPage() {
 
         {/* Product grid — scrollable */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
-          {filteredProducts.length === 0 ? (
+          {loadingProducts ? (
+            <KasirGridSkeleton count={12} />
+          ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-zinc-600 gap-3 py-16">
               {selectedCategory === "Favorit" ? (
                 <>
@@ -702,9 +849,8 @@ export default function KasirPOSPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
               {filteredProducts.map((p) => {
-                const palette = getCategoryPalette(p.kategori?.nama);
                 const Icon = CATEGORY_ICONS[p.kategori?.nama ?? ""] ?? Package;
                 const defaultSatuan = p.satuanProduk.find((s) => s.isDefault) || p.satuanProduk[0];
                 const stok = Number(p.stokCache);
@@ -714,8 +860,10 @@ export default function KasirPOSPage() {
                 const isStokPas = usedBase >= stok;
 
                 return (
-                  <button
+                  <div
                     key={p.id}
+                    role="button"
+                    tabIndex={isHabis ? -1 : 0}
                     onClick={() => {
                       if (isHabis) return;
                       if (p.satuanProduk && p.satuanProduk.length > 1) {
@@ -725,145 +873,166 @@ export default function KasirPOSPage() {
                         handleQuickAdd({ stopPropagation: () => {} } as any, p);
                       }
                     }}
-                    disabled={isHabis}
-                    className={`group relative text-left rounded-2xl p-4 transition-all duration-150 flex flex-col justify-between min-h-[140px] shadow-2xs focus:outline-none ${
-                      isHabis
-                        ? "opacity-60 cursor-not-allowed border border-transparent"
-                        : inCart
-                        ? "border-2 hover:shadow-md active:scale-98"
-                        : "border border-black/5 dark:border-white/5 hover:shadow-md hover:-translate-y-0.5 active:scale-98"
-                    }`}
-                    style={{
-                      background: palette.bg,
-                      ...(inCart && !isHabis ? { borderColor: isStokPas ? "#d97706" : "var(--primary)" } : {}),
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (isHabis) return;
+                        if (p.satuanProduk && p.satuanProduk.length > 1) {
+                          openProductConfig(p);
+                        } else if (!isStokPas) {
+                          handleQuickAdd({ stopPropagation: () => {} } as any, p);
+                        }
+                      }
                     }}
+                    className={`group relative text-left rounded-2xl p-3.5 transition-all duration-150 flex flex-col justify-between min-h-[132px] bg-white dark:bg-zinc-900 focus:outline-none ${
+                      isHabis
+                        ? "opacity-55 cursor-not-allowed border border-slate-200/70 dark:border-zinc-800"
+                        : inCart
+                        ? "border-2 bg-rose-50/20 dark:bg-rose-950/10 hover:shadow-sm hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer"
+                        : "border border-slate-200/80 dark:border-zinc-800 hover:bg-slate-50/80 dark:hover:bg-zinc-800/60 hover:border-slate-300 dark:hover:border-zinc-600 hover:shadow-sm hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer"
+                    }`}
+                    style={
+                      inCart && !isHabis
+                        ? { borderColor: isStokPas ? "#d97706" : "var(--primary)" }
+                        : undefined
+                    }
                   >
-                    {/* Badge in cart */}
-                    {inCart && (
-                      <span
-                        className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-white shadow-xs z-10 ${
-                          isStokPas ? "bg-amber-600" : ""
-                        }`}
-                        style={!isStokPas ? { background: "var(--primary)" } : {}}
-                      >
-                        {formatDecimal(inCart.qty)} di keranjang {isStokPas ? "• Maks" : ""}
-                      </span>
-                    )}
-
-                    {/* Star Favorite Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(p.id);
-                      }}
-                      className={`absolute top-2.5 ${inCart ? (isStokPas ? "right-36" : "right-24") : "right-2.5"} w-7 h-7 rounded-full flex items-center justify-center transition-all z-10 ${
-                        favoriteIds.includes(p.id)
-                          ? "bg-amber-400 text-white shadow-xs scale-100"
-                          : "opacity-0 group-hover:opacity-100 bg-white/80 dark:bg-black/30 hover:bg-white text-slate-400 hover:text-amber-500 hover:scale-110 shadow-2xs border border-black/5"
-                      }`}
-                      title={favoriteIds.includes(p.id) ? "Hapus dari Favorit" : "Tandai sebagai Favorit"}
-                    >
-                      <Star
-                        className={`w-3.5 h-3.5 ${
-                          favoriteIds.includes(p.id) ? "fill-white text-white" : "hover:fill-amber-400"
-                        }`}
+                    {/* Top row: Minimalist icon + Favorite star + In-cart badge */}
+                    <div className="flex items-center justify-between gap-1.5 mb-2">
+                      <Icon
+                        className="w-5 h-5 shrink-0 text-slate-400 dark:text-zinc-500"
+                        strokeWidth={1.6}
                       />
-                    </button>
 
-                    {/* Category icon */}
-                    <Icon
-                      className="w-8 h-8 mb-2.5"
-                      strokeWidth={1.75}
-                      style={{ color: palette.text }}
-                    />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(p.id);
+                          }}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                            favoriteIds.includes(p.id)
+                              ? "text-amber-500"
+                              : "opacity-0 group-hover:opacity-100 text-slate-300 hover:text-amber-500"
+                          }`}
+                          title={favoriteIds.includes(p.id) ? "Hapus dari Favorit" : "Tandai sebagai Favorit"}
+                        >
+                          <Star
+                            className={`w-3.5 h-3.5 ${
+                              favoriteIds.includes(p.id) ? "fill-amber-400 text-amber-500" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {inCart && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap ${
+                              isStokPas ? "bg-amber-600" : ""
+                            }`}
+                            style={!isStokPas ? { background: "var(--primary)" } : {}}
+                          >
+                            {formatDecimal(inCart.qty)}
+                            {isStokPas ? " Maks" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Info Container */}
-                    <div>
+                    <div className="space-y-1">
                       {/* Name */}
-                      <p
-                        className="text-[13px] font-bold leading-snug line-clamp-2 mb-1.5"
-                        style={{ color: palette.text }}
-                      >
+                      <p className="text-[13px] font-semibold text-slate-900 dark:text-zinc-100 leading-snug line-clamp-2">
                         {p.nama}
                       </p>
 
-                      {/* Price + stock row */}
-                      <div className="flex items-center justify-between pt-1">
-                        {(defaultSatuan?.hargaJual || 0) > 0 ? (
-                          <span className="text-xs font-black tracking-tight" style={{ color: palette.text }}>
-                            {formatRupiah(defaultSatuan?.hargaJual || 0)}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-semibold opacity-70" style={{ color: palette.text }}>
-                            Harga belum diatur
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1.5">
-                          {!inCart ? (
-                            <>
-                              <span
-                                className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full border border-black/5 ${
-                                  isHabis
-                                    ? "bg-rose-500/90 text-white"
-                                    : "bg-white/90 dark:bg-black/20 text-slate-800 dark:text-zinc-200"
-                                }`}
-                              >
-                                {isHabis ? "Habis" : `Stok ${formatDecimal(stok)}`}
-                              </span>
+                      {/* Price */}
+                      {(defaultSatuan?.hargaJual || 0) > 0 ? (
+                        <p className="text-sm font-bold text-slate-900 dark:text-zinc-100 tracking-tight tabular-nums">
+                          {formatRupiah(defaultSatuan?.hargaJual || 0)}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] font-medium text-slate-400">
+                          Harga belum diatur
+                        </p>
+                      )}
 
-                              {/* Tombol (+) di bawah kartu jika belum ada di keranjang */}
-                              {!isHabis && !isStokPas && (defaultSatuan?.hargaJual || 0) > 0 && (
-                                <span
-                                  onClick={(e) => handleQuickAdd(e, p)}
-                                  className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white flex items-center justify-center shadow-xs border border-black/5 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                                  title="Tambah ke keranjang"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            /* Langsung render stepper di flex baris bawah (BUKAN overlay absolute yang menimpa teks stok) */
+                      {/* Bottom row: Stock + Add/Stepper */}
+                      <div className="flex items-center justify-between gap-1.5 pt-1.5">
+                        {!inCart ? (
+                          <>
+                            <span
+                              className={`text-[11px] font-medium ${
+                                isHabis
+                                  ? "text-rose-600 font-semibold"
+                                  : "text-slate-400 dark:text-zinc-500"
+                              }`}
+                            >
+                              {isHabis ? "Stok habis" : `Stok ${formatDecimal(stok)}`}
+                            </span>
+
+                            {!isHabis && !isStokPas && (defaultSatuan?.hargaJual || 0) > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickAdd(e, p)}
+                                className="w-7 h-7 rounded-full bg-white dark:bg-zinc-800 hover:!bg-slate-900 dark:hover:!bg-white text-slate-600 dark:text-zinc-300 hover:!text-white dark:hover:!text-zinc-900 flex items-center justify-center border border-slate-200/90 dark:border-zinc-700 hover:!border-slate-900 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                                title="Tambah ke keranjang"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                              Stok {formatDecimal(stok)}
+                            </span>
                             <div
-                              className="flex items-center gap-1.5 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xs rounded-xl px-2 py-1 shadow-xs border border-black/5"
+                              className="flex items-center gap-1 bg-slate-50 dark:bg-zinc-800 rounded-full px-1 py-0.5 border border-slate-200/80 dark:border-zinc-700"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const cartIdx = cart.findIndex((c) => c.produkId === p.id);
                                   if (cartIdx >= 0) updateCartQty(cartIdx, cart[cartIdx].qty - 1);
                                 }}
-                                className="w-5 h-5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 flex items-center justify-center transition-colors"
+                                className="w-5 h-5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors"
                               >
-                                <Minus className="w-2.5 h-2.5 text-slate-700 dark:text-zinc-200" />
+                                <Minus className="w-3 h-3 text-slate-700 dark:text-zinc-200" />
                               </button>
-                              <span className="text-[11px] font-bold text-slate-800 dark:text-zinc-100 min-w-4 text-center">
-                                {formatDecimal(inCart.qty)}
-                              </span>
+                              <QtyStepperInput
+                                value={inCart.qty}
+                                widthClass="w-8"
+                                onCommit={(nextQty) => {
+                                  const cartIdx = cart.findIndex((c) => c.produkId === p.id);
+                                  if (cartIdx >= 0) updateCartQty(cartIdx, nextQty);
+                                }}
+                              />
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const cartIdx = cart.findIndex((c) => c.produkId === p.id);
                                   if (cartIdx >= 0) updateCartQty(cartIdx, cart[cartIdx].qty + 1);
                                 }}
                                 disabled={isStokPas}
-                                className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors ${
+                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
                                   isStokPas
-                                    ? "bg-slate-100/60 text-slate-300 dark:text-zinc-600 cursor-not-allowed opacity-40"
-                                    : "bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200"
+                                    ? "text-slate-300 dark:text-zinc-600 cursor-not-allowed opacity-40"
+                                    : "hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200"
                                 }`}
                                 title={isStokPas ? "Stok sudah pas/maksimal" : "Tambah"}
                               >
-                                <Plus className="w-2.5 h-2.5" />
+                                <Plus className="w-3 h-3" />
                               </button>
                             </div>
-                          )}
-                        </div>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -1064,9 +1233,11 @@ export default function KasirPOSPage() {
                           >
                             <Minus className="w-3 h-3 text-slate-600 dark:text-zinc-400" />
                           </button>
-                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 min-w-5 text-center tabular-nums">
-                            {formatDecimal(item.qty)}
-                          </span>
+                          <QtyStepperInput
+                            value={item.qty}
+                            widthClass="w-10"
+                            onCommit={(nextQty) => updateCartQty(idx, nextQty)}
+                          />
                           <button
                             onClick={() => updateCartQty(idx, item.qty + 1)}
                             disabled={isMaxForThis}
@@ -1329,7 +1500,7 @@ export default function KasirPOSPage() {
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200"
                   }`}
                 >
-                  {m === "TUNAI" ? "Tunai" : m === "TRANSFER" ? "QRIS/Transfer" : "Kasbon"}
+                  {m === "TUNAI" ? "Tunai" : m === "TRANSFER" ? "QRIS" : "Kasbon"}
                 </button>
               ))}
             </div>
@@ -1385,18 +1556,103 @@ export default function KasirPOSPage() {
             )}
 
             {metodeBayar === "TRANSFER" && (
-              <div className="py-4 px-2 text-center space-y-3">
-                <div className="w-48 h-48 max-w-[70vw] mx-auto bg-white p-3 rounded-3xl border border-slate-200 dark:border-zinc-700 shadow-md flex flex-col items-center justify-center">
-                  <QrCode className="w-full h-full text-slate-800" />
+              <div className="py-2 px-1 text-center space-y-3">
+                {/* Toggle Mode Dinamis vs Statis */}
+                <div className="inline-grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl">
+                  {(["DINAMIS", "STATIS"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setQrisMode(mode)}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        qrisMode === mode
+                          ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-xs"
+                          : "text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      {mode === "DINAMIS" ? "QRIS Dinamis" : "QRIS Statis"}
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                    QRIS Pembayaran Dinamis
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
-                    Scan kode QRIS menggunakan GoPay, OVO, Dana, ShopeePay, BCA, Mandiri, BRI, atau mobile banking lainnya.
-                  </p>
-                </div>
+
+                {/* Kotak QRIS (Klik untuk Perbesar) */}
+                {(() => {
+                  const hasStaticImg = Boolean(storeInfo?.qrisStaticImage);
+                  const hasValidPayload = isValidQrisPayload(storeInfo?.qrisPayload);
+                  const activeImg =
+                    qrisMode === "DINAMIS"
+                      ? hasValidPayload
+                        ? qrisDataUrl
+                        : null
+                      : hasValidPayload
+                      ? qrisDataUrl
+                      : hasStaticImg
+                      ? storeInfo.qrisStaticImage
+                      : null;
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsQrisZoomed(true)}
+                        className="group relative w-52 h-52 max-w-[70vw] mx-auto bg-white p-4 rounded-3xl border border-slate-200 dark:border-zinc-700 shadow-md flex flex-col items-center justify-center overflow-hidden hover:border-slate-300 transition-all cursor-pointer"
+                        title="Klik untuk memperbesar QRIS bagi konsumen"
+                      >
+                        {activeImg ? (
+                          <img
+                            src={activeImg}
+                            alt={qrisMode === "DINAMIS" ? "QRIS Dinamis" : "QRIS Statis"}
+                            className="w-full h-full object-contain rounded-xl"
+                          />
+                        ) : (
+                          <QrCode className="w-full h-full text-slate-800" />
+                        )}
+                      </button>
+
+                      <div className="flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setIsQrisZoomed(true)}
+                          className="h-9 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-750 text-xs font-semibold text-slate-700 dark:text-zinc-200 inline-flex items-center gap-1.5 transition-colors"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5" />
+                          <span>Perbesar QRIS untuk Konsumen</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                          {qrisMode === "DINAMIS"
+                            ? "QRIS Pembayaran Dinamis"
+                            : "QRIS Pembayaran Statis"}
+                        </p>
+                        {qrisMode === "DINAMIS" && !hasValidPayload ? (
+                          <p className="text-[11px] text-amber-600 dark:text-amber-400 max-w-xs mx-auto leading-relaxed">
+                            Kode QRIS toko belum diatur untuk nominal otomatis.{" "}
+                            <Link href="/owner/pengaturan?tab=pembayaran" className="underline font-semibold">
+                              Atur di Pengaturan
+                            </Link>{" "}
+                            atau gunakan mode <strong>QRIS Statis</strong>.
+                          </p>
+                        ) : qrisMode === "STATIS" && !hasStaticImg && !hasValidPayload ? (
+                          <p className="text-[11px] text-amber-600 dark:text-amber-400 max-w-xs mx-auto leading-relaxed">
+                            Foto/kode QRIS Statis belum diupload.{" "}
+                            <Link href="/owner/pengaturan?tab=pembayaran" className="underline font-semibold">
+                              Upload di Pengaturan Toko
+                            </Link>
+                            .
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                            {qrisMode === "DINAMIS"
+                              ? `Nominal ${formatRupiah(grandTotal)} otomatis terisi saat konsumen scan via GoPay, OVO, Dana, ShopeePay, atau mobile banking.`
+                              : "Konsumen scan kartu QRIS toko lalu memasukkan nominal tagihan secara manual."}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
@@ -1466,6 +1722,140 @@ export default function KasirPOSPage() {
                 type="button"
                 disabled={submitting || isUangKurang || (metodeBayar === "KASBON" && !selectedMember)}
                 onClick={() => handleCheckout()}
+                className="flex-1 h-12 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-90 disabled:opacity-40 transition-all"
+                style={{ background: "var(--primary)" }}
+              >
+                {submitting ? "Memproses..." : "Konfirmasi Pembayaran"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Perbesar QRIS untuk Konsumen */}
+      {isQrisZoomed && isPayModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+          onClick={() => setIsQrisZoomed(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white text-slate-900 shadow-2xl p-6 space-y-5 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-left">
+                <span
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-1.5"
+                  style={{
+                    backgroundColor: "var(--primary-light)",
+                    color: "var(--primary)",
+                  }}
+                >
+                  {qrisMode === "DINAMIS"
+                    ? "QRIS Dinamis • Nominal Otomatis"
+                    : "QRIS Statis • Input Nominal Manual"}
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {extractQrisMerchantName(storeInfo?.qrisPayload) || storeInfo?.namaToko || "Scan QRIS"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrisZoomed(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 shrink-0"
+                title="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="py-2 px-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Total Tagihan
+              </p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight mt-0.5">
+                {formatRupiah(grandTotal)}
+              </p>
+            </div>
+
+            {/* Kartu QRIS Digital Bersih */}
+            <div className="relative mx-auto w-full max-w-[310px] rounded-3xl border-2 border-slate-200 bg-white p-5 shadow-sm overflow-hidden">
+              {/* Dekorasi sudut QRIS merah */}
+              <div className="pointer-events-none absolute top-0 left-0 w-16 h-3 bg-[#E11D2A] rounded-br-2xl" />
+              <div className="pointer-events-none absolute bottom-0 right-0 w-24 h-3 bg-[#E11D2A] rounded-tl-2xl" />
+
+              {/* Header QRIS */}
+              <div className="flex items-center justify-between pt-1 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black tracking-tight text-slate-900">QRIS</span>
+                  <span className="text-[9px] leading-tight text-left text-slate-400 font-medium">
+                    QR Code Standar<br />Pembayaran Nasional
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  {qrisMode === "DINAMIS" ? "DINAMIS" : "STATIS"}
+                </span>
+              </div>
+
+              {/* Nama Merchant */}
+              <p className="text-xs font-extrabold text-slate-900 uppercase tracking-wide pt-2.5 pb-1 truncate">
+                {extractQrisMerchantName(storeInfo?.qrisPayload) || storeInfo?.namaToko || "MERCHANT QRIS"}
+              </p>
+
+              {/* Gambar QR Code */}
+              <div className="w-60 h-60 mx-auto flex items-center justify-center p-2">
+                {(() => {
+                  const hasStaticImg = Boolean(storeInfo?.qrisStaticImage);
+                  const hasValidPayload = isValidQrisPayload(storeInfo?.qrisPayload);
+                  const zoomedImg =
+                    qrisMode === "DINAMIS"
+                      ? hasValidPayload
+                        ? qrisDataUrl
+                        : null
+                      : hasValidPayload
+                      ? qrisDataUrl
+                      : hasStaticImg
+                      ? storeInfo.qrisStaticImage
+                      : null;
+
+                  return zoomedImg ? (
+                    <img
+                      src={zoomedImg}
+                      alt="QRIS Konsumen"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <QrCode className="w-44 h-44 text-slate-800" />
+                  );
+                })()}
+              </div>
+
+              <p className="text-[10px] font-extrabold tracking-wider text-slate-700 pt-1">
+                SATU QRIS UNTUK SEMUA
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {qrisMode === "DINAMIS"
+                ? "Arahkan kamera aplikasi GoPay, OVO, Dana, ShopeePay, atau mobile banking ke QRIS di atas."
+                : `Scan QRIS lalu masukkan nominal ${formatRupiah(grandTotal)} di aplikasi pembayaran Anda.`}
+            </p>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsQrisZoomed(false)}
+                className="h-12 px-5 rounded-2xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  setIsQrisZoomed(false);
+                  handleCheckout();
+                }}
                 className="flex-1 h-12 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-90 disabled:opacity-40 transition-all"
                 style={{ background: "var(--primary)" }}
               >
@@ -1627,6 +2017,18 @@ export default function KasirPOSPage() {
         onSuccess={() => handleCheckout("verified")}
         title="Otorisasi PIN Pemilik"
         description={`Diskon sebesar ${formatRupiah(diskonNominal)} melebihi batas staf (${formatRupiah(storeInfo.batasDiskonStaff || 0)}). Masukkan PIN Pemilik Toko.`}
+      />
+
+      {/* Konfirmasi Kosongkan Keranjang */}
+      <ConfirmModal
+        isOpen={isClearCartConfirmOpen}
+        title="Kosongkan Keranjang?"
+        description="Semua barang di keranjang pesanan saat ini akan dihapus."
+        confirmText="Ya, Kosongkan"
+        cancelText="Batal"
+        variant="danger"
+        onConfirm={confirmClearCart}
+        onCancel={() => setIsClearCartConfirmOpen(false)}
       />
     </div>
   );

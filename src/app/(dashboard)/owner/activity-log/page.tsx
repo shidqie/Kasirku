@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw, Eye, X } from "lucide-react";
 import { formatDateTime } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
+import { TableSkeletonRows } from "@/components/shared/Skeleton";
 
 interface ActivityLogItem {
   id: string;
@@ -115,10 +116,9 @@ export default function ActivityLogPage() {
         </div>
       </div>
 
-      {/* Log Table Minimalist (Scrollable Internal) */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+      {/* Log Table Minimalist (Scrollable Internal, Sticky Header) */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
                 <th className="py-3 pr-4">Waktu</th>
@@ -130,11 +130,7 @@ export default function ActivityLogPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-400">
-                    Memuat log aktivitas...
-                  </td>
-                </tr>
+                <TableSkeletonRows rows={6} cols={5} />
               ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-slate-400">
@@ -182,7 +178,6 @@ export default function ActivityLogPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {total > 0 && (

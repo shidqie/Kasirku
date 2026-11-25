@@ -1,4 +1,5 @@
 import type { jsPDF } from "jspdf";
+import { registerPdfFont } from "@/lib/pdf-fonts";
 
 export interface BonItem {
   nama: string;
@@ -8,6 +9,16 @@ export interface BonItem {
   subtotal: number;
 }
 
+export interface BonSubEntry {
+  label: string;
+  jam: string;
+  rawDate: Date;
+  pengambil: string;
+  kasir: string;
+  items: BonItem[];
+  total: number;
+}
+
 export interface BonEntry {
   label: string;
   tanggal: string;
@@ -15,6 +26,7 @@ export interface BonEntry {
   pengambil: string;
   kasir: string;
   items: BonItem[];
+  subEntries?: BonSubEntry[];
   total: number;
 }
 
@@ -26,13 +38,17 @@ export interface MemberPDFData {
   batasKasbon?: number;
   transaksi?: any[];
   kasbonMutasi?: any[];
+  kasbonPembayaran?: any[];
 }
 
 export interface StoreInfo {
   namaToko: string;
   alamat?: string | null;
   telepon?: string | null;
+  headerBon?: string | null;
+  footerBon?: string | null;
   footerStruk?: string | null;
+  logoToko?: string | null;
 }
 
 // Colors matching system theme & receipts
@@ -69,8 +85,9 @@ export async function generateBonMemberPDF(
 ): Promise<void> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const fontFamily = await registerPdfFont(doc);
 
-  let logoBase64: string | null = logoBase64Override || null;
+  let logoBase64: string | null = logoBase64Override || storeInfo.logoToko || null;
   if (!logoBase64 && typeof window !== "undefined") {
     // Try circular store logo first, fallback to transparent logo
     logoBase64 = await getBase64Image("/img/Logo%20Toko%20Gagan%202.png");
@@ -88,10 +105,14 @@ export async function generateBonMemberPDF(
 
   const font = (size: number, bold = false, italic = false) => {
     let style = "normal";
-    if (bold && italic) style = "bolditalic";
-    else if (bold) style = "bold";
-    else if (italic) style = "italic";
-    doc.setFont("helvetica", style);
+    if (fontFamily === "PlusJakartaSans") {
+      style = bold ? "bold" : "normal";
+    } else {
+      if (bold && italic) style = "bolditalic";
+      else if (bold) style = "bold";
+      else if (italic) style = "italic";
+    }
+    doc.setFont(fontFamily, style);
     doc.setFontSize(size);
   };
 
@@ -102,152 +123,172 @@ export async function generateBonMemberPDF(
   const rp = (n: number) =>
     "Rp " + Number(n).toLocaleString("id-ID", { minimumFractionDigits: 0 });
 
-  const drawRedTopBar = () => {
-    fill(...C_RED_TOP);
-    doc.rect(0, 0, pageW, 2.5, "F");
-  };
+  const C_ACCENT: [number, number, number] = [225, 29, 42]; // #E11D2A
+  const C_PILL_DEBT_BG: [number, number, number] = [253, 232, 238];
+  const C_PILL_DEBT_FG: [number, number, number] = [200, 22, 64];
+  const C_PILL_OK_BG: [number, number, number] = [227, 246, 238];
+  const C_PILL_OK_FG: [number, number, number] = [10, 143, 90];
+
+  const isLunas = Number(member.saldoUtangCache || 0) <= 0;
+  const printedDateLong = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const drawPageHeader = () => {
-    drawRedTopBar();
-    y = 12;
+    const centerX = pageW / 2;
+    y = 14;
 
-    // Logo
-    let headerTextX = marginL;
+    // Logo bulat tengah
+    const logoSize = 11;
     if (logoBase64) {
       try {
-        const logoSize = 18;
-        doc.addImage(logoBase64, "PNG", marginL, y, logoSize, logoSize);
-        headerTextX = marginL + logoSize + 4;
+        doc.addImage(logoBase64, "PNG", centerX - logoSize / 2, y, logoSize, logoSize);
       } catch {}
+    } else {
+      fill(...C_ACCENT);
+      doc.circle(centerX, y + logoSize / 2, logoSize / 2, "F");
     }
+    y += logoSize + 4;
 
-    // Store Info
+    // NAMA TOKO (Centered, lebih besar)
     font(15, true);
     color(...C_DARK);
-    doc.text((storeInfo.namaToko || "TOKO GAGAN 2").toUpperCase(), headerTextX, y + 4.5);
+    doc.text((storeInfo.namaToko || "Toko Sembako").toUpperCase(), centerX, y, { align: "center" });
+    y += 5.5;
 
-    font(7.5, false);
+    // ALAMAT (Centered, lebih besar & jelas)
+    font(9.5, false);
     color(...C_MUTED);
-    const alamat = storeInfo.alamat || "Toko Sembako & Kebutuhan Harian";
-    doc.text(alamat, headerTextX, y + 9);
+    const alamatTelp = [storeInfo.alamat, storeInfo.telepon].filter(Boolean).join(" · ") || "Kasirku POS";
+    const alamatLines: string[] = doc.splitTextToSize(alamatTelp, contentW - 12);
+    doc.text(alamatLines, centerX, y, { align: "center" });
+    y += alamatLines.length * 4.4 + 3;
 
-    const telp = storeInfo.telepon
-      ? (storeInfo.telepon.toLowerCase().includes("telp") ? storeInfo.telepon : `Telp/WA: ${storeInfo.telepon}`)
-      : "Layanan Pelanggan Kasirku POS";
-    doc.text(telp, headerTextX, y + 13.5);
-
-    // Document Title on Right
-    font(13, true);
-    color(...C_RED_TEXT);
-    doc.text("RINCIAN BON PIUTANG", marginR, y + 4.5, { align: "right" });
-
-    font(7.5, false);
-    color(...C_MUTED);
-    doc.text("Rekap Mutasi & Tagihan Kasbon", marginR, y + 9, { align: "right" });
-
-    // Status Pill: BELUM LUNAS
-    const badgeW = 24;
-    const badgeH = 5;
-    fill(...C_RED_BG);
-    draw(254, 202, 202);
-    doc.roundedRect(marginR - badgeW, y + 11.5, badgeW, badgeH, 1, 1, "FD");
-    font(7, true);
-    color(...C_RED_TEXT);
-    doc.text("BELUM LUNAS", marginR - badgeW / 2, y + 15, { align: "center" });
-
-    y += 24;
-
-    // Divider line
+    // Divider 1
     draw(...C_BORDER);
     doc.setLineWidth(0.3);
     doc.line(marginL, y, marginR, y);
+    y += 6;
+
+    // RINCIAN BON PIUTANG (Centered, customizable)
+    font(14, true);
+    color(...C_DARK);
+    doc.text((storeInfo.headerBon || "RINCIAN BON PIUTANG").toUpperCase(), centerX, y, { align: "center" });
+    y += 4;
+
+    // Divider 2
+    draw(...C_BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(marginL, y, marginR, y);
+    y += 5.5;
+
+    // Dicetak - ... + Status teks polos tanpa bubble (Centered)
+    font(8, false);
+    color(...C_MUTED);
+    doc.text(`Dicetak - ${printedDateLong}`, centerX, y, { align: "center" });
     y += 5;
+
+    const statusText = isLunas ? "Lunas" : "Belum Lunas";
+    font(9, true);
+    color(...(isLunas ? C_PILL_OK_FG : C_PILL_DEBT_FG));
+    doc.text(statusText, centerX, y, { align: "center" });
+
+    y += 7;
   };
 
   const checkPage = (neededSpace = 30) => {
     if (y + neededSpace > pageH - 22) {
       doc.addPage();
-      drawRedTopBar();
-      // Running compact header on subsequent pages
-      y = 12;
+      y = 14;
       font(8, true);
       color(...C_MUTED);
-      doc.text(`${(storeInfo.namaToko || "Toko Gagan 2").toUpperCase()} · Rincian Bon Piutang: ${member.nama}`, marginL, y);
+      doc.text(`${storeInfo.namaToko || "Kasirku POS"} · Rincian Bon Piutang: ${member.nama}`, marginL, y);
       font(7.5, false);
       color(...C_LIGHT_MUTED);
-      doc.text(new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }), marginR, y, { align: "right" });
+      doc.text(
+        new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+        marginR,
+        y,
+        { align: "right" }
+      );
       y += 3;
       draw(...C_BORDER);
       doc.setLineWidth(0.2);
       doc.line(marginL, y, marginR, y);
-      y += 6;
+      y += 7;
     }
   };
 
   // 1. Initial Page Header
   drawPageHeader();
 
-  // 2. Member Info Card
-  const cardH = 24;
-  fill(...C_BG_CARD);
-  draw(...C_BORDER);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(marginL, y, contentW, cardH, 2, 2, "FD");
+  // 2. Pelanggan & Total Utang Strip (Tanpa Limit Kasbon)
+  draw(...C_DARK);
+  doc.setLineWidth(0.45);
+  doc.line(marginL, y, marginR, y);
+  y += 6;
 
-  // Left column in card: Member Data
-  const midX = marginL + contentW * 0.58;
-  font(7, true);
-  color(...C_LIGHT_MUTED);
-  doc.text("INFORMASI MEMBER / PELANGGAN", marginL + 4, y + 5);
+  // Left: Pelanggan
+  font(8, false);
+  color(...C_MUTED);
+  doc.text("Pelanggan", marginL, y);
 
-  font(11, true);
+  font(14, true);
   color(...C_DARK);
-  doc.text(member.nama, marginL + 4, y + 11);
+  doc.text(member.nama, marginL, y + 6.5);
 
-  font(7.5, false);
+  font(8, false);
   color(...C_MUTED);
   const infoKontak = [
     member.telepon ? `No. HP: ${member.telepon}` : "No. HP: -",
     member.alamat ? `Alamat: ${member.alamat}` : "Alamat: -",
-  ].join("  •  ");
-  doc.text(infoKontak, marginL + 4, y + 16.5);
+  ].join(" · ");
+  doc.text(infoKontak, marginL, y + 12);
 
-  font(7, false);
-  color(...C_LIGHT_MUTED);
-  doc.text(`Dicetak pada: ${new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`, marginL + 4, y + 21);
-
-  // Right column in card: Total Hutang Highlight
-  font(7, true);
-  color(...C_LIGHT_MUTED);
-  doc.text("TOTAL HUTANG", marginR - 4, y + 5, { align: "right" });
-
-  font(13, true);
-  color(...C_RED_TEXT);
-  doc.text(rp(member.saldoUtangCache), marginR - 4, y + 11.5, { align: "right" });
-
-  font(7.5, false);
+  // Right: Total utang (tanpa limit kasbon)
+  font(8, false);
   color(...C_MUTED);
-  if (member.batasKasbon && member.batasKasbon > 0) {
-    doc.text(`Limit Kasbon: ${rp(member.batasKasbon)}`, marginR - 4, y + 16.5, { align: "right" });
-  } else {
-    doc.text("Limit Kasbon: Tanpa Batas", marginR - 4, y + 16.5, { align: "right" });
-  }
+  doc.text("Total utang", marginR, y, { align: "right" });
 
-  y += cardH + 7;
+  font(18, true);
+  color(...C_ACCENT);
+  doc.text(rp(member.saldoUtangCache), marginR, y + 8, { align: "right" });
 
-  // 3. Compile Bon Entries
-  const bons: BonEntry[] = [];
+  y += 17;
+  draw(...C_BORDER);
+  doc.setLineWidth(0.25);
+  doc.line(marginL, y, marginR, y);
+  y += 9;
+
+  // 3. Compile Bon Entries (dikelompokkan per tanggal, detail per jam pengambilan)
+  const rawSubs: BonSubEntry[] = [];
+
+  const formatBonDateOnly = (d: string | Date) =>
+    new Date(d).toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+  const formatBonTime = (d: string | Date) =>
+    `${new Date(d).toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })} WIB`;
+
+  const getLocalDateKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
   for (const trx of member.transaksi || []) {
-    bons.push({
-      label: "ID Bon: " + (trx.nomorStruk || "STRUK POS"),
-      tanggal: new Date(trx.dibuatPada).toLocaleDateString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      rawDate: new Date(trx.dibuatPada),
+    const dt = new Date(trx.dibuatPada);
+    rawSubs.push({
+      label: trx.nomorStruk || "STRUK POS",
+      jam: formatBonTime(dt),
+      rawDate: dt,
       pengambil: member.nama,
       kasir: trx.kasir?.nama || "Pemilik Toko",
       items: (trx.items || []).map((it: any) => ({
@@ -272,15 +313,11 @@ export async function generateBonMemberPDF(
         pd = JSON.parse(m.catatan.split("|| JSON:")[1]);
       } catch {}
     }
-    bons.push({
-      label: "ID Bon: #" + m.id.slice(-6).toUpperCase(),
-      tanggal: new Date(m.dibuatPada).toLocaleDateString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      rawDate: new Date(m.dibuatPada),
+    const dt = new Date(m.dibuatPada);
+    rawSubs.push({
+      label: "#" + m.id.slice(-6).toUpperCase(),
+      jam: formatBonTime(dt),
+      rawDate: dt,
       pengambil: pd?.pengambil || member.nama,
       kasir: pd?.kasir || m.user?.nama || "Pemilik Toko",
       items: (pd?.items || []).map((it: any) => ({
@@ -293,6 +330,31 @@ export async function generateBonMemberPDF(
       total: m.jumlah,
     });
   }
+
+  const groupedByDate = new Map<string, BonSubEntry[]>();
+  for (const sub of rawSubs) {
+    const key = getLocalDateKey(sub.rawDate);
+    const bucket = groupedByDate.get(key) || [];
+    bucket.push(sub);
+    groupedByDate.set(key, bucket);
+  }
+
+  const bons: BonEntry[] = Array.from(groupedByDate.values()).map((subs) => {
+    const sortedSubs = [...subs].sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+    return {
+      label:
+        sortedSubs.length === 1
+          ? sortedSubs[0].label
+          : `${sortedSubs.length} pengambilan`,
+      tanggal: formatBonDateOnly(sortedSubs[0].rawDate),
+      rawDate: sortedSubs[0].rawDate,
+      pengambil: Array.from(new Set(sortedSubs.map((s) => s.pengambil))).join(", "),
+      kasir: Array.from(new Set(sortedSubs.map((s) => s.kasir))).join(", "),
+      items: sortedSubs.flatMap((s) => s.items),
+      subEntries: sortedSubs,
+      total: sortedSubs.reduce((sum, s) => sum + Number(s.total || 0), 0),
+    };
+  });
 
   // Urutkan semua bon sesuai tanggal (terlama ke terbaru / kronologis)
   bons.sort((a, b) => (a.rawDate?.getTime() || 0) - (b.rawDate?.getTime() || 0));
@@ -307,173 +369,295 @@ export async function generateBonMemberPDF(
     y += 26;
   }
 
-  // 4. Render each Bon Entry
+  // 4. Hitung status pembayaran tiap bon secara FIFO (kronologis)
+  const totalAllBons = bons.reduce((sum, b) => sum + Number(b.total || 0), 0);
+  let remainingPaid = isLunas
+    ? totalAllBons
+    : Math.max(0, totalAllBons - Number(member.saldoUtangCache || 0));
+
+  const bonStatusList = bons.map((b) => {
+    const amt = Number(b.total || 0);
+    if (isLunas || amt <= 0 || remainingPaid >= amt) {
+      remainingPaid = Math.max(0, remainingPaid - amt);
+      return { status: "LUNAS" as const, paidAmt: amt, sisaAmt: 0 };
+    }
+    if (remainingPaid > 0) {
+      const paid = remainingPaid;
+      remainingPaid = 0;
+      return { status: "CICIL" as const, paidAmt: paid, sisaAmt: Math.max(0, amt - paid) };
+    }
+    return { status: "BELUM_LUNAS" as const, paidAmt: 0, sisaAmt: amt };
+  });
+
+  const C_AMBER_BG: [number, number, number] = [254, 243, 199];
+  const C_AMBER_FG: [number, number, number] = [180, 83, 9];
+
+  // Render each Bon Entry
   for (let i = 0; i < bons.length; i++) {
     const bon = bons[i];
+    const bInfo = bonStatusList[i];
     checkPage(45);
 
-    // Bon Header Bar
-    const bonHeaderH = 11;
-    fill(...C_BG_HEADER);
-    draw(...C_BORDER);
-    doc.roundedRect(marginL, y, contentW, bonHeaderH, 1.5, 1.5, "FD");
-
-    // Title left
+    // Bon Header (Clean minimalist + Status teks tanpa bubble)
     font(9.5, true);
     color(...C_DARK);
-    doc.text(`Bon ${i + 1} — ${bon.label}`, marginL + 4, y + 4.5);
+    const titleStr = `Bon ${i + 1} · ${bon.label.replace(/^ID Bon:\s*/i, "")}`;
+    doc.text(titleStr, marginL, y);
 
-    // Date right
-    font(8, false);
+    const titleW = doc.getTextWidth(titleStr);
+    const statusLabel =
+      bInfo.status === "LUNAS"
+        ? "· Lunas"
+        : bInfo.status === "CICIL"
+        ? "· Cicilan"
+        : "· Belum Lunas";
+    const statusFg =
+      bInfo.status === "LUNAS"
+        ? C_PILL_OK_FG
+        : bInfo.status === "CICIL"
+        ? C_AMBER_FG
+        : C_PILL_DEBT_FG;
+
+    font(8.5, true);
+    color(...statusFg);
+    doc.text(statusLabel, marginL + titleW + 2.5, y);
+
+    font(8.5, false);
     color(...C_MUTED);
-    doc.text(bon.tanggal, marginR - 4, y + 4.5, { align: "right" });
+    doc.text(bon.tanggal, marginR, y, { align: "right" });
 
-    // Sub-info: Diambil oleh & Diterima oleh
-    font(7.5, false);
-    color(...C_LIGHT_MUTED);
-    doc.text(`Diambil Oleh: `, marginL + 4, y + 8.5);
-    font(7.5, true);
-    color(...C_DARK);
-    doc.text(bon.pengambil, marginL + 21, y + 8.5);
+    y += 5;
 
-    font(7.5, false);
-    color(...C_LIGHT_MUTED);
-    doc.text(`Diterima Kasir: `, marginL + 75, y + 8.5);
-    font(7.5, true);
-    color(...C_DARK);
-    doc.text(bon.kasir, marginL + 95, y + 8.5);
+    // Render tiap pengambilan (sub-entry) pada tanggal tersebut dengan jamnya
+    const subEntries = bon.subEntries && bon.subEntries.length > 0
+      ? bon.subEntries
+      : [
+          {
+            label: bon.label,
+            jam: bon.rawDate
+              ? `${bon.rawDate.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`
+              : "",
+            rawDate: bon.rawDate || new Date(),
+            pengambil: bon.pengambil,
+            kasir: bon.kasir,
+            items: bon.items,
+            total: bon.total,
+          },
+        ];
 
-    y += bonHeaderH + 1.5;
+    const colQtyX = marginL + 95;
+    const colHargaX = marginL + 135;
+    const colSubtotalX = marginR;
 
-    // Table Header
-    const colQtyX = marginL + 88;
-    const colHargaX = marginL + 125;
-    const colSubtotalX = marginR - 4;
+    for (let sIdx = 0; sIdx < subEntries.length; sIdx++) {
+      const sub = subEntries[sIdx];
+      checkPage(28);
 
-    fill(...C_BG_CARD);
-    doc.rect(marginL, y, contentW, 6.5, "F");
-    draw(...C_BORDER);
-    doc.setLineWidth(0.2);
-    doc.line(marginL, y + 6.5, marginR, y + 6.5);
-
-    font(7, true);
-    color(...C_MUTED);
-    doc.text("NAMA BARANG", marginL + 4, y + 4.3);
-    doc.text("QTY", colQtyX, y + 4.3, { align: "center" });
-    doc.text("HARGA SATUAN", colHargaX, y + 4.3, { align: "right" });
-    doc.text("SUBTOTAL", colSubtotalX, y + 4.3, { align: "right" });
-
-    y += 7.5;
-
-    // Table Rows
-    if (bon.items.length > 0) {
-      for (let j = 0; j < bon.items.length; j++) {
-        const it = bon.items[j];
-        checkPage(12);
-
-        // Subtle row separator
-        if (j > 0) {
-          draw(245, 247, 250);
-          doc.setLineWidth(0.15);
-          doc.line(marginL + 2, y - 1, marginR - 2, y - 1);
-        }
-
-        font(8.5, false);
-        color(...C_DARK);
-        doc.text(it.nama.substring(0, 42), marginL + 4, y + 3.2);
-
-        font(8, false);
-        color(...C_MUTED);
-        doc.text(`${it.qty} ${it.satuan}`, colQtyX, y + 3.2, { align: "center" });
-
-        doc.text(rp(it.harga), colHargaX, y + 3.2, { align: "right" });
-
-        font(8.5, true);
-        color(...C_DARK);
-        doc.text(rp(it.subtotal), colSubtotalX, y + 3.2, { align: "right" });
-
-        y += 5.5;
-      }
-    } else {
-      font(8, false, true);
-      color(...C_LIGHT_MUTED);
-      doc.text("(Tidak ada rincian item)", marginL + 4, y + 3.5);
-      y += 6;
-    }
-
-    // Bon Summary Box (Sub Total, Bayar DP, Sisa, Total)
-    y += 1.5;
-    draw(...C_BORDER);
-    doc.setLineWidth(0.2);
-    doc.line(marginL, y, marginR, y);
-    y += 4;
-
-    const summaryW = 75;
-    const summaryX = marginR - summaryW;
-
-    const summaryRows: [string, number, boolean][] = [
-      ["Sub Total", bon.total, false],
-      ["Bayar DP", 0, false],
-      ["Sisa Tagihan", bon.total, false],
-    ];
-
-    for (const [lbl, val, isTotal] of summaryRows) {
+      font(8, true);
+      color(...C_DARK);
+      doc.text(
+        `Diambil oleh ${sub.pengambil} · Jam ${sub.jam}`,
+        marginL,
+        y
+      );
       font(7.5, false);
       color(...C_MUTED);
-      doc.text(`${lbl} :`, summaryX + 22, y + 2.8, { align: "right" });
-
-      font(8, false);
-      color(...C_DARK);
-      doc.text(rp(val), marginR - 4, y + 2.8, { align: "right" });
+      doc.text(`${sub.label} · Kasir ${sub.kasir}`, marginR, y, { align: "right" });
       y += 4.5;
+
+      // Table Header (tanpa kotak abu-abu)
+      font(7.5, true);
+      color(...C_MUTED);
+      doc.text("BARANG", marginL, y);
+      doc.text("QTY", colQtyX, y, { align: "right" });
+      doc.text("HARGA SATUAN", colHargaX, y, { align: "right" });
+      doc.text("SUBTOTAL", colSubtotalX, y, { align: "right" });
+
+      y += 2.5;
+      draw(...C_DARK);
+      doc.setLineWidth(0.35);
+      doc.line(marginL, y, marginR, y);
+      y += 5;
+
+      // Table Rows
+      if (sub.items.length > 0) {
+        for (let j = 0; j < sub.items.length; j++) {
+          const it = sub.items[j];
+          checkPage(12);
+
+          font(8.5, false);
+          color(...C_DARK);
+          doc.text(it.nama.substring(0, 44), marginL, y);
+
+          font(8.5, false);
+          color(...C_DARK);
+          doc.text(`${it.qty} ${it.satuan}`, colQtyX, y, { align: "right" });
+          doc.text(rp(it.harga), colHargaX, y, { align: "right" });
+
+          font(8.5, true);
+          color(...C_DARK);
+          doc.text(rp(it.subtotal), colSubtotalX, y, { align: "right" });
+
+          y += 3;
+          draw(...C_BORDER);
+          doc.setLineWidth(0.2);
+          doc.line(marginL, y, marginR, y);
+          y += 5;
+        }
+      } else {
+        font(8, false, true);
+        color(...C_LIGHT_MUTED);
+        doc.text("(Tidak ada rincian item)", marginL, y);
+        y += 6;
+      }
+
+      if (sIdx < subEntries.length - 1) {
+        y += 2;
+      }
     }
 
-    // Highlight Total Box
-    fill(...C_RED_BG);
-    draw(254, 202, 202);
-    doc.roundedRect(summaryX, y, summaryW, 7, 1, 1, "FD");
+    // Bon Summary (Clean right-aligned)
+    y += 1.5;
+    const summaryW = 72;
+    const summaryX = marginR - summaryW;
 
-    font(8, true);
-    color(...C_RED_TEXT);
-    doc.text("TOTAL BON :", summaryX + 22, y + 4.5, { align: "right" });
+    const summaryRows: Array<{ lbl: string; val: number; isGreen?: boolean }> = [
+      { lbl: "Sub total", val: bon.total },
+      { lbl: "Sudah dibayar", val: bInfo.paidAmt, isGreen: bInfo.paidAmt > 0 },
+      { lbl: "Sisa tagihan", val: bInfo.sisaAmt },
+    ];
 
-    font(9.5, true);
-    doc.text(rp(bon.total), marginR - 4, y + 4.7, { align: "right" });
+    for (const row of summaryRows) {
+      font(8.5, row.isGreen ? true : false);
+      color(...(row.isGreen ? C_PILL_OK_FG : C_MUTED));
+      doc.text(row.lbl, summaryX, y);
+      doc.text(rp(row.val), marginR, y, { align: "right" });
+      y += 5;
+    }
+
+    y += 1;
+    draw(...C_DARK);
+    doc.setLineWidth(0.4);
+    doc.line(summaryX, y, marginR, y);
+    y += 5.5;
+
+    font(10.5, true);
+    if (bInfo.status === "LUNAS") {
+      color(...C_PILL_OK_FG);
+      doc.text("Total bon (Lunas)", summaryX, y);
+      doc.text(rp(bon.total), marginR, y, { align: "right" });
+    } else if (bInfo.status === "CICIL") {
+      color(...C_AMBER_FG);
+      doc.text("Sisa tagihan", summaryX, y);
+      doc.text(rp(bInfo.sisaAmt), marginR, y, { align: "right" });
+    } else {
+      color(...C_ACCENT);
+      doc.text("Total bon", summaryX, y);
+      doc.text(rp(bon.total), marginR, y, { align: "right" });
+    }
 
     y += 12;
+  }
 
-    // Spacing between bons
-    if (i < bons.length - 1) {
+  // 4b. Riwayat Pembayaran (jika sudah ada pembayaran)
+  const payments = Array.isArray(member.kasbonPembayaran) ? member.kasbonPembayaran : [];
+  if (payments.length > 0) {
+    checkPage(32);
+    const totalPaidAll = payments.reduce((sum, p) => sum + Number(p.jumlah || 0), 0);
+
+    font(10, true);
+    color(...C_DARK);
+    doc.text("Riwayat Pembayaran", marginL, y);
+
+    font(9, true);
+    color(...C_PILL_OK_FG);
+    doc.text(`Total dibayar: ${rp(totalPaidAll)}`, marginR, y, { align: "right" });
+    y += 5;
+
+    const pColTgl = marginL + 38;
+    const pColMetode = marginL + 86;
+    const pColKasir = marginL + 114;
+
+    font(7.5, true);
+    color(...C_MUTED);
+    doc.text("NO. BUKTI", marginL, y);
+    doc.text("WAKTU", pColTgl, y);
+    doc.text("METODE", pColMetode, y);
+    doc.text("KASIR", pColKasir, y);
+    doc.text("NOMINAL", marginR, y, { align: "right" });
+
+    y += 2.5;
+    draw(...C_DARK);
+    doc.setLineWidth(0.35);
+    doc.line(marginL, y, marginR, y);
+    y += 5;
+
+    for (const p of payments) {
+      checkPage(10);
+      const tglPay = p.dibuatPada
+        ? new Date(p.dibuatPada).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        : "-";
+
+      font(8, true);
+      color(...C_DARK);
+      doc.text(String(p.nomorBukti || "-"), marginL, y);
+
+      font(8, false);
+      color(...C_MUTED);
+      doc.text(tglPay, pColTgl, y);
+      doc.text(String(p.metode || "-"), pColMetode, y);
+      doc.text(String(p.kasir?.nama || "Kasir").substring(0, 22), pColKasir, y);
+
+      font(8.5, true);
+      color(...C_PILL_OK_FG);
+      doc.text(rp(Number(p.jumlah || 0)), marginR, y, { align: "right" });
+
+      y += 3;
       draw(...C_BORDER);
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.2);
       doc.line(marginL, y, marginR, y);
-      y += 7;
+      y += 5;
     }
+
+    y += 4;
   }
 
   y += 4;
 
-  // 5. Footer (Pinned or at bottom)
-  checkPage(15);
+  // 5. Footer Minimalis (Centered)
+  checkPage(26);
   draw(...C_BORDER);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.25);
   doc.line(marginL, y, marginR, y);
-  y += 4;
+  y += 7;
 
-  font(7.5, false, true);
-  color(...C_MUTED);
-  const footerNote = storeInfo.footerStruk || "Terima kasih, mohon simpan bukti bon ini sebagai catatan pembayaran yang sah.";
-  doc.text(footerNote, pageW / 2, y, { align: "center" });
-  y += 3.8;
+  const centerX = pageW / 2;
+  const nowDate = new Date();
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  const nowStr = `${pad2(nowDate.getDate())}/${pad2(nowDate.getMonth() + 1)}/${nowDate.getFullYear()} ${pad2(
+    nowDate.getHours()
+  )}.${pad2(nowDate.getMinutes())}`;
 
-  font(7, false);
+  const footerBonText =
+    storeInfo.footerBon?.trim() ||
+    "Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda.";
+  const footerBonLines = footerBonText.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  footerBonLines.forEach((line, idx) => {
+    const isLast = idx === footerBonLines.length - 1;
+    font(isLast ? 9 : 8, isLast);
+    color(...(isLast ? C_DARK : C_MUTED));
+    doc.text(line, centerX, y, { align: "center" });
+    y += 5.5;
+  });
+
+  font(7.5, false);
   color(...C_LIGHT_MUTED);
-  doc.text(
-    `Dicetak otomatis dari Sistem Kasirku POS · ${new Date().toLocaleDateString("id-ID")} ${new Date().toLocaleTimeString("id-ID")}`,
-    pageW / 2,
-    y,
-    { align: "center" }
-  );
+  doc.text(`Dicetak otomatis dari Kasirku POS · ${nowStr}`, centerX, y, { align: "center" });
 
   // 7. Page numbers across all pages
   const totalPages = doc.getNumberOfPages();
@@ -484,7 +668,25 @@ export async function generateBonMemberPDF(
     doc.text(`Halaman ${p} dari ${totalPages}`, marginR, pageH - 8, { align: "right" });
   }
 
-  // 8. Save
-  const safeMemberName = member.nama.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_");
-  doc.save(`BonPiutang_${safeMemberName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  // 8. Save: TRANSAKSI_BON_{NAMA_TOKO}_{YYYY-MM-DD}_{URUTAN}.pdf
+  const tokoSlug =
+    (storeInfo.namaToko || "TOKO")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "TOKO";
+
+  const lastBon = bons[bons.length - 1];
+  const refDate =
+    lastBon?.rawDate && !isNaN(new Date(lastBon.rawDate).getTime())
+      ? new Date(lastBon.rawDate)
+      : new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const tglStr = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}`;
+
+  const lastLabel = lastBon ? lastBon.label.replace(/^ID Bon:\s*/i, "").replace(/^#/, "") : "";
+  const labelParts = lastLabel.split("-");
+  const urutanBon = labelParts[labelParts.length - 1] || "001";
+
+  doc.save(`TRANSAKSI_BON_${tokoSlug}_${tglStr}_${urutanBon}.pdf`);
 }

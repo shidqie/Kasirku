@@ -4,13 +4,17 @@
  * Rendered in-browser via jsPDF.
  */
 
-import { formatRupiah, formatDecimal } from "@/lib/formatters";
+import { formatRupiah, formatDecimal, formatMetodeBayar } from "@/lib/formatters";
+import { registerPdfFont } from "@/lib/pdf-fonts";
 
 export interface StoreInfo {
   namaToko: string;
   alamat?: string | null;
   telepon?: string | null;
+  headerStruk?: string | null;
   footerStruk?: string | null;
+  catatanRetur?: string | null;
+  logoToko?: string | null;
 }
 
 export interface TransaksiForPDF {
@@ -76,31 +80,71 @@ function formatTanggalShort(d: string | Date) {
   });
 }
 
+async function getLogoBase64(logoToko?: string | null): Promise<string | null> {
+  if (logoToko) return logoToko;
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/logo.png");
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function buildReceiptFilename(transaksi: TransaksiForPDF, _storeInfo: StoreInfo): string {
+  const d = new Date(transaksi.dibuatPada);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const tgl = isNaN(d.getTime())
+    ? "0000-00-00"
+    : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  const parts = String(transaksi.nomorStruk || "").split("-");
+  const urutan = parts[parts.length - 1] || "001";
+
+  return `TRANSAKSI_HARIAN_${tgl}_${urutan}.pdf`;
+}
+
 export async function generateReceiptPDF(
   transaksi: TransaksiForPDF,
   storeInfo: StoreInfo
 ): Promise<void> {
   const { jsPDF } = await import("jspdf");
+  const logoBase64 = await getLogoBase64(storeInfo.logoToko);
 
   // First pass: measure height
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const testDoc: any = new jsPDF({ unit: "mm", format: [PW, 500], orientation: "portrait" });
-  const finalH = renderReceipt(testDoc, transaksi, storeInfo);
+  const fontFamily = await registerPdfFont(testDoc);
+  const finalH = renderReceipt(testDoc, transaksi, storeInfo, logoBase64, fontFamily);
 
   // Second pass: render with exact height
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const doc: any = new jsPDF({ unit: "mm", format: [PW, Math.max(80, finalH + 4)], orientation: "portrait" });
-  renderReceipt(doc, transaksi, storeInfo);
+  await registerPdfFont(doc);
+  renderReceipt(doc, transaksi, storeInfo, logoBase64, fontFamily);
 
-  doc.save(`struk-${transaksi.nomorStruk}.pdf`);
+  doc.save(buildReceiptFilename(transaksi, storeInfo));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderReceipt(doc: any, transaksi: TransaksiForPDF, storeInfo: StoreInfo): number {
+function renderReceipt(
+  doc: any,
+  transaksi: TransaksiForPDF,
+  storeInfo: StoreInfo,
+  logoBase64: string | null,
+  fontFamily = "helvetica"
+): number {
   let y = 0;
 
   const font = (size: number, bold = false) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFont(fontFamily, bold ? "bold" : "normal");
     doc.setFontSize(size);
   };
 
@@ -108,223 +152,228 @@ function renderReceipt(doc: any, transaksi: TransaksiForPDF, storeInfo: StoreInf
   const fill = (...rgb: [number, number, number]) => doc.setFillColor(...rgb);
   const draw = (...rgb: [number, number, number]) => doc.setDrawColor(...rgb);
 
-  // 1. Red top bar (1.8mm ~ 5pt)
-  fill(...C_RED_TOP);
-  doc.rect(0, 0, PW, 1.8, "F");
-  y = 6.5;
+  const bayar = transaksi.pembayaran?.[0];
+  const metode = bayar?.metode || "TUNAI";
+  const isKasbon = metode === "KASBON";
 
-  // 2. Store Header (Centered)
-  font(11, true);
+  // 1. Header Toko (Logo kiri + Nama & Alamat)
+  y = 7;
+  let headerTextX = ML;
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, "PNG", ML, y, 9, 9);
+      headerTextX = ML + 11.5;
+    } catch {}
+  }
+
+  font(8.5, true);
   color(...C_DARK);
-  doc.text(storeInfo.namaToko.toUpperCase(), PW / 2, y, { align: "center" });
+  doc.text(storeInfo.namaToko || "Toko Sembako", headerTextX, y + 3.6);
 
-  y += 4.2;
-  font(6.5, false);
+  font(6.0, false);
   color(...C_MUTED);
-  if (storeInfo.alamat) {
-    doc.text(storeInfo.alamat, PW / 2, y, { align: "center" });
-    y += 3.5;
-  }
-  if (storeInfo.telepon) {
-    const telpText = storeInfo.telepon.toLowerCase().includes("telp")
-      ? storeInfo.telepon
-      : `Telp/WA ${storeInfo.telepon}`;
-    doc.text(telpText, PW / 2, y, { align: "center" });
-    y += 3.5;
+  const subInfo = [storeInfo.alamat, storeInfo.telepon].filter(Boolean).join(" · ") || "Kasirku POS";
+  const maxSubW = XR - headerTextX;
+  const subLines = doc.splitTextToSize(subInfo, maxSubW);
+  doc.text(subLines[0] || subInfo, headerTextX, y + 7.2);
+  if (storeInfo.headerStruk) {
+    font(5.8, false);
+    color(...C_MUTED);
+    doc.text(storeInfo.headerStruk, headerTextX, y + 10.5);
+    y += 16.5;
+  } else {
+    y += 14;
   }
 
-  // 3. Status Badge: LUNAS (Centered pill)
-  y += 1.5;
-  const badgeW = 16.5;
+  // 2. Hero: Status Pill + Total bayar
+  const statusLabel = isKasbon ? "Belum lunas (Kasbon)" : "Lunas";
+  const badgeW = isKasbon ? 30 : 16;
   const badgeH = 5;
   const badgeX = (PW - badgeW) / 2;
-  fill(...C_GREEN_BG);
-  doc.roundedRect(badgeX, y - 3.6, badgeW, badgeH, 1, 1, "F");
+  const pillBg: [number, number, number] = isKasbon ? [253, 232, 238] : [227, 246, 238];
+  const pillFg: [number, number, number] = isKasbon ? [200, 22, 64] : [10, 143, 90];
+  fill(...pillBg);
+  doc.roundedRect(badgeX, y, badgeW, badgeH, 2.5, 2.5, "F");
+
+  fill(...pillFg);
+  doc.circle(badgeX + 3, y + badgeH / 2, 0.75, "F");
 
   font(6.5, true);
-  color(...C_GREEN_TEXT);
-  doc.text("LUNAS", PW / 2, y - 0.2, { align: "center" });
-  y += 5.5;
+  color(...pillFg);
+  doc.text(statusLabel, badgeX + 5.2, y + 3.4);
+  y += 9;
 
-  // 4. Metadata Rows (No. Transaksi, Tanggal, Kasir, Pelanggan)
+  font(6.5, false);
+  color(...C_MUTED);
+  doc.text("Total bayar", PW / 2, y, { align: "center" });
+  y += 6.5;
+
+  const formattedNum = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(
+    Number(transaksi.total || 0)
+  );
+  font(19, true);
+  color(...C_DARK);
+  const numW = doc.getTextWidth(formattedNum);
+  font(8.5, true);
+  const rpW = doc.getTextWidth("Rp ");
+  const totalStartX = (PW - (rpW + numW)) / 2;
+
+  font(8.5, true);
+  color(...C_MUTED);
+  doc.text("Rp ", totalStartX, y);
+
+  font(19, true);
+  color(...C_DARK);
+  doc.text(formattedNum, totalStartX + rpW, y);
+  y += 6;
+
+  // 3. Dashed Separator
+  draw(...C_BORDER);
+  doc.setLineWidth(0.25);
+  if (typeof doc.setLineDashPattern === "function") doc.setLineDashPattern([1.2, 1.2], 0);
+  doc.line(ML, y, XR, y);
+  if (typeof doc.setLineDashPattern === "function") doc.setLineDashPattern([], 0);
+  y += 4.5;
+
+  // 4. Metadata Rows
   const metaRows: [string, string][] = [
-    ["No. Transaksi", transaksi.nomorStruk],
+    ["No. transaksi", transaksi.nomorStruk],
     ["Tanggal", formatTanggalWIB(transaksi.dibuatPada)],
     ["Kasir", transaksi.kasir?.nama || "Pemilik Toko"],
     ["Pelanggan", transaksi.member?.nama || "Umum"],
   ];
 
   for (const [k, v] of metaRows) {
-    font(6.5, false);
+    font(6.8, false);
     color(...C_MUTED);
     doc.text(k, ML, y);
 
-    font(6.5, true);
+    font(6.8, true);
     color(...C_DARK);
     doc.text(v, XR, y, { align: "right" });
-    y += 4.0;
+    y += 4.2;
   }
 
-  // 5. Divider Line
-  y += 1.0;
+  // 5. Dashed Separator
+  y += 1;
   draw(...C_BORDER);
-  doc.setLineWidth(0.2);
+  doc.setLineWidth(0.25);
+  if (typeof doc.setLineDashPattern === "function") doc.setLineDashPattern([1.2, 1.2], 0);
   doc.line(ML, y, XR, y);
-  y += 3.5;
+  if (typeof doc.setLineDashPattern === "function") doc.setLineDashPattern([], 0);
+  y += 5;
 
-  // 6. Section Label: ITEM PEMBELIAN
-  font(5.8, true);
-  color(...C_MUTED);
-  doc.text("ITEM PEMBELIAN", ML, y);
-  y += 4.0;
-
-  // 7. Items
+  // 6. Items
   const items = transaksi.items || [];
   for (const it of items) {
-    // Row 1: Nama Barang (Bold, 7.5pt)
     font(7.5, true);
     color(...C_DARK);
     doc.text(it.namaSnapshot, ML, y);
+    doc.text(formatRupiah(it.subtotal), XR, y, { align: "right" });
     y += 3.5;
 
-    // Row 2: Qty info (left) & Subtotal (right)
-    font(6.5, false);
+    font(6.3, false);
     color(...C_MUTED);
     const qtyText = `${formatDecimal(it.qty)} ${it.satuanSnapshot} x ${formatRupiah(it.hargaJualSnapshot)}${
-      it.catatan ? `  (${it.catatan})` : ""
+      it.catatan ? ` (${it.catatan})` : ""
     }`;
     doc.text(qtyText, ML, y);
-
-    font(6.5, true);
-    color(...C_DARK);
-    doc.text(formatRupiah(it.subtotal), XR, y, { align: "right" });
-    y += 5.0;
+    y += 5;
   }
 
-  // 8. Divider Line
+  // 7. Solid Divider Line
   y += 0.5;
-  draw(...C_BORDER);
+  draw(226, 232, 240);
   doc.setLineWidth(0.2);
   doc.line(ML, y, XR, y);
-  y += 3.8;
+  y += 4;
 
-  // 9. Summary: Jumlah item & Subtotal
+  // 8. Summary
   const totalItemCount = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
-  font(7.0, false);
+  font(6.8, false);
   color(...C_MUTED);
-  doc.text("Jumlah item", ML, y);
-  font(7.0, false);
-  color(...C_DARK);
-  doc.text(`${totalItemCount} barang`, XR, y, { align: "right" });
-  y += 4.2;
-
-  font(7.0, false);
-  color(...C_MUTED);
-  doc.text("Subtotal", ML, y);
-  font(7.0, false);
-  color(...C_DARK);
+  doc.text(`Subtotal · ${formatDecimal(totalItemCount)} barang`, ML, y);
   doc.text(formatRupiah(transaksi.subtotal), XR, y, { align: "right" });
-  y += 4.5;
+  y += 4;
 
-  // 10. Divider Line
-  draw(...C_BORDER);
-  doc.setLineWidth(0.2);
-  doc.line(ML, y, XR, y);
-  y += 4.5;
+  if (Number(transaksi.diskon || 0) > 0) {
+    doc.text("Diskon", ML, y);
+    doc.text(`-${formatRupiah(transaksi.diskon)}`, XR, y, { align: "right" });
+    y += 4;
+  }
 
-  // 11. TOTAL BAYAR (Besar, Merah)
-  font(7.5, true);
-  color(...C_DARK);
-  doc.text("TOTAL BAYAR", ML, y);
-
-  font(13.5, true);
-  color(...C_TOTAL_RED);
-  doc.text(formatRupiah(transaksi.total), XR, y, { align: "right" });
-  y += 5.5;
-
-  // 12. Divider Line
-  draw(...C_BORDER);
-  doc.setLineWidth(0.2);
-  doc.line(ML, y, XR, y);
-  y += 4.0;
-
-  // 13. Metode Bayar, Uang Diterima, Kembalian
-  const bayar = transaksi.pembayaran?.[0];
-  const metode = bayar?.metode || "TUNAI";
-
-  font(7.0, false);
-  color(...C_MUTED);
-  doc.text("Metode bayar", ML, y);
-  font(7.0, true);
-  color(...C_DARK);
-  doc.text(metode, XR, y, { align: "right" });
-  y += 4.2;
+  if (Number(transaksi.pembulatan || 0) !== 0) {
+    doc.text("Pembulatan", ML, y);
+    doc.text(
+      `${transaksi.pembulatan > 0 ? "+" : ""}${formatRupiah(transaksi.pembulatan)}`,
+      XR,
+      y,
+      { align: "right" }
+    );
+    y += 4;
+  }
 
   if (metode === "TUNAI") {
     const uangDiterima = bayar?.uangDiterima || transaksi.total;
     const kembalian = bayar?.kembalian ?? Math.max(0, uangDiterima - transaksi.total);
 
-    font(7.0, false);
-    color(...C_MUTED);
-    doc.text("Uang diterima", ML, y);
-    font(7.0, false);
-    color(...C_DARK);
+    doc.text(formatMetodeBayar(metode), ML, y);
     doc.text(formatRupiah(uangDiterima), XR, y, { align: "right" });
     y += 4.2;
 
-    font(7.0, false);
-    color(...C_MUTED);
-    doc.text("Kembalian", ML, y);
-    font(7.0, true);
+    font(7.5, true);
     color(...C_DARK);
+    doc.text("Kembalian", ML, y);
     doc.text(formatRupiah(kembalian), XR, y, { align: "right" });
-    y += 5.0;
+    y += 5.5;
+  } else {
+    font(7.5, true);
+    color(...C_DARK);
+    doc.text("Metode Pembayaran", ML, y);
+    doc.text(formatMetodeBayar(metode), XR, y, { align: "right" });
+    y += 5.5;
   }
 
-  // 14. Kebijakan Retur / Catatan Box (Toner peach #fdf0f0)
-  y += 1.0;
-  const boxH = 17;
-  fill(...C_FOOTER_BG);
-  doc.roundedRect(ML, y, CW, boxH, 1.5, 1.5, "F");
+  // 9. Catatan Retur Box (Soft slate #f8fafc)
+  const returText =
+    storeInfo.catatanRetur || "Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.";
+  const returLines: string[] = doc.splitTextToSize(returText, CW - 8);
+  const returBoxH = Math.max(9.5, returLines.length * 3.2 + 4.5);
+  fill(248, 250, 252);
+  doc.roundedRect(ML, y, CW, returBoxH, 2, 2, "F");
 
-  y += 4.2;
-  font(6.2, false);
-  color(...C_DARK);
-  doc.text(
-    "Barang yang sudah dibeli dapat ditukar maks. 2 hari",
-    PW / 2,
-    y,
-    { align: "center" }
-  );
-  y += 3.2;
-  doc.text(
-    "dengan struk ini (kecuali makanan/minuman).",
-    PW / 2,
-    y,
-    { align: "center" }
-  );
-  y += 4.2;
-  font(6.5, true);
-  color(...C_DARK);
-  doc.text(
-    storeInfo.footerStruk || "Terima kasih, selamat berbelanja kembali",
-    PW / 2,
-    y,
-    { align: "center" }
-  );
-
-  y += 8.5;
-
-  // 15. Struk digital Footer bar
-  font(5.8, false);
+  font(6.0, false);
   color(...C_MUTED);
-  doc.text(
-    `Struk digital  |  Kasirku POS  |  ${formatTanggalShort(transaksi.dibuatPada)}`,
-    PW / 2,
-    y,
-    { align: "center" }
-  );
+  returLines.forEach((line, idx) => {
+    doc.text(line, PW / 2, y + 4.2 + idx * 3.2, { align: "center" });
+  });
+  y += returBoxH + 3.5;
 
+  // 10. Decorative Barcode
+  const barWidths = [1.0, 0.5, 1.4, 0.7, 0.5, 1.2, 0.5, 0.9, 1.4, 0.5, 1.0, 0.7, 0.5, 1.2, 0.7, 0.5, 1.4, 0.7, 1.0, 0.5, 1.2, 0.7, 0.5, 1.0];
+  let bx = (PW - 40) / 2;
+  fill(...C_DARK);
+  for (let b = 0; b < barWidths.length; b++) {
+    const w = barWidths[b];
+    if (b % 2 === 0) {
+      doc.rect(bx, y, w, 6, "F");
+    }
+    bx += w + 0.85;
+  }
+  y += 9.5;
+
+  // 11. Footer
+  font(7.0, true);
+  color(...C_DARK);
+  doc.text(storeInfo.footerStruk || "Terima kasih, selamat berbelanja kembali", PW / 2, y, {
+    align: "center",
+  });
   y += 4;
+
+  font(6.0, false);
+  color(...C_MUTED);
+  doc.text("Struk digital · Kasirku POS", PW / 2, y, { align: "center" });
+  y += 3;
+
   return y;
 }

@@ -18,9 +18,15 @@ import {
   Palette,
   Check,
   User,
+  QrCode,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/formatters";
+import { FormSkeleton, TableSkeletonRows } from "@/components/shared/Skeleton";
+import { PopupAlert } from "@/components/shared/ToastProvider";
+import { isValidQrisPayload, extractQrisMerchantName } from "@/lib/qris";
 import {
   ACCENT_PRESETS,
   AccentColor,
@@ -44,6 +50,10 @@ interface SettingsData {
   batasDiskonStaff: number;
   ambangUtangLamaHari: number;
   bolehJualStokNol: boolean;
+  qrisModeDefault?: "DINAMIS" | "STATIS";
+  qrisPayload?: string | null;
+  qrisStaticImage?: string | null;
+  logoToko?: string | null;
 }
 
 interface UserItem {
@@ -107,6 +117,7 @@ function TabToko() {
 
       if (data.settings) {
         setSettings(data.settings);
+        window.dispatchEvent(new CustomEvent("kasirku-store-updated", { detail: data.settings }));
       }
       setSuccess("Pengaturan toko berhasil disimpan!");
       router.refresh();
@@ -118,7 +129,7 @@ function TabToko() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-400">Memuat pengaturan toko...</div>;
+    return <FormSkeleton fields={6} />;
   }
 
   return (
@@ -136,21 +147,95 @@ function TabToko() {
         </Link>
       </div>
 
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm">
-          <CheckCircle className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
+      <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+      <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
 
       {settings && (
         <form onSubmit={handleSaveSettings} className="space-y-5">
+          {/* Logo Toko */}
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 overflow-hidden flex items-center justify-center shrink-0 p-1">
+                <img
+                  src={settings.logoToko || "/logo.png"}
+                  alt="Logo Toko"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Logo Toko</h4>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Tampil di sidebar, navbar, struk belanja, dan dokumen PDF.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <label className="h-10 px-4 rounded-[14px] border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Ubah Logo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const maxDim = 400;
+                            let { width, height } = img;
+                            if (width > maxDim || height > maxDim) {
+                              if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                              } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                              }
+                            }
+                            const canvas = document.createElement("canvas");
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            if (!ctx) return reject(new Error("Canvas tidak tersedia"));
+                            ctx.drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL("image/png"));
+                          };
+                          img.onerror = () => reject(new Error("Gagal membaca logo"));
+                          img.src = reader.result as string;
+                        };
+                        reader.onerror = () => reject(new Error("Gagal membaca file"));
+                        reader.readAsDataURL(file);
+                      });
+                      setSettings({ ...settings, logoToko: dataUrl });
+                      setSuccess("Logo dipilih. Klik 'Simpan pengaturan' untuk menerapkan.");
+                    } catch (err: any) {
+                      setError(err.message || "Gagal memproses logo");
+                    } finally {
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </label>
+              {settings.logoToko && (
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, logoToko: null })}
+                  className="h-10 px-3 rounded-[14px] border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Kembalikan ke logo default"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Default</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="field-label">
@@ -318,6 +403,7 @@ function EditProfileCard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<"struk" | "bon">("struk");
 
   useEffect(() => {
     fetch("/api/auth/profile")
@@ -384,11 +470,7 @@ function EditProfileCard() {
   };
 
   if (loading) {
-    return (
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 text-sm text-slate-400">
-        Memuat profil akun...
-      </div>
-    );
+    return <FormSkeleton fields={4} />;
   }
 
   return (
@@ -409,18 +491,8 @@ function EditProfileCard() {
         )}
       </div>
 
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm">
-          <CheckCircle className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
+      <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+      <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
 
       <form onSubmit={handleSave} className="space-y-4 max-w-lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -776,18 +848,8 @@ function TabPengguna() {
         </button>
       </div>
 
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm">
-          <CheckCircle className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
+      <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+      <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
 
       <div className="pt-2">
         <div className="pb-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
@@ -816,11 +878,7 @@ function TabPengguna() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
-                    Memuat data pengguna...
-                  </td>
-                </tr>
+                <TableSkeletonRows rows={5} cols={6} />
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-400">
@@ -1148,12 +1206,7 @@ function TabTema() {
         </span>
       </div>
 
-      {success && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-700 text-sm">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
+      <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
 
       {/* Preset Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -1401,6 +1454,649 @@ function TabTema() {
   );
 }
 
+function TabPembayaran() {
+  const router = useRouter();
+  const [settings, setSettings] = useState<SettingsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<"struk" | "bon">("struk");
+  const [qrisScanNote, setQrisScanNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal memuat pengaturan");
+        setSettings(data.settings);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleQrisImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !settings) return;
+    setQrisScanNote(null);
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 900;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return reject(new Error("Canvas tidak tersedia"));
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+          };
+          img.onerror = () => reject(new Error("Gagal membaca gambar"));
+          img.src = reader.result as string;
+        };
+        reader.onerror = () => reject(new Error("Gagal membaca file"));
+        reader.readAsDataURL(file);
+      });
+
+      let detectedPayload: string | null = null;
+      const tempId = `qris-decode-${Date.now()}`;
+      const tempEl = document.createElement("div");
+      tempEl.id = tempId;
+      tempEl.style.display = "none";
+      document.body.appendChild(tempEl);
+      try {
+        const { Html5Qrcode } = await import("html5-qrcode");
+        const scanner = new Html5Qrcode(tempId);
+        const decoded = await scanner.scanFile(file, false);
+        if (decoded && isValidQrisPayload(decoded)) {
+          detectedPayload = decoded.trim();
+        }
+        scanner.clear();
+      } catch {
+        // Gambar statis tetap tersimpan walau QR tidak terbaca otomatis
+      } finally {
+        tempEl.remove();
+      }
+
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              qrisStaticImage: dataUrl,
+              ...(detectedPayload ? { qrisPayload: detectedPayload } : {}),
+            }
+          : prev
+      );
+
+      if (detectedPayload) {
+        const merchant = extractQrisMerchantName(detectedPayload);
+        setQrisScanNote(
+          `Foto QRIS tersimpan & kode QRIS otomatis terbaca${merchant ? ` (${merchant})` : ""}! Mode Dinamis siap digunakan.`
+        );
+      } else {
+        setQrisScanNote(
+          "Foto QRIS Statis tersimpan. Jika ingin Mode Dinamis (nominal otomatis), tempel juga kode teks QRIS di bawah."
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || "Gagal memproses gambar QRIS");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settings) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...settings,
+          batasDiskonStaff: Math.max(0, Number(settings.batasDiskonStaff) || 0),
+          ambangUtangLamaHari: Math.max(1, Number(settings.ambangUtangLamaHari) || 30),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan pengaturan pembayaran");
+      if (data.settings) setSettings(data.settings);
+      setSuccess("Pengaturan pembayaran QRIS berhasil disimpan!");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <FormSkeleton fields={4} />;
+  }
+
+  return (
+    <div className="pt-2 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-zinc-800">
+        <div>
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm">
+            Pembayaran QRIS Toko (Statis &amp; Dinamis)
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            Upload foto kartu QRIS Statis warung Anda agar tampil di layar kasir &amp; bisa diubah ke QRIS Dinamis otomatis.
+          </p>
+        </div>
+      </div>
+
+      <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+      <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
+      <PopupAlert type="success" message={qrisScanNote} onClear={() => setQrisScanNote(null)} />
+
+      {settings && (
+        <form onSubmit={handleSave} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="field-label">Mode QRIS Default di Kasir</label>
+              <select
+                value={settings.qrisModeDefault || "DINAMIS"}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    qrisModeDefault: e.target.value as "DINAMIS" | "STATIS",
+                  })
+                }
+                className="ctl"
+              >
+                <option value="DINAMIS">QRIS Dinamis (Nominal otomatis terisi)</option>
+                <option value="STATIS">QRIS Statis (Tampilkan kartu QRIS toko)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="field-label">Foto / Gambar Kartu QRIS Statis</label>
+              <div className="flex items-center gap-2">
+                <label className="flex-1 h-11 px-4 rounded-[14px] border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:text-zinc-200 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                  <Upload className="w-4 h-4" />
+                  <span>{settings.qrisStaticImage ? "Ganti Foto QRIS" : "Upload Foto QRIS"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQrisImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                {settings.qrisStaticImage && (
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, qrisStaticImage: null })}
+                    className="h-11 px-3 rounded-[14px] border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    title="Hapus gambar QRIS"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div className="md:col-span-2">
+              <label className="field-label">Kode String QRIS Statis (untuk Mode Dinamis)</label>
+              <textarea
+                rows={3}
+                value={settings.qrisPayload || ""}
+                onChange={(e) => setSettings({ ...settings, qrisPayload: e.target.value })}
+                placeholder="Otomatis terisi saat upload foto QRIS yang jelas, atau tempel kode QRIS (diawali 000201...)"
+                className="ctl-ta font-mono text-xs"
+              />
+              {settings.qrisPayload?.trim() && (
+                <p
+                  className={`text-xs mt-1 font-medium ${
+                    isValidQrisPayload(settings.qrisPayload)
+                      ? "text-emerald-600"
+                      : "text-amber-600"
+                  }`}
+                >
+                  {isValidQrisPayload(settings.qrisPayload)
+                    ? `✓ Payload QRIS valid${
+                        extractQrisMerchantName(settings.qrisPayload)
+                          ? ` • Merchant: ${extractQrisMerchantName(settings.qrisPayload)}`
+                          : ""
+                      }`
+                    : "Format payload QRIS belum valid (harus diawali 000201 dan memiliki checksum CRC16)."}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 min-h-[120px]">
+              {settings.qrisStaticImage ? (
+                <img
+                  src={settings.qrisStaticImage}
+                  alt="Preview QRIS Statis"
+                  className="max-h-36 w-auto rounded-lg object-contain"
+                />
+              ) : (
+                <div className="text-center text-slate-400 space-y-1">
+                  <QrCode className="w-7 h-7 mx-auto opacity-50" />
+                  <p className="text-[11px]">Belum ada foto QRIS</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="h-10 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{saving ? "Menyimpan..." : "Simpan pengaturan pembayaran"}</span>
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function TabStruk() {
+  const router = useRouter();
+  const [settings, setSettings] = useState<any>(null);
+  const [headerStruk, setHeaderStruk] = useState("");
+  const [footerStruk, setFooterStruk] = useState("");
+  const [catatanRetur, setCatatanRetur] = useState("");
+  const [headerBon, setHeaderBon] = useState("");
+  const [footerBon, setFooterBon] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<"struk" | "bon">("struk");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setSettings(data.settings);
+          setHeaderStruk(data.settings.headerStruk || "");
+          setFooterStruk(data.settings.footerStruk || "");
+          setCatatanRetur(data.settings.catatanRetur || "");
+          setHeaderBon(data.settings.headerBon || "");
+          setFooterBon(data.settings.footerBon || "");
+        }
+      })
+      .catch(() => setError("Gagal memuat pengaturan struk & dokumen"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settings) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...settings,
+          batasDiskonStaff: Math.max(0, Number(settings.batasDiskonStaff) || 0),
+          ambangUtangLamaHari: Math.max(1, Number(settings.ambangUtangLamaHari) || 30),
+          headerStruk: headerStruk.trim() || null,
+          footerStruk: footerStruk.trim() || null,
+          catatanRetur: catatanRetur.trim() || null,
+          headerBon: headerBon.trim() || null,
+          footerBon: footerBon.trim() || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan pengaturan struk & dokumen");
+      if (data.settings) setSettings(data.settings);
+      setSuccess("Pengaturan header & footer struk, e-struk, dan bon kasbon berhasil disimpan!");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <FormSkeleton fields={5} />;
+  }
+
+  return (
+    <div className="pt-2 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-zinc-800">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+            Pengaturan Struk, E-Struk & Bon Kasbon
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">
+            Sesuaikan teks header, footer, dan catatan kebijakan pada struk kasir, e-struk PDF, dan dokumen bon piutang.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+      )}
+      {success && (
+        <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
+      )}
+
+      {settings && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <form onSubmit={handleSave} className="lg:col-span-7 space-y-6">
+            {/* Bagian 1: Struk & E-Struk Kasir */}
+            <div
+              onFocus={() => setPreviewMode("struk")}
+              className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-4"
+            >
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Struk & E-Struk Kasir
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Tampil pada struk belanja kasir (modal & cetak PDF). Nama, alamat, telepon, dan logo toko diambil dari tab Toko.
+                </p>
+              </div>
+
+              <div>
+                <label className="field-label">Header / Tagline Struk (Opsional)</label>
+                <input
+                  type="text"
+                  value={headerStruk}
+                  onChange={(e) => setHeaderStruk(e.target.value)}
+                  placeholder="Contoh: Melayani Kebutuhan Harian Anda • Buka 07.00 - 21.00"
+                  className="ctl"
+                />
+                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Ditampilkan tepat di bawah alamat dan nomor telepon toko pada header struk & e-struk.
+                </p>
+              </div>
+
+              <div>
+                <label className="field-label">Footer Struk Belanja</label>
+                <textarea
+                  rows={2}
+                  value={footerStruk}
+                  onChange={(e) => setFooterStruk(e.target.value)}
+                  placeholder="Terima kasih telah berbelanja!"
+                  className="ctl-ta"
+                />
+                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Kosongkan untuk menggunakan teks default (&ldquo;Terima kasih telah berbelanja!&rdquo;).
+                </p>
+              </div>
+
+              <div>
+                <label className="field-label">Catatan Retur / Kebijakan (Opsional)</label>
+                <textarea
+                  rows={2}
+                  value={catatanRetur}
+                  onChange={(e) => setCatatanRetur(e.target.value)}
+                  placeholder="Contoh: Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan."
+                  className="ctl-ta"
+                />
+              </div>
+            </div>
+
+            {/* Bagian 2: Bon Kasbon / Piutang PDF */}
+            <div
+              onFocus={() => setPreviewMode("bon")}
+              className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 space-y-4"
+            >
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Bon Kasbon / Piutang (PDF)
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Tampil pada dokumen PDF rincian bon piutang member.
+                </p>
+              </div>
+
+              <div>
+                <label className="field-label">Judul / Header Bon Kasbon</label>
+                <input
+                  type="text"
+                  value={headerBon}
+                  onChange={(e) => setHeaderBon(e.target.value)}
+                  placeholder="RINCIAN BON PIUTANG"
+                  className="ctl"
+                />
+                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Kosongkan untuk menggunakan judul default (&ldquo;RINCIAN BON PIUTANG&rdquo;).
+                </p>
+              </div>
+
+              <div>
+                <label className="field-label">Footer Bon Kasbon</label>
+                <textarea
+                  rows={3}
+                  value={footerBon}
+                  onChange={(e) => setFooterBon(e.target.value)}
+                  placeholder={"Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda."}
+                  className="ctl-ta"
+                />
+                <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Mendukung beberapa baris (tekan Enter untuk baris baru). Kosongkan untuk menggunakan teks default.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="h-10 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{saving ? "Menyimpan..." : "Simpan pengaturan struk & dokumen"}</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Live Preview Panel */}
+          <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                Preview Langsung
+              </span>
+              <div className="inline-flex p-0.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("struk")}
+                  className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    previewMode === "struk"
+                      ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs"
+                      : "text-slate-500 dark:text-zinc-400 hover:text-slate-800"
+                  }`}
+                >
+                  Struk / E-Struk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("bon")}
+                  className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    previewMode === "bon"
+                      ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs"
+                      : "text-slate-500 dark:text-zinc-400 hover:text-slate-800"
+                  }`}
+                >
+                  Bon Kasbon (PDF)
+                </button>
+              </div>
+            </div>
+
+            {previewMode === "struk" ? (
+              <div className="bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3 text-xs">
+                {/* Store Header */}
+                <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-300">
+                  {settings.logoToko && (
+                    <img
+                      src={settings.logoToko}
+                      alt={settings.namaToko}
+                      className="w-10 h-10 object-contain mx-auto mb-1.5 rounded-lg"
+                    />
+                  )}
+                  <p className="font-bold text-sm uppercase tracking-tight text-slate-900">
+                    {settings.namaToko || "TOKO"}
+                  </p>
+                  {settings.alamat && (
+                    <p className="text-[11px] text-slate-500 leading-snug">{settings.alamat}</p>
+                  )}
+                  {settings.telepon && (
+                    <p className="text-[11px] text-slate-500">{settings.telepon}</p>
+                  )}
+                  {headerStruk.trim() && (
+                    <p className="text-[11px] font-medium text-slate-700 italic pt-1">
+                      {headerStruk.trim()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Meta & Sample Items */}
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>No: TR-20261125-0001</span>
+                  <span>25 Nov 2026, 16.30</span>
+                </div>
+
+                <div className="py-2 border-y border-dashed border-slate-300 space-y-1.5">
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium text-slate-800">Beras Ramos 5kg</p>
+                      <p className="text-[11px] text-slate-400">1 zak × Rp 68.000</p>
+                    </div>
+                    <span className="font-semibold tabular-nums">Rp 68.000</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium text-slate-800">Minyak Goreng 1L</p>
+                      <p className="text-[11px] text-slate-400">2 pcs × Rp 18.000</p>
+                    </div>
+                    <span className="font-semibold tabular-nums">Rp 36.000</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between font-bold text-sm pt-0.5">
+                  <span>Total</span>
+                  <span className="tabular-nums">Rp 104.000</span>
+                </div>
+
+                {/* Footer & Return Note */}
+                <div className="pt-3 border-t border-dashed border-slate-300 text-center space-y-2">
+                  <p className="text-[11px] text-slate-600 whitespace-pre-line">
+                    {footerStruk.trim() || "Terima kasih telah berbelanja!"}
+                  </p>
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-500">
+                    {catatanRetur.trim() ||
+                      "Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan."}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3 text-xs">
+                {/* PDF Header */}
+                <div className="text-center space-y-1 pb-3 border-b border-slate-200">
+                  {settings.logoToko && (
+                    <img
+                      src={settings.logoToko}
+                      alt={settings.namaToko}
+                      className="w-9 h-9 object-contain mx-auto mb-1 rounded-lg"
+                    />
+                  )}
+                  <p className="font-bold text-sm uppercase tracking-wide text-slate-900">
+                    {settings.namaToko || "TOKO"}
+                  </p>
+                  {(settings.alamat || settings.telepon) && (
+                    <p className="text-[10px] text-slate-500">
+                      {[settings.alamat, settings.telepon].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-center py-1 border-b border-slate-200">
+                  <p className="font-bold text-xs tracking-wide text-slate-900 uppercase">
+                    {headerBon.trim() || "RINCIAN BON PIUTANG"}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Dicetak - Rabu, 25 November 2026
+                  </p>
+                </div>
+
+                {/* Sample Member & Bon */}
+                <div className="flex justify-between items-baseline border-b border-slate-200 pb-2">
+                  <div>
+                    <p className="text-[10px] text-slate-400">Pelanggan</p>
+                    <p className="font-bold text-xs text-slate-900">Pak Budi</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-slate-400">Total utang</p>
+                    <p className="font-bold text-sm text-rose-600 tabular-nums">Rp 45.000</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="flex justify-between font-semibold text-slate-800">
+                    <span>Bon 1 · #A1B2C3</span>
+                    <span className="text-rose-600">· Belum Lunas</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Diambil oleh Pak Budi · Jam 09.15 WIB
+                  </p>
+                  <div className="flex justify-between border-t border-slate-100 pt-1 text-slate-700">
+                    <span>Gula Pasir 1 kg</span>
+                    <span className="font-semibold tabular-nums">Rp 18.000</span>
+                  </div>
+                  <div className="flex justify-between text-slate-700">
+                    <span>Kopi Kapal Api 1 pack</span>
+                    <span className="font-semibold tabular-nums">Rp 27.000</span>
+                  </div>
+                </div>
+
+                {/* PDF Footer */}
+                <div className="pt-3 border-t border-slate-200 text-center">
+                  <p className="text-[10px] text-slate-500 whitespace-pre-line leading-relaxed">
+                    {footerBon.trim() ||
+                      "Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PengaturanContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1423,7 +2119,7 @@ function PengaturanContent() {
         <button
           onClick={() => router.push("/owner/pengaturan")}
           className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
-            activeTab === "toko" || (!["profil", "pin", "pengguna", "tema"].includes(activeTab))
+            activeTab === "toko" || (!["pembayaran", "profil", "pin", "pengguna", "tema", "struk"].includes(activeTab))
               ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
               : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
           }`}
@@ -1461,6 +2157,26 @@ function PengaturanContent() {
           Pengguna
         </button>
         <button
+          onClick={() => router.push("/owner/pengaturan?tab=pembayaran")}
+          className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+            activeTab === "pembayaran"
+              ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+              : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+          }`}
+        >
+          Pembayaran
+        </button>
+        <button
+          onClick={() => router.push("/owner/pengaturan?tab=struk")}
+          className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+            activeTab === "struk"
+              ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+              : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+          }`}
+        >
+          Struk &amp; Dokumen
+        </button>
+        <button
           onClick={() => router.push("/owner/pengaturan?tab=tema")}
           className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
             activeTab === "tema"
@@ -1472,18 +2188,20 @@ function PengaturanContent() {
         </button>
       </div>
 
+      {activeTab === "pembayaran" && <TabPembayaran />}
+      {activeTab === "struk" && <TabStruk />}
       {activeTab === "profil" && <EditProfileCard />}
       {activeTab === "pin" && <TabPin />}
       {activeTab === "pengguna" && <TabPengguna />}
       {activeTab === "tema" && <TabTema />}
-      {(activeTab === "toko" || (!["profil", "pin", "pengguna", "tema"].includes(activeTab))) && <TabToko />}
+      {(activeTab === "toko" || (!["pembayaran", "profil", "pin", "pengguna", "tema", "struk"].includes(activeTab))) && <TabToko />}
     </div>
   );
 }
 
 export default function PengaturanPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat pengaturan...</div>}>
+    <Suspense fallback={<FormSkeleton fields={4} />}>
       <PengaturanContent />
     </Suspense>
   );

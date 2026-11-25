@@ -83,7 +83,11 @@ model PengaturanToko {
   namaToko            String     @map("nama_toko")
   alamat              String?
   telepon             String?
+  headerStruk         String?    @map("header_struk")
   footerStruk         String?    @map("footer_struk")
+  catatanRetur        String?    @map("catatan_retur")
+  headerBon           String?    @map("header_bon")
+  footerBon           String?    @map("footer_bon")
   pesanWhatsApp       String?    @map("pesan_whatsapp")
   pembulatan          Pembulatan @default(BULAT_0)
   batasDiskonStaff    Int        @default(0) @map("batas_diskon_staff")
@@ -92,6 +96,10 @@ model PengaturanToko {
   pinLockedUntil      DateTime?  @map("pin_locked_until")
   ambangUtangLamaHari Int        @default(30) @map("ambang_utang_lama_hari")
   bolehJualStokNol    Boolean    @default(false) @map("boleh_jual_stok_nol")
+  qrisModeDefault     String     @default("DINAMIS") @map("qris_mode_default")
+  qrisPayload         String?    @map("qris_payload")
+  qrisStaticImage     String?    @map("qris_static_image")
+  logoToko            String?    @map("logo_toko")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
   @@map("pengaturan_toko")
@@ -243,6 +251,7 @@ model Member {
   nama            String
   telepon         String?
   alamat          String?
+  subMembers      String[] @default([]) @map("sub_members")
   batasKasbon     Int      @default(0) @map("batas_kasbon")
   saldoUtangCache Int      @default(0) @map("saldo_utang_cache")
   aktif           Boolean  @default(true)
@@ -286,6 +295,7 @@ model KasbonPembayaran {
   kembalian    Int?
   kasirId      String           @map("kasir_id")
   catatan      String?
+  buktiUrl     String?          @map("bukti_url")
   dibuatPada   DateTime         @default(now()) @map("dibuat_pada")
 
   member Member @relation(fields: [memberId], references: [id])

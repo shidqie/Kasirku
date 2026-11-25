@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, Eye, Pencil } from "lucide-react";
 import { Pagination } from "@/components/shared/Pagination";
+import { useToast } from "@/components/shared/ToastProvider";
 
 interface MasterSatuan {
   id: string;
@@ -50,6 +51,7 @@ const DEFAULT_KONVERSI: AturanKonversi[] = [
 ];
 
 export default function SatuanKonversiPage() {
+  const toast = useToast();
   const [satuanList, setSatuanList] = useState<MasterSatuan[]>(DEFAULT_SATUAN);
   const [konversiList, setKonversiList] = useState<AturanKonversi[]>(DEFAULT_KONVERSI);
 
@@ -58,17 +60,23 @@ export default function SatuanKonversiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Modal state
+  // Drawer state
   const [isSatuanModalOpen, setIsSatuanModalOpen] = useState(false);
-  const [isKonversiModalOpen, setIsKonversiModalOpen] = useState(false);
+  const [editingSatuanId, setEditingSatuanId] = useState<string | null>(null);
+  const [detailSatuan, setDetailSatuan] = useState<MasterSatuan | null>(null);
 
-  // Form Tambah Satuan
+  const [isKonversiModalOpen, setIsKonversiModalOpen] = useState(false);
+  const [editingKonversiId, setEditingKonversiId] = useState<string | null>(null);
+  const [detailKonversi, setDetailKonversi] = useState<AturanKonversi | null>(null);
+
+  // Form Tambah / Edit Satuan
   const [kodeSatuan, setKodeSatuan] = useState("");
   const [namaSatuan, setNamaSatuan] = useState("");
   const [katSatuan, setKatSatuan] = useState<"Kecil / Eceran" | "Sedang" | "Besar / Grosir">("Kecil / Eceran");
+  const [deskripsiSatuan, setDeskripsiSatuan] = useState("");
   const [isTimbangan, setIsTimbangan] = useState(false);
 
-  // Form Tambah Konversi
+  // Form Tambah / Edit Konversi
   const [formBesar, setFormBesar] = useState("dus");
   const [formIsi, setFormIsi] = useState<number>(10);
   const [formKecil, setFormKecil] = useState("pcs");
@@ -100,45 +108,96 @@ export default function SatuanKonversiPage() {
   const activeItems = activeTab === "SATUAN" ? filteredSatuan : filteredKonversi;
   const paginatedItems = activeItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleAddSatuan = (e: React.FormEvent) => {
+  const openAddSatuan = () => {
+    setEditingSatuanId(null);
+    setKodeSatuan("");
+    setNamaSatuan("");
+    setKatSatuan("Kecil / Eceran");
+    setDeskripsiSatuan("");
+    setIsTimbangan(false);
+    setIsSatuanModalOpen(true);
+  };
+
+  const openEditSatuan = (s: MasterSatuan) => {
+    setEditingSatuanId(s.id);
+    setKodeSatuan(s.kode);
+    setNamaSatuan(s.nama);
+    setKatSatuan(s.kategori);
+    setDeskripsiSatuan(s.deskripsi);
+    setIsTimbangan(Boolean(s.isTimbangan));
+    setIsSatuanModalOpen(true);
+  };
+
+  const openAddKonversi = () => {
+    setEditingKonversiId(null);
+    setFormBesar("dus");
+    setFormIsi(10);
+    setFormKecil("pcs");
+    setFormContoh("");
+    setIsKonversiModalOpen(true);
+  };
+
+  const openEditKonversi = (k: AturanKonversi) => {
+    setEditingKonversiId(k.id);
+    setFormBesar(k.satuanBesar);
+    setFormIsi(k.isi);
+    setFormKecil(k.satuanKecil);
+    setFormContoh(k.contohBarang);
+    setIsKonversiModalOpen(true);
+  };
+
+  const handleSaveSatuan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!kodeSatuan.trim() || !namaSatuan.trim()) return;
-    const newS: MasterSatuan = {
-      id: String(Date.now()),
+    const payload: MasterSatuan = {
+      id: editingSatuanId || String(Date.now()),
       kode: kodeSatuan.trim().toLowerCase(),
       nama: namaSatuan.trim(),
       kategori: katSatuan,
-      deskripsi: isTimbangan ? "Barang ditimbang saat transaksi" : "Satuan kemasan",
+      deskripsi: deskripsiSatuan.trim() || (isTimbangan ? "Barang ditimbang saat transaksi" : "Satuan kemasan"),
       isTimbangan,
     };
-    setSatuanList([...satuanList, newS]);
-    setKodeSatuan("");
-    setNamaSatuan("");
-    setIsTimbangan(false);
+    if (editingSatuanId) {
+      setSatuanList((prev) => prev.map((item) => (item.id === editingSatuanId ? payload : item)));
+      toast.success(`Satuan "${payload.nama}" berhasil diperbarui!`);
+    } else {
+      setSatuanList((prev) => [...prev, payload]);
+      toast.success(`Satuan "${payload.nama}" berhasil ditambahkan!`);
+    }
     setIsSatuanModalOpen(false);
+    setEditingSatuanId(null);
   };
 
   const handleAddKonversi = (e: React.FormEvent) => {
     e.preventDefault();
     if (formIsi <= 0) return;
-    const newK: AturanKonversi = {
-      id: String(Date.now()),
+    const payload: AturanKonversi = {
+      id: editingKonversiId || String(Date.now()),
       satuanBesar: formBesar.trim(),
       isi: formIsi,
       satuanKecil: formKecil.trim(),
       contohBarang: formContoh.trim() || "Standar toko",
     };
-    setKonversiList([...konversiList, newK]);
+    if (editingKonversiId) {
+      setKonversiList((prev) => prev.map((item) => (item.id === editingKonversiId ? payload : item)));
+      toast.success("Rumus konversi berhasil diperbarui!");
+    } else {
+      setKonversiList((prev) => [...prev, payload]);
+      toast.success("Rumus konversi berhasil ditambahkan!");
+    }
     setFormContoh("");
+    setEditingKonversiId(null);
     setIsKonversiModalOpen(false);
   };
 
   const handleDeleteSatuan = (id: string) => {
     setSatuanList((prev) => prev.filter((s) => s.id !== id));
+    toast.success("Satuan berhasil dihapus.");
   };
 
   const handleDeleteKonversi = (id: string) => {
     setKonversiList((prev) => prev.filter((k) => k.id !== id));
+    toast.success("Aturan konversi berhasil dihapus.");
   };
 
   return (
@@ -157,9 +216,7 @@ export default function SatuanKonversiPage() {
 
           <button
             type="button"
-            onClick={() =>
-              activeTab === "SATUAN" ? setIsSatuanModalOpen(true) : setIsKonversiModalOpen(true)
-            }
+            onClick={() => (activeTab === "SATUAN" ? openAddSatuan() : openAddKonversi())}
             className="h-10 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all text-xs shrink-0 self-start sm:self-auto cursor-pointer"
           >
             {activeTab === "SATUAN" ? "Tambah satuan" : "Tambah konversi"}
@@ -228,9 +285,8 @@ export default function SatuanKonversiPage() {
       </div>
 
       {/* Tabel Minimalist (Scrollable Internal) */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="overflow-x-auto">
-          {activeTab === "SATUAN" ? (
+      <div className="flex-1 min-h-0 overflow-auto pb-2">
+        {activeTab === "SATUAN" ? (
             <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
               <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                 <tr>
@@ -272,15 +328,35 @@ export default function SatuanKonversiPage() {
                         )}
                       </td>
                       <td className="py-3.5 pl-4 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSatuan(s.id)}
-                          className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                          title="Hapus satuan"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus</span>
-                        </button>
+                        <div className="inline-flex items-center justify-center gap-1 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setDetailSatuan(s)}
+                            className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Lihat detail satuan"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Detail</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEditSatuan(s)}
+                            className="h-7 px-2.5 rounded-lg text-amber-600 hover:bg-amber-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Edit satuan"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSatuan(s.id)}
+                            className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Hapus satuan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -321,15 +397,35 @@ export default function SatuanKonversiPage() {
                         Template otomatis
                       </td>
                       <td className="py-3.5 pl-4 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteKonversi(k.id)}
-                          className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                          title="Hapus konversi"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus</span>
-                        </button>
+                        <div className="inline-flex items-center justify-center gap-1 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setDetailKonversi(k)}
+                            className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Lihat detail konversi"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Detail</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEditKonversi(k)}
+                            className="h-7 px-2.5 rounded-lg text-amber-600 hover:bg-amber-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Edit konversi"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteKonversi(k.id)}
+                            className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Hapus konversi"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -337,7 +433,6 @@ export default function SatuanKonversiPage() {
               </tbody>
             </table>
           )}
-        </div>
       </div>
 
       {/* Pagination Fixed at Bottom */}
@@ -352,73 +447,246 @@ export default function SatuanKonversiPage() {
         </div>
       )}
 
-      {/* Modal Tambah Satuan */}
-      {isSatuanModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 dark:border-zinc-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">Tambah satuan baru</h3>
-              <button onClick={() => setIsSatuanModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+      {/* Slide Drawer Detail Satuan */}
+      {detailSatuan && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => setDetailSatuan(null)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">Detail satuan</h3>
+              <button
+                type="button"
+                onClick={() => setDetailSatuan(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleAddSatuan} className="space-y-4 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Kode satuan</label>
-                <input
-                  type="text"
-                  required
-                  value={kodeSatuan}
-                  onChange={(e) => setKodeSatuan(e.target.value)}
-                  placeholder="Contoh: ikat, rim"
-                  className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
-                />
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 space-y-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Kode satuan</span>
+                <p className="text-lg font-mono font-bold text-slate-900 dark:text-zinc-100">{detailSatuan.kode}</p>
               </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Nama satuan</label>
-                <input
-                  type="text"
-                  required
-                  value={namaSatuan}
-                  onChange={(e) => setNamaSatuan(e.target.value)}
-                  placeholder="Contoh: Ikat / Rim"
-                  className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
-                />
+              <div className="space-y-3 divide-y divide-slate-100 dark:divide-zinc-800">
+                <div className="pt-2 flex justify-between gap-4">
+                  <span className="text-slate-500">Nama satuan</span>
+                  <span className="font-semibold text-slate-900 dark:text-zinc-100 text-right">{detailSatuan.nama}</span>
+                </div>
+                <div className="pt-3 flex justify-between gap-4">
+                  <span className="text-slate-500">Kategori</span>
+                  <span className="font-semibold text-slate-900 dark:text-zinc-100 text-right">{detailSatuan.kategori}</span>
+                </div>
+                <div className="pt-3 flex justify-between gap-4">
+                  <span className="text-slate-500">Tipe</span>
+                  <span className={`font-semibold text-right ${detailSatuan.isTimbangan ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"}`}>
+                    {detailSatuan.isTimbangan ? "Timbangan" : "Reguler"}
+                  </span>
+                </div>
+                <div className="pt-3 space-y-1">
+                  <span className="text-slate-500 block">Deskripsi</span>
+                  <p className="font-medium text-slate-800 dark:text-zinc-200 leading-relaxed">{detailSatuan.deskripsi}</p>
+                </div>
               </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Kategori</label>
-                <select
-                  value={katSatuan}
-                  onChange={(e) => setKatSatuan(e.target.value as any)}
-                  className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
-                >
-                  <option value="Kecil / Eceran">Kecil / Eceran</option>
-                  <option value="Sedang">Sedang</option>
-                  <option value="Besar / Grosir">Besar / Grosir</option>
-                </select>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
+              <button
+                type="button"
+                onClick={() => setDetailSatuan(null)}
+                className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = detailSatuan;
+                  setDetailSatuan(null);
+                  openEditSatuan(target);
+                }}
+                className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold rounded-[14px] text-xs cursor-pointer"
+              >
+                Edit satuan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide Drawer Detail Konversi */}
+      {detailKonversi && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => setDetailKonversi(null)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">Detail rumus konversi</h3>
+              <button
+                type="button"
+                onClick={() => setDetailKonversi(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-center space-y-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Rumus konversi</span>
+                <p className="text-lg font-mono font-bold text-slate-900 dark:text-zinc-100">
+                  1 {detailKonversi.satuanBesar} = {detailKonversi.isi} {detailKonversi.satuanKecil}
+                </p>
               </div>
-              <label className="flex items-center gap-2 text-slate-600 dark:text-zinc-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isTimbangan}
-                  onChange={(e) => setIsTimbangan(e.target.checked)}
-                  className="rounded border-slate-300"
-                />
-                <span>Barang timbangan</span>
-              </label>
-              <div className="flex gap-2 pt-2">
+              <div className="space-y-3 divide-y divide-slate-100 dark:divide-zinc-800">
+                <div className="pt-2 flex justify-between gap-4">
+                  <span className="text-slate-500">Satuan besar</span>
+                  <span className="font-mono font-semibold text-rose-600">{detailKonversi.satuanBesar}</span>
+                </div>
+                <div className="pt-3 flex justify-between gap-4">
+                  <span className="text-slate-500">Isi per kemasan</span>
+                  <span className="font-mono font-semibold text-emerald-600">{detailKonversi.isi} {detailKonversi.satuanKecil}</span>
+                </div>
+                <div className="pt-3 space-y-1">
+                  <span className="text-slate-500 block">Contoh barang</span>
+                  <p className="font-medium text-slate-800 dark:text-zinc-200 leading-relaxed">{detailKonversi.contohBarang}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
+              <button
+                type="button"
+                onClick={() => setDetailKonversi(null)}
+                className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = detailKonversi;
+                  setDetailKonversi(null);
+                  openEditKonversi(target);
+                }}
+                className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold rounded-[14px] text-xs cursor-pointer"
+              >
+                Edit konversi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide Drawer Tambah / Edit Satuan */}
+      {isSatuanModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => {
+            setIsSatuanModalOpen(false);
+            setEditingSatuanId(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                {editingSatuanId ? "Edit satuan" : "Tambah satuan baru"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSatuanModalOpen(false);
+                  setEditingSatuanId(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveSatuan} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <div>
+                  <label className="field-label">Kode satuan</label>
+                  <input
+                    type="text"
+                    required
+                    value={kodeSatuan}
+                    onChange={(e) => setKodeSatuan(e.target.value)}
+                    placeholder="Contoh: ikat, rim"
+                    className="ctl"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Nama satuan</label>
+                  <input
+                    type="text"
+                    required
+                    value={namaSatuan}
+                    onChange={(e) => setNamaSatuan(e.target.value)}
+                    placeholder="Contoh: Ikat / Rim"
+                    className="ctl"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Kategori</label>
+                  <select
+                    value={katSatuan}
+                    onChange={(e) => setKatSatuan(e.target.value as any)}
+                    className="ctl"
+                  >
+                    <option value="Kecil / Eceran">Kecil / Eceran</option>
+                    <option value="Sedang">Sedang</option>
+                    <option value="Besar / Grosir">Besar / Grosir</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">Deskripsi</label>
+                  <textarea
+                    rows={2}
+                    value={deskripsiSatuan}
+                    onChange={(e) => setDeskripsiSatuan(e.target.value)}
+                    placeholder="Keterangan pemakaian satuan"
+                    className="ctl-ta"
+                  />
+                </div>
+                <label className="flex items-center gap-2.5 text-xs font-medium text-slate-700 dark:text-zinc-300 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={isTimbangan}
+                    onChange={(e) => setIsTimbangan(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300"
+                  />
+                  <span>Barang timbangan</span>
+                </label>
+              </div>
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
                 <button
                   type="button"
-                  onClick={() => setIsSatuanModalOpen(false)}
-                  className="w-1/2 h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl cursor-pointer"
+                  onClick={() => {
+                    setIsSatuanModalOpen(false);
+                    setEditingSatuanId(null);
+                  }}
+                  className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl cursor-pointer"
+                  className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold rounded-[14px] text-xs cursor-pointer"
                 >
-                  Simpan satuan
+                  {editingSatuanId ? "Simpan perubahan" : "Simpan satuan"}
                 </button>
               </div>
             </form>
@@ -426,75 +694,98 @@ export default function SatuanKonversiPage() {
         </div>
       )}
 
-      {/* Modal Tambah Konversi */}
+      {/* Slide Drawer Tambah / Edit Konversi */}
       {isKonversiModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200/80 dark:border-zinc-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">Tambah rumus konversi</h3>
-              <button onClick={() => setIsKonversiModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => {
+            setIsKonversiModalOpen(false);
+            setEditingKonversiId(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                {editingKonversiId ? "Edit rumus konversi" : "Tambah rumus konversi"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKonversiModalOpen(false);
+                  setEditingKonversiId(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleAddKonversi} className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Satuan besar</label>
-                  <input
-                    type="text"
-                    required
-                    value={formBesar}
-                    onChange={(e) => setFormBesar(e.target.value)}
-                    placeholder="dus"
-                    className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
-                  />
+            <form onSubmit={handleAddKonversi} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="field-label">Satuan besar</label>
+                    <input
+                      type="text"
+                      required
+                      value={formBesar}
+                      onChange={(e) => setFormBesar(e.target.value)}
+                      placeholder="dus"
+                      className="ctl"
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label">Isi</label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={formIsi}
+                      onChange={(e) => setFormIsi(parseInt(e.target.value || "1", 10))}
+                      className="ctl font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label">Satuan kecil</label>
+                    <input
+                      type="text"
+                      required
+                      value={formKecil}
+                      onChange={(e) => setFormKecil(e.target.value)}
+                      placeholder="pcs"
+                      className="ctl"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Isi</label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={formIsi}
-                    onChange={(e) => setFormIsi(parseInt(e.target.value || "1", 10))}
-                    className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Satuan kecil</label>
+                  <label className="field-label">Contoh pemakaian barang</label>
                   <input
                     type="text"
-                    required
-                    value={formKecil}
-                    onChange={(e) => setFormKecil(e.target.value)}
-                    placeholder="pcs"
-                    className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
+                    value={formContoh}
+                    onChange={(e) => setFormContoh(e.target.value)}
+                    placeholder="Misal: Sabun Batang 1 dus isi 72"
+                    className="ctl"
                   />
                 </div>
               </div>
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Contoh pemakaian barang</label>
-                <input
-                  type="text"
-                  value={formContoh}
-                  onChange={(e) => setFormContoh(e.target.value)}
-                  placeholder="Misal: Sabun Batang 1 dus isi 72"
-                  className="w-full px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-zinc-800 flex gap-2.5 shrink-0 bg-slate-50/50 dark:bg-zinc-900">
                 <button
                   type="button"
-                  onClick={() => setIsKonversiModalOpen(false)}
-                  className="w-1/2 h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl cursor-pointer"
+                  onClick={() => {
+                    setIsKonversiModalOpen(false);
+                    setEditingKonversiId(null);
+                  }}
+                  className="w-1/2 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 text-slate-700 dark:text-zinc-200 font-semibold rounded-[14px] text-xs cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl cursor-pointer"
+                  className="w-1/2 h-11 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold rounded-[14px] text-xs cursor-pointer"
                 >
-                  Simpan konversi
+                  {editingKonversiId ? "Simpan perubahan" : "Simpan konversi"}
                 </button>
               </div>
             </form>

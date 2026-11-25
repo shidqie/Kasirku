@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Printer, RefreshCw, XCircle, AlertCircle } from "lucide-react";
 import { formatDecimal, formatRupiah, formatDateTime } from "@/lib/formatters";
+import { CardListSkeleton } from "@/components/shared/Skeleton";
+import { PopupAlert } from "@/components/shared/ToastProvider";
 
 interface LowStockItem {
   id: string;
@@ -85,12 +87,7 @@ export default function PerluBelanjaPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
       </div>
 
       {/* Dokumen Format Cetak & Tampilan Layar */}
@@ -106,7 +103,7 @@ export default function PerluBelanjaPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-400 text-xs">Memeriksa stok seluruh produk...</div>
+          <CardListSkeleton count={5} />
         ) : items.length === 0 ? (
           <div className="text-center py-12 text-slate-500">
             <p className="text-sm font-bold text-emerald-600">Alhamdulillah, Semua Stok Aman!</p>

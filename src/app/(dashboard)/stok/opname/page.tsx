@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { CardListSkeleton, DetailPageSkeleton, TableSkeletonRows } from "@/components/shared/Skeleton";
+import { PopupAlert } from "@/components/shared/ToastProvider";
+import { Pagination } from "@/components/shared/Pagination";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ClipboardCheck,
@@ -21,7 +24,6 @@ interface ProductItem {
 
 function TabHitungFisik() {
   const [products, setProducts] = useState<ProductItem[]>([]);
-  const [opnameList, setOpnameList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -29,17 +31,15 @@ function TabHitungFisik() {
   const [draftItems, setDraftItems] = useState<{ [produkId: string]: number }>({});
   const [catatan, setCatatan] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [pRes, oRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/opname"),
-      ]);
-
+      const pRes = await fetch("/api/products");
       const pData = await pRes.json();
-      const oData = await oRes.json();
 
       if (pRes.ok) {
         setProducts(pData.products || []);
@@ -49,7 +49,6 @@ function TabHitungFisik() {
         });
         setDraftItems(initialDraft);
       }
-      if (oRes.ok) setOpnameList(oData.list || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -105,139 +104,244 @@ function TabHitungFisik() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-            Input Hitungan Fisik Stok Opname
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            Hitung fisik barang di rak/gudang toko, masukkan angka riil. Sistem akan menghitung selisih dan mengirimkannya ke Pemilik Toko untuk ditinjau. Stok belum berubah sampai disetujui.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={fetchData}
-          title="Muat ulang"
-          aria-label="Muat ulang"
-          className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-        </button>
-      </div>
-
-      {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-xs">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
-
-      <div className="pt-2 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-3">
-          <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">
-            Formulir penghitungan fisik ({products.length} produk)
-          </h3>
-        </div>
-
-        <form onSubmit={handleSubmitOpname} className="space-y-5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-              <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
-                <tr>
-                  <th className="py-3 pr-3">Nama produk</th>
-                  <th className="py-3 px-3 text-center">Stok sistem</th>
-                  <th className="py-3 px-3 text-center w-48">Stok fisik nyata</th>
-                  <th className="py-3 pl-3 text-center">Selisih</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
-                {products.map((p) => {
-                  const sistem = Number(p.stokCache);
-                  const fisik = draftItems[p.id] ?? sistem;
-                  const selisih = fisik - sistem;
-
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                      <td className="py-3 px-3 font-bold text-slate-800">
-                        {p.nama}
-                        <span className="text-xs text-slate-400 font-sans block">
-                          Satuan: {p.satuanDasar}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center font-sans font-semibold text-slate-700">
-                        {formatDecimal(sistem)} {p.satuanDasar}
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <input
-                            type="number"
-                            step="any"
-                            min={0}
-                            required
-                            value={fisik}
-                            onChange={(e) =>
-                              handleStokFisikChange(p.id, parseFloat(e.target.value || "0"))
-                            }
-                            className="w-28 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl text-center font-sans font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-[#F0090F]"
-                          />
-                          <span className="text-xs font-sans text-slate-400">{p.satuanDasar}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 text-center font-sans font-bold">
-                        {selisih === 0 ? (
-                          <span className="text-slate-400">Cocok (0)</span>
-                        ) : selisih > 0 ? (
-                          <span className="text-emerald-600">+{formatDecimal(selisih)}</span>
-                        ) : (
-                          <span className="text-rose-600">{formatDecimal(selisih)}</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="shrink-0">
+        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              Input Hitungan Fisik Stok Opname
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              Hitung fisik barang di rak/gudang toko, masukkan angka riil. Sistem akan menghitung selisih dan mengirimkannya ke Pemilik Toko untuk ditinjau. Stok belum berubah sampai disetujui.
+            </p>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans block mb-1">
-              Catatan / Periode Opname (Opsional):
-            </label>
+          <button
+            type="button"
+            onClick={fetchData}
+            title="Muat ulang"
+            aria-label="Muat ulang"
+            className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+          </button>
+        </div>
+
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+        <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
+
+        <div className="py-3 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">
+            Formulir penghitungan fisik ({products.length} produk)
+          </span>
+
+          <div className="relative w-full sm:w-56">
             <input
               type="text"
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Contoh: Stok opname akhir pekan rak depan"
-              className="w-full px-3.5 h-11 bg-white border border-slate-200 rounded-xl text-sm"
+              placeholder="Cari nama produk..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmitOpname} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {(() => {
+          const q = search.trim().toLowerCase();
+          const filtered = q
+            ? products.filter((p) => p.nama.toLowerCase().includes(q))
+            : products;
+          const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+          return (
+            <>
+              <div className="flex-1 min-h-0 overflow-auto">
+                <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+                  <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                    <tr>
+                      <th className="py-3 pr-3 w-12">No</th>
+                      <th className="py-3 px-3">Nama produk</th>
+                      <th className="py-3 px-3">Satuan</th>
+                      <th className="py-3 px-3 text-right">Stok sistem</th>
+                      <th className="py-3 px-3 text-center w-44">Stok fisik nyata</th>
+                      <th className="py-3 pl-3 text-center">Selisih Stok</th>
+                    </tr>
+                  </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+                      {loading ? (
+                        <TableSkeletonRows rows={8} cols={6} />
+                      ) : paginated.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-10 text-slate-400">
+                            Tidak ada produk yang cocok dengan pencarian.
+                          </td>
+                        </tr>
+                      ) : (
+                        paginated.map((p, idx) => {
+                          const sistem = Number(p.stokCache);
+                          const fisik = draftItems[p.id] ?? sistem;
+                          const selisih = fisik - sistem;
+                          const rowNum = (currentPage - 1) * pageSize + idx + 1;
+
+                          return (
+                            <tr key={p.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
+                              <td className="py-3 pr-3 text-slate-400 tabular-nums">{rowNum}</td>
+                              <td className="py-3 px-3 font-semibold text-slate-900 dark:text-zinc-100">
+                                {p.nama}
+                              </td>
+                              <td className="py-3 px-3 text-slate-500 dark:text-zinc-400">
+                                {p.satuanDasar}
+                              </td>
+                              <td className="py-3 px-3 text-right font-semibold text-slate-700 dark:text-zinc-300 tabular-nums">
+                                {formatDecimal(sistem)}
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    min={0}
+                                    required
+                                    value={fisik}
+                                    onChange={(e) =>
+                                      handleStokFisikChange(p.id, parseFloat(e.target.value || "0"))
+                                    }
+                                    className="w-24 px-3 h-9 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-center font-sans font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:border-transparent"
+                                    style={{ "--tw-ring-color": "var(--primary)" } as any}
+                                  />
+                                </div>
+                              </td>
+                              <td className="py-3 pl-3 text-center font-sans font-bold">
+                                {selisih === 0 ? (
+                                  <span className="text-slate-400">Cocok (0)</span>
+                                ) : selisih > 0 ? (
+                                  <span className="text-emerald-600">+{formatDecimal(selisih)}</span>
+                                ) : (
+                                  <span className="text-rose-600">{formatDecimal(selisih)}</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+              {filtered.length > 0 && (
+                <div className="shrink-0">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={filtered.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+        <div className="shrink-0 pt-3 border-t border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-3">
+          <input
+            type="text"
+            value={catatan}
+            onChange={(e) => setCatatan(e.target.value)}
+            placeholder="Catatan / Periode Opname (opsional), mis: Akhir pekan rak depan"
+            className="flex-1 px-3.5 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900 dark:focus:border-white"
+          />
 
           <button
             type="submit"
             disabled={submitting || products.length === 0}
-            className="h-10 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="h-10 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             {submitting ? "Mengirim..." : "Ajukan hasil hitung fisik ke Pemilik Toko"}
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
+    </div>
+  );
+}
 
-      <div className="pt-4">
-        <div className="pb-3 border-b border-slate-200 dark:border-zinc-800">
-          <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm">Riwayat pengajuan stok opname</h3>
+function TabRiwayat() {
+  const [opnameList, setOpnameList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [opnamePage, setOpnamePage] = useState(1);
+  const [opnamePageSize, setOpnamePageSize] = useState(10);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/opname");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memuat riwayat opname");
+      setOpnameList(data.list || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="shrink-0">
+        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              Riwayat Pengajuan Stok Opname
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              Daftar seluruh pengajuan stok opname beserta status persetujuan dan pemeriksanya.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchHistory}
+            title="Muat ulang"
+            aria-label="Muat ulang"
+            className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+          </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+
+        <div className="py-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 font-medium">
+          <span>Riwayat pengajuan ({opnameList.length} entri)</span>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
                 <th className="py-3 pr-4">No. Opname</th>
                 <th className="py-3 px-4">Waktu</th>
@@ -247,53 +351,68 @@ function TabHitungFisik() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
-              {opnameList.length === 0 ? (
+              {loading ? (
+                <TableSkeletonRows rows={6} cols={5} />
+              ) : opnameList.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-6 text-slate-400">
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
                     Belum ada pengajuan stok opname.
                   </td>
                 </tr>
               ) : (
-                opnameList.map((op) => (
-                  <tr key={op.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                    <td className="py-3 px-4 font-sans font-bold text-[#F0090F]">{op.nomor}</td>
-                    <td className="py-3 px-4 text-slate-500">{formatDateTime(op.createdAt)}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-800">
-                      {op.dibuatOleh?.nama || "Staff"}
-                    </td>
-                    <td className="py-3 px-4">
-                      {op.status === "MENUNGGU" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                          Menunggu Persetujuan
-                        </span>
-                      )}
-                      {op.status === "DISETUJUI" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                          Disetujui Owner
-                        </span>
-                      )}
-                      {op.status === "DITOLAK" && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
-                          Ditolak
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-slate-600">
-                      {op.disetujuiOleh?.nama ? (
-                        <span>
-                          {op.disetujuiOleh.nama} ({formatDateTime(op.tanggalPersetujuan)})
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                ))
+                opnameList
+                  .slice((opnamePage - 1) * opnamePageSize, opnamePage * opnamePageSize)
+                  .map((op) => (
+                    <tr key={op.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
+                      <td className="py-3 pr-4 font-sans font-bold text-[#F0090F]">{op.nomor}</td>
+                      <td className="py-3 px-4 text-slate-500">{formatDateTime(op.createdAt)}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-zinc-200">
+                        {op.dibuatOleh?.nama || "Staff"}
+                      </td>
+                      <td className="py-3 px-4">
+                        {op.status === "MENUNGGU" && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                            Menunggu Persetujuan
+                          </span>
+                        )}
+                        {op.status === "DISETUJUI" && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                            Disetujui Owner
+                          </span>
+                        )}
+                        {op.status === "DITOLAK" && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
+                            Ditolak
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pl-4 text-slate-600 dark:text-zinc-300">
+                        {op.disetujuiOleh?.nama ? (
+                          <span>
+                            {op.disetujuiOleh.nama} ({formatDateTime(op.tanggalPersetujuan)})
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
-        </div>
       </div>
+
+      {opnameList.length > 0 && (
+        <div className="shrink-0">
+          <Pagination
+            currentPage={opnamePage}
+            totalItems={opnameList.length}
+            pageSize={opnamePageSize}
+            onPageChange={setOpnamePage}
+            onPageSizeChange={setOpnamePageSize}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -377,45 +496,36 @@ function TabPersetujuan() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-            Persetujuan Stok Opname
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            Tinjau selisih hitungan fisik staff beserta nilai rupiahnya. Stok hanya berubah setelah Anda menekan tombol Setujui.
-          </p>
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="shrink-0">
+        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              Persetujuan Stok Opname
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              Tinjau selisih hitungan fisik staff beserta nilai rupiahnya. Stok hanya berubah setelah Anda menekan tombol Setujui.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchOpnames}
+            title="Muat ulang"
+            aria-label="Muat ulang"
+            className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchOpnames}
-          title="Muat ulang"
-          aria-label="Muat ulang"
-          className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-        </button>
+        <PopupAlert type="error" message={error} onClear={() => setError(null)} />
+        <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
       </div>
 
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-2 text-sm">
-          <CheckCircle className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
-        </div>
-      )}
-
+      <div className="flex-1 min-h-0 overflow-auto pt-4">
       {loading ? (
-        <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-          Memeriksa pengajuan opname...
-        </div>
+        <CardListSkeleton count={4} />
       ) : opnameList.length === 0 ? (
         <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
           <p className="text-base font-bold text-slate-700">Tidak ada pengajuan opname yang menunggu</p>
@@ -543,6 +653,7 @@ function TabPersetujuan() {
           })}
         </div>
       )}
+      </div>
 
       {rejectingId && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -605,19 +716,29 @@ function StokOpnameContent() {
   }, []);
 
   return (
-    <div className="space-y-4 w-full pb-12 select-none">
-      {userRole === "OWNER" && (
-        <div className="flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs">
-          <button
-            onClick={() => router.push("/stok/opname")}
-            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
-              activeTab !== "persetujuan"
-                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
-            }`}
-          >
-            Hitung fisik
-          </button>
+    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+      <div className="shrink-0 flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs">
+        <button
+          onClick={() => router.push("/stok/opname")}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+            activeTab !== "persetujuan" && activeTab !== "riwayat"
+              ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+              : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+          }`}
+        >
+          Hitung fisik
+        </button>
+        <button
+          onClick={() => router.push("/stok/opname?tab=riwayat")}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "riwayat"
+              ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+              : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+          }`}
+        >
+          Riwayat
+        </button>
+        {userRole === "OWNER" && (
           <button
             onClick={() => router.push("/stok/opname?tab=persetujuan")}
             className={`pb-3 border-b-2 transition-colors cursor-pointer ${
@@ -628,21 +749,25 @@ function StokOpnameContent() {
           >
             Persetujuan Owner
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {activeTab === "persetujuan" && userRole === "OWNER" ? (
-        <TabPersetujuan />
-      ) : (
-        <TabHitungFisik />
-      )}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-4">
+        {activeTab === "persetujuan" && userRole === "OWNER" ? (
+          <TabPersetujuan />
+        ) : activeTab === "riwayat" ? (
+          <TabRiwayat />
+        ) : (
+          <TabHitungFisik />
+        )}
+      </div>
     </div>
   );
 }
 
 export default function StokOpnamePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat stok opname...</div>}>
+    <Suspense fallback={<DetailPageSkeleton />}>
       <StokOpnameContent />
     </Suspense>
   );

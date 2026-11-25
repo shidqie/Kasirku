@@ -6,12 +6,20 @@ export interface UpdateSettingsInput {
   namaToko: string;
   alamat?: string | null;
   telepon?: string | null;
+  headerStruk?: string | null;
   footerStruk?: string | null;
+  catatanRetur?: string | null;
+  headerBon?: string | null;
+  footerBon?: string | null;
   pesanWhatsApp?: string | null;
   pembulatan: Pembulatan;
   batasDiskonStaff: number;
   ambangUtangLamaHari: number;
   bolehJualStokNol: boolean;
+  qrisModeDefault?: string;
+  qrisPayload?: string | null;
+  qrisStaticImage?: string | null;
+  logoToko?: string | null;
 }
 
 export async function getSettings() {
@@ -65,12 +73,20 @@ export async function updateSettings(
       namaToko: input.namaToko,
       alamat: input.alamat,
       telepon: input.telepon,
+      ...(input.headerStruk !== undefined ? { headerStruk: input.headerStruk } : {}),
       footerStruk: input.footerStruk,
+      ...(input.catatanRetur !== undefined ? { catatanRetur: input.catatanRetur } : {}),
+      ...(input.headerBon !== undefined ? { headerBon: input.headerBon } : {}),
+      ...(input.footerBon !== undefined ? { footerBon: input.footerBon } : {}),
       pesanWhatsApp: input.pesanWhatsApp,
       pembulatan: input.pembulatan,
       batasDiskonStaff: input.batasDiskonStaff,
       ambangUtangLamaHari: input.ambangUtangLamaHari,
       bolehJualStokNol: input.bolehJualStokNol,
+      ...(input.qrisModeDefault !== undefined ? { qrisModeDefault: input.qrisModeDefault } : {}),
+      ...(input.qrisPayload !== undefined ? { qrisPayload: input.qrisPayload } : {}),
+      ...(input.qrisStaticImage !== undefined ? { qrisStaticImage: input.qrisStaticImage } : {}),
+      ...(input.logoToko !== undefined ? { logoToko: input.logoToko } : {}),
     },
   });
 

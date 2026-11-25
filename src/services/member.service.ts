@@ -7,6 +7,7 @@ export interface CreateMemberInput {
   nama: string;
   telepon?: string | null;
   alamat?: string | null;
+  subMembers?: string[];
   batasKasbon: number;
   saldoAwal?: number;
 }
@@ -15,6 +16,7 @@ export interface UpdateMemberInput {
   nama?: string;
   telepon?: string | null;
   alamat?: string | null;
+  subMembers?: string[];
   batasKasbon?: number;
   aktif?: boolean;
 }
@@ -24,6 +26,7 @@ export interface PayDebtInput {
   metode: MetodePembayaran;
   uangDiterima?: number;
   catatan?: string | null;
+  buktiUrl?: string | null;
 }
 
 async function generatePaymentNumber(tx: Prisma.TransactionClient): Promise<string> {
@@ -161,6 +164,7 @@ export async function createMember(input: CreateMemberInput, actorId: string, ip
         nama: input.nama,
         telepon: input.telepon || null,
         alamat: input.alamat || null,
+        subMembers: (input.subMembers || []).map((s) => s.trim()).filter(Boolean),
         batasKasbon: limit,
         saldoUtangCache: saldoAwal,
         aktif: true,
@@ -223,6 +227,9 @@ export async function updateMember(
       ...(input.nama ? { nama: input.nama } : {}),
       ...(input.telepon !== undefined ? { telepon: input.telepon } : {}),
       ...(input.alamat !== undefined ? { alamat: input.alamat } : {}),
+      ...(input.subMembers !== undefined
+        ? { subMembers: input.subMembers.map((s) => s.trim()).filter(Boolean) }
+        : {}),
       ...(input.batasKasbon !== undefined ? { batasKasbon: input.batasKasbon } : {}),
       ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
     },
@@ -354,6 +361,7 @@ export async function bayarKasbon(
         kembalian: input.metode === "TUNAI" ? kembalian : 0,
         kasirId,
         catatan: input.catatan || null,
+        buktiUrl: input.buktiUrl || null,
       },
     });
 

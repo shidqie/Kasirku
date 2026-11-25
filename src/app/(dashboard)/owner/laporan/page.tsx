@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   TrendingUp,
@@ -14,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatRupiah } from "@/lib/formatters";
+import { Pagination } from "@/components/shared/Pagination";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function formatTanggal(dateStr: string) {
@@ -41,9 +43,12 @@ function TabPendapatan() {
   const [endDate, setEndDate] = useState("");
   const [preset, setPreset] = useState<"hari" | "minggu" | "bulan" | "custom">("bulan");
   const [view, setView] = useState<"harian" | "bulanan">("harian");
+  const [rekapPage, setRekapPage] = useState(1);
+  const [rekapPageSize, setRekapPageSize] = useState(10);
 
   const applyPreset = (p: "hari" | "minggu" | "bulan" | "custom") => {
     setPreset(p);
+    setRekapPage(1);
     const now = new Date();
     if (p === "hari") {
       const d = now.toISOString().split("T")[0];
@@ -193,8 +198,8 @@ function TabPendapatan() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-400 text-xs">
-          Memuat data laporan...
+        <div className="py-4">
+          <DetailPageSkeleton />
         </div>
       ) : !data ? (
         <div className="py-12 text-center text-slate-400 text-xs">
@@ -203,7 +208,7 @@ function TabPendapatan() {
       ) : (
         <>
           {/* KPI 4 Kolom Flat */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800 border-b border-slate-200 dark:border-zinc-800">
+          <div className="!mt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800 border-b border-slate-200 dark:border-zinc-800">
             {[
               {
                 label: "Pendapatan hari ini",
@@ -246,11 +251,13 @@ function TabPendapatan() {
             <h4 className="font-bold text-sm text-slate-900 dark:text-zinc-100 mb-3">
               Pendapatan per metode pembayaran
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {Object.entries(data.perMetode || {}).map(([metode, val]: any) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800">
+              {Object.entries(data.perMetode || {}).map(([metode, val]: any, idx: number) => (
                 <div
                   key={metode}
-                  className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-zinc-800 sm:border-b-0"
+                  className={`flex items-center justify-between py-3 ${
+                    idx === 0 ? "sm:pr-6" : idx === 2 ? "sm:pl-6" : "sm:px-6"
+                  }`}
                 >
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-zinc-400">
@@ -274,7 +281,10 @@ function TabPendapatan() {
               <h4 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Rincian pendapatan</h4>
               <div className="flex gap-4 text-xs">
                 <button
-                  onClick={() => setView("harian")}
+                  onClick={() => {
+                    setView("harian");
+                    setRekapPage(1);
+                  }}
                   className={`transition-colors cursor-pointer ${
                     view === "harian"
                       ? "font-semibold text-slate-900 dark:text-white underline underline-offset-4"
@@ -284,7 +294,10 @@ function TabPendapatan() {
                   Per hari
                 </button>
                 <button
-                  onClick={() => setView("bulanan")}
+                  onClick={() => {
+                    setView("bulanan");
+                    setRekapPage(1);
+                  }}
                   className={`transition-colors cursor-pointer ${
                     view === "bulanan"
                       ? "font-semibold text-slate-900 dark:text-white underline underline-offset-4"
@@ -317,7 +330,9 @@ function TabPendapatan() {
                       </td>
                     </tr>
                   ) : (
-                    (view === "harian" ? rekapHarian : rekapBulanan).map((row: any) => (
+                    (view === "harian" ? rekapHarian : rekapBulanan)
+                      .slice((rekapPage - 1) * rekapPageSize, rekapPage * rekapPageSize)
+                      .map((row: any) => (
                       <tr
                         key={view === "harian" ? row.tanggal : row.bulan}
                         className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150"
@@ -354,6 +369,17 @@ function TabPendapatan() {
                 )}
               </table>
             </div>
+            {(view === "harian" ? rekapHarian : rekapBulanan).length > 0 && (
+              <div className="pt-3">
+                <Pagination
+                  currentPage={rekapPage}
+                  totalItems={(view === "harian" ? rekapHarian : rekapBulanan).length}
+                  pageSize={rekapPageSize}
+                  onPageChange={setRekapPage}
+                  onPageSizeChange={setRekapPageSize}
+                />
+              </div>
+            )}
           </div>
         </>
       )}
@@ -366,6 +392,10 @@ function TabPiutang() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"saldo" | "mutasi">("saldo");
+  const [saldoPage, setSaldoPage] = useState(1);
+  const [saldoPageSize, setSaldoPageSize] = useState(10);
+  const [mutasiPage, setMutasiPage] = useState(1);
+  const [mutasiPageSize, setMutasiPageSize] = useState(10);
 
   const fetchData = async () => {
     setLoading(true);
@@ -412,8 +442,8 @@ function TabPiutang() {
         </button>
       </div>
       {loading ? (
-        <div className="py-12 text-center text-slate-400 text-xs">
-          Memuat data piutang...
+        <div className="py-4">
+          <DetailPageSkeleton />
         </div>
       ) : !data ? (
         <div className="py-12 text-center text-slate-400 text-xs">
@@ -422,7 +452,7 @@ function TabPiutang() {
       ) : (
         <>
           {/* KPI Summary 3 Kolom Flat */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800 border-b border-slate-200 dark:border-zinc-800">
+          <div className="!mt-0 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-zinc-800 border-b border-slate-200 dark:border-zinc-800">
             <div className="py-5 sm:pr-6">
               <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
                 Total piutang aktif
@@ -483,11 +513,12 @@ function TabPiutang() {
             </div>
 
             {viewMode === "saldo" ? (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-slate-600 dark:text-zinc-300">
                   <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                     <tr>
-                      <th className="py-3 pr-4 text-left">Nama member</th>
+                      <th className="py-3 pr-4 text-left">Nama Pelanggan</th>
                       <th className="py-3 px-4 text-left">No. HP</th>
                       <th className="py-3 px-4 text-center">Umur utang</th>
                       <th className="py-3 px-4 text-right">Saldo utang</th>
@@ -502,7 +533,9 @@ function TabPiutang() {
                         </td>
                       </tr>
                     ) : (
-                      members.map((m: any) => (
+                      members
+                        .slice((saldoPage - 1) * saldoPageSize, saldoPage * saldoPageSize)
+                        .map((m: any) => (
                         <tr key={m.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
                           <td className="py-3.5 pr-4 font-semibold text-slate-900 dark:text-zinc-100">{m.nama}</td>
                           <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-zinc-400">
@@ -526,7 +559,7 @@ function TabPiutang() {
                           <td className="py-3.5 pl-4 text-center">
                             {m.saldoUtangCache > 0 ? (
                               <span className="text-xs font-semibold text-rose-600">
-                                Belum lunas
+                                Belum Lunas
                               </span>
                             ) : (
                               <span className="text-xs font-semibold text-emerald-600">
@@ -556,13 +589,26 @@ function TabPiutang() {
                   )}
                 </table>
               </div>
+              {members.length > 0 && (
+                <div className="pt-3">
+                  <Pagination
+                    currentPage={saldoPage}
+                    totalItems={members.length}
+                    pageSize={saldoPageSize}
+                    onPageChange={setSaldoPage}
+                    onPageSizeChange={setSaldoPageSize}
+                  />
+                </div>
+              )}
+              </>
             ) : (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-slate-600 dark:text-zinc-300">
                   <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                     <tr>
                       <th className="py-3 pr-4 text-left">Tanggal</th>
-                      <th className="py-3 px-4 text-left">Member</th>
+                      <th className="py-3 px-4 text-left">Pelanggan</th>
                       <th className="py-3 px-4 text-left">Tipe</th>
                       <th className="py-3 px-4 text-right">Jumlah</th>
                       <th className="py-3 pl-4 text-left">Catatan</th>
@@ -576,7 +622,9 @@ function TabPiutang() {
                         </td>
                       </tr>
                     ) : (
-                      (data.riwayatMutasi as any[]).map((r: any) => (
+                      (data.riwayatMutasi as any[])
+                        .slice((mutasiPage - 1) * mutasiPageSize, mutasiPage * mutasiPageSize)
+                        .map((r: any) => (
                         <tr key={r.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                             {new Date(r.dibuatPada).toLocaleDateString("id-ID", {
@@ -611,13 +659,27 @@ function TabPiutang() {
                             {r.tipe === "PEMBAYARAN" ? "-" : "+"}
                             {formatRupiah(r.jumlah)}
                           </td>
-                          <td className="py-3 px-4 text-slate-500">{r.catatan ?? "-"}</td>
+                          <td className="py-3 px-4 text-slate-500">
+                            {r.catatan ? String(r.catatan).split("|| JSON:")[0].trim() : "-"}
+                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
+              {(data?.riwayatMutasi ?? []).length > 0 && (
+                <div className="pt-3">
+                  <Pagination
+                    currentPage={mutasiPage}
+                    totalItems={(data?.riwayatMutasi ?? []).length}
+                    pageSize={mutasiPageSize}
+                    onPageChange={setMutasiPage}
+                    onPageSizeChange={setMutasiPageSize}
+                  />
+                </div>
+              )}
+              </>
             )}
           </div>
         </>
@@ -641,9 +703,7 @@ function LaporanContent() {
 export default function LaporanOwnerPage() {
   return (
     <Suspense
-      fallback={
-        <div className="p-8 text-center text-slate-400">Memuat laporan...</div>
-      }
+      fallback={<DetailPageSkeleton />}
     >
       <LaporanContent />
     </Suspense>

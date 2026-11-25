@@ -96,5 +96,20 @@ export function generateUUID(): string {
   });
 }
 
+const METODE_BAYAR_LABELS: Record<string, string> = {
+  TUNAI: "Tunai",
+  TRANSFER: "QRIS",
+  QRIS: "QRIS",
+  KASBON: "Kasbon",
+};
+
+/**
+ * Format kode metode bayar ke label yang ramah pengguna
+ */
+export function formatMetodeBayar(metode?: string | null): string {
+  if (!metode) return "Tunai";
+  return METODE_BAYAR_LABELS[metode.toUpperCase()] || metode;
+}
+
 
 

@@ -327,4 +327,83 @@ textarea:focus {
   border-color: #E2E8F0 !important;
 }
 
+/* Smooth Slide Drawer Animations */
+@keyframes drawer-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.drawer-backdrop {
+  animation: drawer-backdrop-in 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.drawer-panel {
+  animation: drawer-slide-in 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+/* Global Sticky Table Header */
+thead.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+thead.sticky th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: inherit;
+  box-shadow: inset 0 -1px 0 0 #e2e8f0;
+}
+
+:root[data-theme="dark"] thead.sticky th,
+.dark thead.sticky th {
+  box-shadow: inset 0 -1px 0 0 #27272a;
+}
+
+/* Print only receipt when StrukModal is open / printing */
+@media print {
+  body.printing-receipt *,
+  body:has(#kasirku-print-receipt) * {
+    visibility: hidden !important;
+  }
+
+  body.printing-receipt #kasirku-print-receipt,
+  body.printing-receipt #kasirku-print-receipt *,
+  body:has(#kasirku-print-receipt) #kasirku-print-receipt,
+  body:has(#kasirku-print-receipt) #kasirku-print-receipt * {
+    visibility: visible !important;
+  }
+
+  body.printing-receipt #kasirku-print-receipt,
+  body:has(#kasirku-print-receipt) #kasirku-print-receipt {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding: 8mm 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    z-index: 99999 !important;
+  }
+}
+
 

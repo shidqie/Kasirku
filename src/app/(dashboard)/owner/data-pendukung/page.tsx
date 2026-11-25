@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Database, CreditCard, Receipt, Users } from "lucide-react";
+import { CardListSkeleton } from "@/components/shared/Skeleton";
 
 interface MetodeBayar {
   id: string;
@@ -223,7 +224,9 @@ export default function DataPendukungPage() {
 
             <div className="divide-y divide-slate-100 dark:divide-zinc-800 mt-3 space-y-2">
               {loadingUsers ? (
-                <div className="py-6 text-center text-slate-400 text-xs">Memuat staf...</div>
+                <div className="py-2">
+                  <CardListSkeleton count={3} />
+                </div>
               ) : stafList.length === 0 ? (
                 <div className="py-6 text-center text-slate-400 text-xs">Belum ada kasir</div>
               ) : (

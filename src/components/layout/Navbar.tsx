@@ -24,13 +24,31 @@ const PAGE_TITLES: Record<string, string> = {
   "/owner/activity-log": "Log Kontrol",
   "/owner/pengaturan": "Pengaturan",
   "/owner/laporan": "Laporan",
+  "/owner/produk-terlaris": "Produk Terlaris",
   "/owner/go-live": "Checklist Go-Live",
 };
 
 export function Navbar({ storeName, onMenuToggle }: NavbarProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [logoSrc, setLogoSrc] = useState<string>("/logo.png");
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.settings?.logoToko) setLogoSrc(d.settings.logoToko);
+      })
+      .catch(() => {});
+
+    const onStoreUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setLogoSrc(detail?.logoToko || "/logo.png");
+    };
+    window.addEventListener("kasirku-store-updated", onStoreUpdated);
+    return () => window.removeEventListener("kasirku-store-updated", onStoreUpdated);
+  }, []);
 
   useEffect(() => {
     setCurrentDate(new Date());
@@ -64,32 +82,32 @@ export function Navbar({ storeName, onMenuToggle }: NavbarProps) {
           </button>
         )}
 
-        {/* Breadcrumb: Point of Sale / Toko Gagan 2 (/ Halaman) */}
+        {/* Breadcrumb: Point of Sale / Toko Gagan 2 / Halaman */}
         <nav
           aria-label="Breadcrumb"
-          className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 text-xs"
+          className="flex items-center gap-1.5 sm:gap-2 px-1 sm:px-2 py-1 text-xs min-w-0"
         >
           {/* Logo brand */}
           <img
-            src="/logo.png"
+            src={logoSrc}
             alt="Logo"
             className="w-5 h-5 rounded-full object-contain shrink-0"
           />
 
-          <span className="font-semibold text-slate-500 dark:text-zinc-400">
+          <span className="hidden md:inline font-semibold text-slate-500 dark:text-zinc-400">
             Point of Sale
           </span>
 
-          <span className="text-slate-300 dark:text-zinc-600 font-bold select-none">/</span>
+          <span className="hidden md:inline text-slate-300 dark:text-zinc-600 font-bold select-none">/</span>
 
-          <span className="font-bold text-slate-900 dark:text-zinc-100">
+          <span className="font-bold text-slate-900 dark:text-zinc-100 truncate max-w-[110px] sm:max-w-none">
             {storeName || "Toko Gagan 2"}
           </span>
 
           {currentTitle && (
             <>
-              <span className="hidden sm:inline text-slate-300 dark:text-zinc-600 font-bold select-none">/</span>
-              <span className="hidden sm:inline font-black text-[#F0090F] dark:text-red-400">
+              <span className="text-slate-300 dark:text-zinc-600 font-bold select-none">/</span>
+              <span className="font-black text-[#F0090F] dark:text-red-400 truncate max-w-[120px] sm:max-w-none">
                 {currentTitle}
               </span>
             </>

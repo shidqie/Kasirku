@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { MotionConfig, motion } from "motion/react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionPayload } from "@/lib/auth/session";
@@ -13,30 +15,41 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, storeName, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-[#121214] flex flex-col transition-colors">
-      {/* Full Page Shell Container */}
-      <div className="w-full h-screen flex overflow-hidden">
-        {/* Sidebar Component */}
-        <Sidebar
-          user={user}
-          storeName={storeName}
-          isOpen={mobileMenuOpen}
-          onClose={() => setMobileMenuOpen(false)}
-        />
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white dark:bg-[#121214]">
-          <Navbar
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen w-full bg-white dark:bg-[#121214] flex flex-col transition-colors">
+        {/* Full Page Shell Container */}
+        <div className="w-full h-screen flex overflow-hidden">
+          {/* Sidebar Component */}
+          <Sidebar
+            user={user}
             storeName={storeName}
-            onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
           />
-          <main className="flex-1 min-h-0 flex flex-col overflow-y-auto relative px-4 sm:px-8 pb-6 pt-4">
-            {children}
-          </main>
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white dark:bg-[#121214]">
+            <Navbar
+              storeName={storeName}
+              onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
+            />
+            <main className="flex-1 min-h-0 flex flex-col overflow-y-auto relative px-4 sm:px-8 pb-6 pt-4">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-1 min-h-0 flex flex-col"
+              >
+                {children}
+              </motion.div>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </MotionConfig>
   );
 }

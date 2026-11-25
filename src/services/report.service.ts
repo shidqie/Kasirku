@@ -304,3 +304,101 @@ export async function getDashboardSummary() {
   };
 }
 
+// 5. Laporan Produk Terlaris Lengkap
+export async function getTopProductsReport(params?: {
+  startDate?: string;
+  endDate?: string;
+}) {
+  const trxWhere: Prisma.TransaksiWhereInput = {
+    status: "SELESAI",
+  };
+
+  if (params?.startDate || params?.endDate) {
+    trxWhere.dibuatPada = {};
+    if (params.startDate) {
+      const start = new Date(params.startDate);
+      start.setHours(0, 0, 0, 0);
+      trxWhere.dibuatPada.gte = start;
+    }
+    if (params.endDate) {
+      const end = new Date(params.endDate);
+      end.setHours(23, 59, 59, 999);
+      trxWhere.dibuatPada.lte = end;
+    }
+  }
+
+  const grouped = await prisma.transaksiItem.groupBy({
+    by: ["produkId"],
+    where: { transaksi: trxWhere },
+    _sum: {
+      qtyDasar: true,
+      subtotal: true,
+    },
+    _count: {
+      _all: true,
+    },
+    orderBy: {
+      _sum: {
+        qtyDasar: "desc",
+      },
+    },
+  });
+
+  const productIds = grouped.map((g) => g.produkId);
+  const products =
+    productIds.length > 0
+      ? await prisma.produk.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            nama: true,
+            satuanDasar: true,
+            stokCache: true,
+            kategori: { select: { id: true, nama: true } },
+          },
+        })
+      : [];
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  const totalRevenueAll = grouped.reduce(
+    (sum, g) => sum + Number(g._sum.subtotal || 0),
+    0
+  );
+  const totalQtyAll = grouped.reduce(
+    (sum, g) => sum + Number(g._sum.qtyDasar || 0),
+    0
+  );
+
+  const items = grouped.map((g, idx) => {
+    const prod = productMap.get(g.produkId);
+    const totalQty = Number(g._sum.qtyDasar || 0);
+    const totalRevenue = Number(g._sum.subtotal || 0);
+    const sharePercent =
+      totalRevenueAll > 0 ? (totalRevenue / totalRevenueAll) * 100 : 0;
+
+    return {
+      rank: idx + 1,
+      id: g.produkId,
+      nama: prod?.nama || "Produk",
+      satuan: prod?.satuanDasar || "Pcs",
+      kategoriId: prod?.kategori?.id || "",
+      kategori: prod?.kategori?.nama || "Umum",
+      stokSaatIni: Number(prod?.stokCache || 0),
+      jumlahTransaksi: g._count._all,
+      totalQty,
+      totalRevenue,
+      sharePercent,
+    };
+  });
+
+  return {
+    items,
+    summary: {
+      totalProduk: items.length,
+      totalQtyAll,
+      totalRevenueAll,
+      topProduct: items[0] || null,
+    },
+  };
+}
+
