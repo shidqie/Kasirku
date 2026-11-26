@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -12,10 +13,10 @@ import {
   buildOfflineSyntheticResponse,
   cacheApiJson,
   enqueueOfflineMutation,
-  getCachedApiJson,
   getPendingSyncItems,
   OFFLINE_QUEUE_EVENT,
   removeOfflineQueueItem,
+  resolveOfflineGetJson,
   syncPendingQueue,
 } from "@/lib/offline/offline-sync";
 import type { OfflineSyncItem } from "@/lib/offline/offline-db";
@@ -50,6 +51,9 @@ const SKIP_OFFLINE_QUEUE_PATHS = [
   "/api/auth/logout",
   "/api/settings/verify-pin",
 ];
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const toast = useToast();
@@ -105,7 +109,8 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   );
 
   // Pasang Service Worker + Interceptor Fetch Global + Listener Online/Offline
-  useEffect(() => {
+  // Gunakan useIsomorphicLayoutEffect agar window.fetch sudah ter-patch sebelum useEffect halaman anak berjalan
+  useIsomorphicLayoutEffect(() => {
     if (typeof window === "undefined") return;
 
     setIsOnline(navigator.onLine);
@@ -150,9 +155,9 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       // 1. GET API: Network-first + simpan ke IndexedDB, fallback ke cache saat offline
       if (method === "GET") {
         if (!navigator.onLine) {
-          const cached = await getCachedApiJson(apiPathWithQuery);
-          if (cached) {
-            return new Response(JSON.stringify(cached.data), {
+          const cachedData = await resolveOfflineGetJson(parsedUrl);
+          if (cachedData !== null) {
+            return new Response(JSON.stringify(cachedData), {
               status: 200,
               headers: {
                 "Content-Type": "application/json",
@@ -173,14 +178,27 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
                 .then((json) => cacheApiJson(apiPathWithQuery, json))
                 .catch(() => {});
             }
+            return res;
+          }
+          if (res.status >= 500) {
+            const cachedData = await resolveOfflineGetJson(parsedUrl);
+            if (cachedData !== null) {
+              return new Response(JSON.stringify(cachedData), {
+                status: 200,
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Offline-Cache": "true",
+                },
+              });
+            }
           }
           return res;
         } catch (err) {
           // Jaringan putus saat fetch berlangsung -> pakai cache IndexedDB
-          const cached = await getCachedApiJson(apiPathWithQuery);
-          if (cached) {
+          const cachedData = await resolveOfflineGetJson(parsedUrl);
+          if (cachedData !== null) {
             setIsOnline(false);
-            return new Response(JSON.stringify(cached.data), {
+            return new Response(JSON.stringify(cachedData), {
               status: 200,
               headers: {
                 "Content-Type": "application/json",

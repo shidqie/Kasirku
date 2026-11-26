@@ -54,6 +54,52 @@ export async function cacheApiJson(url: string, data: unknown) {
   return idbSetCache(url, data);
 }
 
+/**
+ * Ambil data JSON dari cache IndexedDB untuk request GET saat offline.
+ * Jika request `/api/products?...` memiliki query (search/kategoriId/checkPrice)
+ * dan belum ada di cache persisnya, lakukan fallback filter dari cache `/api/products`.
+ */
+export async function resolveOfflineGetJson(parsedUrl: URL): Promise<unknown | null> {
+  const apiPathWithQuery = parsedUrl.pathname + parsedUrl.search;
+  const exact = await getCachedApiJson(apiPathWithQuery);
+  if (exact) {
+    return exact.data;
+  }
+
+  if (parsedUrl.pathname === "/api/products" && parsedUrl.search) {
+    const base = await getCachedApiJson("/api/products");
+    const baseProducts = (base?.data as { products?: any[] } | undefined)?.products;
+    if (Array.isArray(baseProducts)) {
+      const search = (parsedUrl.searchParams.get("search") || "").trim().toLowerCase();
+      const kategoriId = parsedUrl.searchParams.get("kategoriId") || "";
+      const isCheckPrice = parsedUrl.searchParams.get("checkPrice") === "true";
+
+      const filtered = baseProducts.filter((p) => {
+        if (kategoriId && p?.kategori?.id !== kategoriId && p?.kategoriId !== kategoriId) {
+          return false;
+        }
+        if (search) {
+          const nama = String(p?.nama || "").toLowerCase();
+          const barcode = String(p?.barcode || "").toLowerCase();
+          const kodeBarang = String(p?.kodeBarang || "").toLowerCase();
+          const idBarang = String(p?.idBarang || "").toLowerCase();
+          const matched =
+            nama.includes(search) ||
+            barcode.includes(search) ||
+            kodeBarang.includes(search) ||
+            idBarang.includes(search);
+          if (!matched) return false;
+        }
+        return true;
+      });
+
+      return isCheckPrice ? { results: filtered } : { products: filtered };
+    }
+  }
+
+  return null;
+}
+
 export async function getPendingSyncItems(): Promise<OfflineSyncItem[]> {
   return idbGetAllQueue();
 }

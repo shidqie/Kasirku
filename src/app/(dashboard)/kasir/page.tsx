@@ -241,6 +241,7 @@ export default function KasirPOSPage() {
   const [selectedMember, setSelectedMember] = useState<MemberOption | null>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [kasbonMemberSearch, setKasbonMemberSearch] = useState("");
 
   const [configProduct, setConfigProduct] = useState<ProductItem | null>(null);
   const [configSatuanId, setConfigSatuanId] = useState<string>("");
@@ -1759,24 +1760,65 @@ export default function KasirPOSPage() {
                     <p className="text-xs font-bold text-rose-700 dark:text-rose-400">
                       Kasbon hanya untuk pelanggan terdaftar!
                     </p>
-                    {/* Inline Member Selector inside Payment Modal */}
-                    <div className="text-left space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                      <p className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">Pilih salah satu member di bawah:</p>
-                      {members.map((m) => (
+                    {/* Search bar member Kasbon */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={kasbonMemberSearch}
+                        onChange={(e) => setKasbonMemberSearch(e.target.value)}
+                        placeholder="Cari nama member atau no HP..."
+                        className="w-full h-9 pl-8 pr-8 text-xs rounded-xl bg-white dark:bg-zinc-800 border border-rose-200 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400"
+                      />
+                      {kasbonMemberSearch && (
                         <button
-                          key={m.id}
                           type="button"
-                          onClick={() => setSelectedMember(m)}
-                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-primary-500 text-left flex items-center justify-between text-xs transition-colors"
+                          onClick={() => setKasbonMemberSearch("")}
+                          aria-label="Hapus pencarian member"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
                         >
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-zinc-100">{m.nama}</span>
-                            <span className="text-[10px] text-slate-400 block">Utang: {formatRupiah(m.saldoUtangCache)}</span>
-                          </div>
-                          <span className="text-[11px] font-bold text-primary-600">Pilih</span>
+                          <X className="w-3 h-3" />
                         </button>
-                      ))}
+                      )}
                     </div>
+                    {/* Inline Member Selector inside Payment Modal */}
+                    {(() => {
+                      const q = kasbonMemberSearch.trim().toLowerCase();
+                      const filteredKasbonMembers = members.filter((m) => {
+                        if (!q) return true;
+                        const matchNama = m.nama.toLowerCase().includes(q);
+                        const matchTelp = m.telepon ? m.telepon.toLowerCase().includes(q) : false;
+                        return matchNama || matchTelp;
+                      });
+                      return (
+                        <div className="text-left space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">Pilih salah satu member di bawah:</p>
+                          {filteredKasbonMembers.length === 0 ? (
+                            <p className="text-xs text-slate-500 dark:text-zinc-400 text-center py-4 bg-white/70 dark:bg-zinc-800/60 rounded-xl border border-dashed border-rose-200 dark:border-zinc-700">
+                              Member &ldquo;{kasbonMemberSearch}&rdquo; tidak ditemukan
+                            </p>
+                          ) : (
+                            filteredKasbonMembers.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMember(m);
+                                  setKasbonMemberSearch("");
+                                }}
+                                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-primary-500 text-left flex items-center justify-between text-xs transition-colors"
+                              >
+                                <div>
+                                  <span className="font-bold text-slate-900 dark:text-zinc-100">{m.nama}</span>
+                                  <span className="text-[10px] text-slate-400 block">Utang: {formatRupiah(m.saldoUtangCache)}</span>
+                                </div>
+                                <span className="text-[11px] font-bold text-primary-600">Pilih</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-800 space-y-2 text-xs">
@@ -1811,7 +1853,7 @@ export default function KasirPOSPage() {
             )}
 
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setIsPayModalOpen(false)} className="h-12 px-5 rounded-2xl border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-zinc-800">
+              <button type="button" onClick={() => { setIsPayModalOpen(false); setKasbonMemberSearch(""); }} className="h-12 px-5 rounded-2xl border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-zinc-800">
                 Batal
               </button>
               <button
