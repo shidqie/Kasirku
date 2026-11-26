@@ -66,11 +66,13 @@ export async function POST(req: NextRequest) {
 
     const targetUrl = getDefaultLandingRoute(result.user.role);
 
+    const isHttps = proto.split(",")[0].trim() === "https";
+
     if (isFormData) {
       const res = NextResponse.redirect(new URL(targetUrl, baseUrl), 303);
       res.cookies.set("kasirku_session", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isHttps,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24,
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     });
     res.cookies.set("kasirku_session", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24,

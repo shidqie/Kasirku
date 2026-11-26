@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Lock, User, AlertCircle, ArrowRight } from "lucide-react";
+import { getDefaultLandingRoute } from "@/lib/auth/permissions";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -26,8 +27,8 @@ export default function LoginPage() {
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!username || !password) {
-      e.preventDefault();
       setError("Silakan isi username dan password.");
       return;
     }
@@ -73,14 +74,12 @@ export default function LoginPage() {
       }
 
       if (!ok) {
-        e.preventDefault();
         setError(data?.error || "Gagal masuk ke sistem.");
         setLoading(false);
       } else {
-        // Login Berhasil: Gunakan redirect browser langsung (100% stabil di Android 5.0.2)
-        e.preventDefault();
+        // Login Berhasil: Redirect sesuai role
         const user = data?.user;
-        const targetUrl = user && user.role === "OWNER" ? "/owner/dashboard" : "/kasir";
+        const targetUrl = getDefaultLandingRoute(user?.role || "STAFF_KASIR");
         window.location.href = targetUrl;
       }
     } catch {
