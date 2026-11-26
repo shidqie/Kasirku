@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "create-owner": "tsx scripts/create-owner.ts",
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "barcode-detector": "^3.2.5",
     "bcryptjs": "^2.4.3",
     "html5-qrcode": "^2.3.8",
     "jose": "^5.9.6",

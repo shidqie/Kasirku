@@ -23,9 +23,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ products });
 }
 
+import { hasPermission } from "@/lib/auth/permissions";
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
+  if (!session || !hasPermission(session, "produk:manage")) {
     return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
   }
 

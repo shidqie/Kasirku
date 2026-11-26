@@ -15,6 +15,7 @@ import {
 import { formatRupiah, formatDateTime } from "@/lib/formatters";
 import { StrukModal } from "@/components/kasir/StrukModal";
 import { Pagination } from "@/components/shared/Pagination";
+import { Dropdown } from "@/components/shared/Dropdown";
 
 interface TransactionRow {
   id: string;
@@ -245,15 +246,21 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
                 className="w-full pl-9 pr-3.5 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500/20"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-700 dark:text-zinc-300 focus:outline-none"
-            >
-              <option value="">Semua Status</option>
-              <option value="SELESAI">Selesai</option>
-              <option value="BATAL">Batal (Void)</option>
-            </select>
+            <div className="w-40">
+              <Dropdown
+                variant="box"
+                searchable={false}
+                align="right"
+                ariaLabel="Filter status transaksi"
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "", label: "Semua Status" },
+                  { value: "SELESAI", label: "Selesai" },
+                  { value: "BATAL", label: "Batal (Void)" },
+                ]}
+              />
+            </div>
             <button
               onClick={fetchData}
               className="p-2 text-slate-400 hover:text-slate-600 rounded-lg"

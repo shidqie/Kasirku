@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useState, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import { DetailPageSkeleton } from "@/components/shared/Skeleton";
+import { NumberInput } from "@/components/shared/NumberInput";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -523,8 +525,15 @@ export default function MemberDetailPage() {
     }
   };
 
-  const handleReconcile = async () => {
-    if (!confirm("Jalankan audit rekonsiliasi saldo kasbon vs mutasi ledger?")) return;
+  const [isReconcileOpen, setIsReconcileOpen] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+
+  const handleReconcile = () => {
+    setIsReconcileOpen(true);
+  };
+
+  const confirmReconcile = async () => {
+    setReconciling(true);
     try {
       const res = await fetch("/api/members/reconcile", {
         method: "POST",
@@ -539,9 +548,13 @@ export default function MemberDetailPage() {
       } else {
         setSuccess("Saldo utang kasbon 100% konsisten dengan mutasi ledger.");
       }
+      setIsReconcileOpen(false);
       fetchMember();
     } catch (err: any) {
       setError(err.message);
+      setIsReconcileOpen(false);
+    } finally {
+      setReconciling(false);
     }
   };
 
@@ -885,7 +898,7 @@ export default function MemberDetailPage() {
   const limitUsagePct = Math.min(100, Math.round((member.saldoUtangCache / limitMax) * 100));
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       <div className="shrink-0 space-y-2">
       {/* Tombol Kembali */}
       <div className="pb-2">
@@ -1153,7 +1166,123 @@ export default function MemberDetailPage() {
               ) : (
                 <>
                 <div className="flex-1 min-h-0 overflow-auto">
-                  <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+                  {/* Mobile Card List (< md) */}
+                  <div className="md:hidden space-y-2.5 py-2">
+                    {allKasbonEntries
+                      .slice((bonPage - 1) * bonPageSize, bonPage * bonPageSize)
+                      .map((bon: any, idx: number) => {
+                        const globalIdx = (bonPage - 1) * bonPageSize + idx;
+                        const bonNumber = sortOrder === "ASC" ? globalIdx + 1 : allKasbonEntries.length - globalIdx;
+                        const cleanLabel = String(bon.label || "").replace(/^ID Bon:\s*/i, "");
+                        const isExpanded = !!expandedBonIds[bon.id];
+                        const totalBarang = Array.isArray(bon.items) ? bon.items.length : 0;
+                        const payStatus = bonStatusMap[bon.id] || "BELUM_LUNAS";
+
+                        return (
+                          <div
+                            key={bon.id}
+                            className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandBon(bon.id)}
+                              className="w-full p-3.5 text-left flex items-center justify-between gap-3 cursor-pointer"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-xs text-slate-900 dark:text-zinc-100">
+                                    Bon {bonNumber}
+                                  </span>
+                                  <span className="text-[11px] font-mono text-slate-400">
+                                    {cleanLabel}
+                                  </span>
+                                  {payStatus === "LUNAS" ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200/80">
+                                      Lunas
+                                    </span>
+                                  ) : payStatus === "CICIL" ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80">
+                                      Cicilan
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/80">
+                                      Belum Lunas
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-1">
+                                  {formatDayDate(bon.dibuatPada)} · {totalBarang} barang
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0 flex items-center gap-2">
+                                <span className="font-bold text-sm text-slate-900 dark:text-zinc-100 tabular-nums">
+                                  {formatRupiah(bon.sisa > 0 ? bon.sisa : bon.total)}
+                                </span>
+                                <ChevronDown
+                                  className={`w-4 h-4 text-slate-400 transition-transform ${
+                                    isExpanded ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </div>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2.5 bg-slate-50/60 dark:bg-zinc-900/60">
+                                {(bon.subEntries || [bon]).map((sub: any, sIdx: number) => {
+                                  const subJam = new Date(sub.dibuatPada).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                                  return (
+                                    <div
+                                      key={sub.id || sIdx}
+                                      className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3 space-y-2 text-xs"
+                                    >
+                                      <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] pb-1.5 border-b border-slate-100 dark:border-zinc-800">
+                                        <span>
+                                          Diambil oleh <strong>{sub.pengambil}</strong> · Jam {subJam} WIB
+                                        </span>
+                                        <span className="text-slate-400">Kasir: {sub.kasir}</span>
+                                      </div>
+                                      <div className="space-y-1">
+                                        {(sub.items || []).map((it: any, iIdx: number) => (
+                                          <div key={it.id || iIdx} className="flex justify-between gap-2">
+                                            <span className="text-slate-800 dark:text-zinc-200">
+                                              {it.nama}{" "}
+                                              <span className="text-slate-400">
+                                                ({formatDecimal(it.qty)} {it.satuan})
+                                              </span>
+                                            </span>
+                                            <span className="font-semibold tabular-nums shrink-0">
+                                              {formatRupiah(it.subtotal)}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                <div className="flex items-center justify-between pt-1">
+                                  <span className="text-xs text-slate-500">
+                                    Sisa: <strong className="text-rose-600">{formatRupiah(bon.sisa)}</strong>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={member.saldoUtangCache <= 0}
+                                    onClick={() => handleOpenPayForBon(bon)}
+                                    className="h-9 px-3.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold disabled:opacity-40"
+                                  >
+                                    Bayar bon ini
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  <table className="hidden md:table w-full text-left text-xs text-slate-600 dark:text-zinc-300">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                       <tr>
                         <th className="py-3 pr-4">ID Bon</th>
@@ -2253,13 +2382,12 @@ export default function MemberDetailPage() {
                                   />
                                 </td>
                                 <td className="py-2 px-1">
-                                  <input
-                                    type="number"
-                                    step="any"
+                                  <NumberInput
                                     min={0.1}
+                                    emptyFallback={1}
                                     required
                                     value={item.qty}
-                                    onChange={(e) => handleManualItemChange(idx, "qty", e.target.value)}
+                                    onChange={(val) => handleManualItemChange(idx, "qty", String(val))}
                                     className="w-full px-1.5 h-8 bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent hover:border-slate-200 focus:border-blue-500 rounded-lg text-xs font-semibold text-center text-slate-800 dark:text-zinc-100 focus:outline-none transition-colors"
                                   />
                                 </td>
@@ -2562,13 +2690,12 @@ export default function MemberDetailPage() {
                                 />
                               </td>
                               <td className="py-2 px-2">
-                                <input
-                                  type="number"
-                                  step="any"
+                                <NumberInput
                                   min={0.1}
+                                  emptyFallback={1}
                                   required
                                   value={item.qty}
-                                  onChange={(e) => handleEditItemChange(idx, "qty", e.target.value)}
+                                  onChange={(val) => handleEditItemChange(idx, "qty", String(val))}
                                   className="w-full px-2 h-8 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs font-semibold text-center text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                               </td>
@@ -2702,6 +2829,17 @@ export default function MemberDetailPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isReconcileOpen}
+        title="Audit Rekonsiliasi Kasbon?"
+        description="Sistem akan membandingkan saldo kasbon pelanggan dengan seluruh mutasi ledger."
+        confirmText="Ya, Jalankan Audit"
+        variant="default"
+        loading={reconciling}
+        onConfirm={confirmReconcile}
+        onCancel={() => !reconciling && setIsReconcileOpen(false)}
+      />
     </div>
   );
 }

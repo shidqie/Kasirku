@@ -26,6 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/owner/laporan": "Laporan",
   "/owner/produk-terlaris": "Produk Terlaris",
   "/owner/go-live": "Checklist Go-Live",
+  "/admin": "Platform Console",
 };
 
 export function Navbar({ storeName, onMenuToggle }: NavbarProps) {
@@ -72,7 +73,7 @@ export function Navbar({ storeName, onMenuToggle }: NavbarProps) {
   return (
     <header className="h-16 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/90 dark:bg-[#18181B]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] z-10 transition-all">
       <div className="flex items-center gap-3">
-        {onMenuToggle && (
+        {onMenuToggle && pathname === "/kasir" && (
           <button
             onClick={onMenuToggle}
             className="lg:hidden w-10 h-10 rounded-full bg-slate-50 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 shadow-sm text-slate-600 dark:text-zinc-300 hover:text-slate-900 flex items-center justify-center transition-colors"

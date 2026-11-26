@@ -406,4 +406,52 @@ thead.sticky th {
   }
 }
 
+/* Global Smooth Transitions & Scrolling */
+:root {
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  transition: background-color 240ms var(--ease-smooth), color 240ms var(--ease-smooth);
+}
+
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+tbody tr {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-smooth);
+}
+
+.drawer-backdrop {
+  animation: drawer-backdrop-in 260ms var(--ease-smooth) forwards;
+}
+
+.drawer-panel {
+  animation: drawer-slide-in 320ms var(--ease-smooth) forwards;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
 

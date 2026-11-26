@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { rejectOpname } from "@/services/opname.service";
 import { rejectOpnameSchema } from "@/lib/validations/opname.schema";
 
@@ -8,7 +9,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
+  if (!session || !hasPermission(session, "stok:opname_approve")) {
     return NextResponse.json({ error: "Akses ditolak. Penolakan opname hanya untuk Pemilik Toko." }, { status: 403 });
   }
 

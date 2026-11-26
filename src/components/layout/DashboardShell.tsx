@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { MotionConfig, motion } from "motion/react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
+import { BottomNavbar } from "@/components/layout/BottomNavbar";
 import { SessionPayload } from "@/lib/auth/session";
 
 interface DashboardShellProps {
@@ -19,9 +20,9 @@ export function DashboardShell({ user, storeName, children }: DashboardShellProp
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen w-full bg-white dark:bg-[#121214] flex flex-col transition-colors">
+      <div className="min-h-screen w-full bg-white dark:bg-[#121214] flex flex-col transition-colors overflow-x-hidden">
         {/* Full Page Shell Container */}
-        <div className="w-full h-screen flex overflow-hidden">
+        <div className="w-full h-screen h-dvh flex overflow-hidden">
           {/* Sidebar Component */}
           <Sidebar
             user={user}
@@ -36,17 +37,27 @@ export function DashboardShell({ user, storeName, children }: DashboardShellProp
               storeName={storeName}
               onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
             />
-            <main className="flex-1 min-h-0 flex flex-col overflow-y-auto relative px-4 sm:px-8 pb-6 pt-4">
+            <main
+              className={`flex-1 min-h-0 flex flex-col overflow-y-auto relative px-4 sm:px-8 pt-4 ${
+                pathname === "/kasir" ? "pb-6" : "pb-24 lg:pb-6"
+              }`}
+            >
               <motion.div
                 key={pathname}
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                className="flex-1 min-h-0 flex flex-col"
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-1 lg:min-h-0 flex flex-col"
               >
                 {children}
               </motion.div>
             </main>
+            <Suspense fallback={null}>
+              <BottomNavbar
+                user={user}
+                onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
+              />
+            </Suspense>
           </div>
         </div>
       </div>

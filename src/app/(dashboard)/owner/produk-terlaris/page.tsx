@@ -5,6 +5,7 @@ import { RefreshCw, X, ArrowUpDown } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import { Pagination } from "@/components/shared/Pagination";
+import { Dropdown } from "@/components/shared/Dropdown";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 
 interface TopProductItem {
@@ -125,7 +126,7 @@ export default function ProdukTerlarisPage() {
   );
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Filter Fixed */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -232,21 +233,20 @@ export default function ProdukTerlarisPage() {
               )}
             </div>
 
-            <select
+            <Dropdown
+              variant="underline"
+              ariaLabel="Filter kategori produk terlaris"
               value={selectedKategori}
-              onChange={(e) => {
-                setSelectedKategori(e.target.value);
+              onChange={(val) => {
+                setSelectedKategori(val);
                 setCurrentPage(1);
               }}
-              className="h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-slate-900 dark:focus:border-white"
-            >
-              <option value="ALL">Semua kategori</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              searchPlaceholder="Cari kategori..."
+              options={[
+                { value: "ALL", label: "Semua kategori" },
+                ...categories.map((cat) => ({ value: cat, label: cat })),
+              ]}
+            />
 
             <button
               type="button"

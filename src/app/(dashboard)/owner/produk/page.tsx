@@ -21,10 +21,15 @@ import {
   ListFilter,
   Save,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
+import { Dropdown } from "@/components/shared/Dropdown";
+import { NumberInput } from "@/components/shared/NumberInput";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
+import { HargaNaikModal } from "@/components/produk/HargaNaikModal";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 interface SatuanInput {
   id?: string;
@@ -72,6 +77,9 @@ function TabProduk() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM">("FORM");
+  const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [scannerRowProductId, setScannerRowProductId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [detailProduct, setDetailProduct] = useState<{ product: ProductItem; idBarang: string } | null>(null);
@@ -161,23 +169,23 @@ function TabProduk() {
     setSavingInDrawer(true);
 
     if (!nama.trim()) {
-      alert("Nama produk tidak boleh kosong");
+      setError("Nama produk tidak boleh kosong");
       setSavingInDrawer(false);
       return;
     }
     if (!satuanDasar.trim()) {
-      alert("Satuan dasar tidak boleh kosong");
+      setError("Satuan dasar tidak boleh kosong");
       setSavingInDrawer(false);
       return;
     }
     for (const s of satuanList) {
       if (!s.namaSatuan.trim()) {
-        alert("Nama satuan tidak boleh kosong");
+        setError("Nama satuan tidak boleh kosong");
         setSavingInDrawer(false);
         return;
       }
       if (s.faktorKeDasar <= 0) {
-        alert("Isi / faktor konversi harus lebih dari 0");
+        setError("Isi / faktor konversi harus lebih dari 0");
         setSavingInDrawer(false);
         return;
       }
@@ -209,7 +217,7 @@ function TabProduk() {
       }
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Gagal menyimpan produk");
+      setError(err.message || "Gagal menyimpan produk");
     } finally {
       setSavingInDrawer(false);
     }
@@ -312,36 +320,52 @@ function TabProduk() {
     }
   };
 
-  const handleDelete = async (p: ProductItem) => {
-    if (!confirm(`Nonaktifkan produk "${p.nama}"?`)) return;
+  const handleDelete = (p: ProductItem) => {
+    setDeleteTarget(p);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/products/${p.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/products/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan produk");
 
-      setSuccess(`Produk "${p.nama}" berhasil dinonaktifkan`);
+      setSuccess(`Produk "${deleteTarget.nama}" berhasil dinonaktifkan`);
+      setDeleteTarget(null);
       fetchData();
     } catch (err: any) {
       setError(err.message);
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Filter Fixed at Top */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Master Produk &amp; Harga
+              Daftar Produk &amp; Harga
             </h2>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
               Kelola produk sembako, multi-satuan, harga jual/beli, dan stok minimum.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
+            <button
+              onClick={() => setIsHargaNaikOpen(true)}
+              className="h-10 px-3.5 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              title="Naikkan harga jual produk dengan cepat"
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Harga Naik</span>
+            </button>
             <button
               onClick={() => {
                 setScannerTarget("SEARCH");
@@ -390,21 +414,20 @@ function TabProduk() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap pb-2.5">
-            <select
+            <Dropdown
+              variant="underline"
+              ariaLabel="Filter kategori produk"
               value={selectedKategori}
-              onChange={(e) => {
-                setSelectedKategori(e.target.value);
+              onChange={(val) => {
+                setSelectedKategori(val);
                 setCurrentPage(1);
               }}
-              className="h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-slate-900 dark:focus:border-white pr-2"
-            >
-              <option value="">Semua kategori</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nama}
-                </option>
-              ))}
-            </select>
+              searchPlaceholder="Cari kategori..."
+              options={[
+                { value: "", label: "Semua kategori" },
+                ...categories.map((c) => ({ value: c.id, label: c.nama })),
+              ]}
+            />
 
             <div className="relative flex-1 sm:w-52">
               <input
@@ -440,22 +463,20 @@ function TabProduk() {
         <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
-                <th className="py-3 pr-4 whitespace-nowrap">ID barang</th>
-                <th className="py-3 px-3 whitespace-nowrap">Barcode</th>
-                <th className="py-3 px-3">Nama barang</th>
-                <th className="py-3 px-3 whitespace-nowrap">Kategori</th>
-                <th className="py-3 px-3 whitespace-nowrap">Satuan</th>
-                <th className="py-3 px-3 text-right whitespace-nowrap">Harga (eceran)</th>
-                <th className="py-3 px-3 text-center whitespace-nowrap">Stok saat ini</th>
+                <th className="py-3 pr-4 whitespace-nowrap">ID</th>
+                <th className="py-3 px-4">Nama Produk</th>
+                <th className="py-3 px-4 whitespace-nowrap">Kategori</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Harga Jual</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Stok</th>
                 <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
               {loading ? (
-                <TableSkeletonRows rows={8} cols={8} />
+                <TableSkeletonRows rows={8} cols={6} />
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-slate-400">
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
                     Tidak ada produk yang cocok.
                   </td>
                 </tr>
@@ -501,79 +522,38 @@ function TabProduk() {
                   const idBarang = `BRG-${String(globalIdx).padStart(3, "0")}`;
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                      {/* ID Barang */}
-                      <td className="py-3 pr-4">
-                        <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    <tr key={p.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+                      {/* ID */}
+                      <td className="py-3.5 pr-4 whitespace-nowrap">
+                        <span className="text-xs font-mono text-slate-500 dark:text-zinc-400">
                           {idBarang}
                         </span>
                       </td>
 
-                      {/* Barcode */}
-                      <td className="py-3 px-3">
-                        {p.barcode ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-mono text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded whitespace-nowrap">
-                              {p.barcode}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setScannerRowProductId(p.id);
-                                setIsScannerOpen(true);
-                              }}
-                              className="text-[10px] font-medium text-slate-400 hover:text-blue-600 transition-colors whitespace-nowrap"
-                              title="Ganti barcode"
-                            >
-                              Ganti
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setScannerRowProductId(p.id);
-                              setIsScannerOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md text-slate-400 hover:text-amber-700 hover:bg-amber-50 transition-colors border border-dashed border-slate-200 hover:border-amber-300 whitespace-nowrap"
-                          >
-                            <Barcode className="w-3 h-3" />
-                            <span>+ Barcode</span>
-                          </button>
-                        )}
-                      </td>
-
-                      {/* Nama Barang */}
-                      <td className="py-3 px-3 min-w-[160px]">
-                        <span className="font-semibold text-slate-900 text-sm leading-tight">
+                      {/* Nama Produk */}
+                      <td className="py-3.5 px-4 min-w-[180px]">
+                        <span className="font-semibold text-slate-900 dark:text-zinc-100 text-sm leading-tight">
                           {p.nama}
                         </span>
                       </td>
 
                       {/* Kategori */}
-                      <td className="py-3 px-3">
-                        <span className="text-xs text-slate-600 whitespace-nowrap">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="text-xs text-slate-600 dark:text-zinc-300">
                           {p.kategori?.nama || <span className="text-slate-400 italic">Umum</span>}
                         </span>
                       </td>
 
-                      {/* Satuan (eceran) */}
-                      <td className="py-3 px-3">
-                        <span className="text-xs font-medium text-slate-700 capitalize">
-                          {satuanEceran?.namaSatuan || p.satuanDasar}
-                        </span>
-                      </td>
-
-                      {/* Harga (Eceran) */}
-                      <td className="py-3 px-3 text-right">
-                        <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
+                      {/* Harga Jual */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
                           {formatRupiah(hargaEceran)}
                         </span>
                       </td>
 
-                      {/* Stok Saat Ini */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+                      {/* Stok */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5">
                           {isLowStock && (
                             <span
                               className={`inline-block w-2 h-2 rounded-full shrink-0 ${
@@ -582,14 +562,14 @@ function TabProduk() {
                               title={isHabis ? "Stok habis" : "Stok menipis"}
                             />
                           )}
-                          <span className={`text-sm font-bold ${
-                            isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900"
+                          <span className={`text-sm font-semibold tabular-nums ${
+                            isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"
                           }`}>
                             {formatDecimal(stok)}
                           </span>
                         </div>
                         {konversiStokDisplay !== null && (
-                          <div className="text-[10px] text-slate-400 font-normal mt-0.5 whitespace-nowrap">
+                          <div className="text-[10px] text-slate-400 font-normal mt-0.5">
                             ≈ {konversiStokDisplay} {satuanGrosir?.namaSatuan}
                           </div>
                         )}
@@ -795,15 +775,14 @@ function TabProduk() {
                                 />
                               </td>
                               <td className="py-2 px-1 text-center">
-                                <input
-                                  type="number"
-                                  step="any"
+                                <NumberInput
                                   min={0.001}
+                                  emptyFallback={1}
                                   required
                                   value={s.faktorKeDasar}
-                                  onChange={(e) => {
+                                  onChange={(val) => {
                                     const u = [...satuanList];
-                                    u[idx].faktorKeDasar = parseFloat(e.target.value || "1");
+                                    u[idx].faktorKeDasar = val;
                                     setSatuanList(u);
                                   }}
                                   className="w-14 text-center px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-[#F0090F]"
@@ -859,18 +838,21 @@ function TabProduk() {
                         {p.kategori?.nama || "Umum"}
                       </span>
                     ) : (
-                      <select
-                        value={kategoriId}
-                        onChange={(e) => setKategoriId(e.target.value)}
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-[#F0090F]"
-                      >
-                        <option value="">-- Pilih Kategori --</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.nama}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="w-48">
+                        <Dropdown
+                          variant="box"
+                          ariaLabel="Pilih kategori produk"
+                          value={kategoriId}
+                          onChange={setKategoriId}
+                          placeholder="-- Pilih Kategori --"
+                          searchPlaceholder="Cari kategori..."
+                          align="right"
+                          options={[
+                            { value: "", label: "-- Pilih Kategori --" },
+                            ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                          ]}
+                        />
+                      </div>
                     )}
                   </div>
 
@@ -928,11 +910,11 @@ function TabProduk() {
                         {formatDecimal(min)}
                       </span>
                     ) : (
-                      <input
-                        type="number"
+                      <NumberInput
                         min={0}
+                        emptyFallback={0}
                         value={stokMinimum}
-                        onChange={(e) => setStokMinimum(Number(e.target.value))}
+                        onChange={setStokMinimum}
                         className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-20 text-right focus:outline-none focus:border-[#F0090F]"
                       />
                     )}
@@ -1030,18 +1012,20 @@ function TabProduk() {
                   <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
                     Kategori
                   </label>
-                  <select
-                    value={kategoriId}
-                    onChange={(e) => setKategoriId(e.target.value)}
-                    className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    <option value="">-- Pilih Kategori --</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-1.5">
+                    <Dropdown
+                      variant="box"
+                      ariaLabel="Pilih kategori produk"
+                      value={kategoriId}
+                      onChange={setKategoriId}
+                      placeholder="-- Pilih Kategori --"
+                      searchPlaceholder="Cari kategori..."
+                      options={[
+                        { value: "", label: "-- Pilih Kategori --" },
+                        ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                      ]}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1160,12 +1144,11 @@ function TabProduk() {
                     <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
                       Stok Min
                     </label>
-                    <input
-                      type="number"
-                      step="any"
+                    <NumberInput
                       min={0}
+                      emptyFallback={0}
                       value={stokMinimum}
-                      onChange={(e) => setStokMinimum(parseFloat(e.target.value || "0"))}
+                      onChange={setStokMinimum}
                       className="w-full mt-1.5 px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
@@ -1248,15 +1231,14 @@ function TabProduk() {
                         <label className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
                           Isi ({satuanDasar})
                         </label>
-                        <input
-                          type="number"
-                          step="any"
+                        <NumberInput
                           min={0.001}
+                          emptyFallback={1}
                           required
                           value={s.faktorKeDasar}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const updated = [...satuanList];
-                            updated[idx].faktorKeDasar = parseFloat(e.target.value || "1");
+                            updated[idx].faktorKeDasar = val;
                             setSatuanList(updated);
                           }}
                           className="w-full px-2 h-9 bg-white border border-slate-200 rounded-lg text-xs font-sans"
@@ -1382,7 +1364,7 @@ function TabProduk() {
               });
               const data = await res.json();
               if (!res.ok) {
-                alert(data.error || "Gagal menyimpan barcode");
+                setError(data.error || "Gagal menyimpan barcode");
                 return;
               }
               setSuccess(`Barcode ${cleanCode} berhasil disimpan ke produk!`);
@@ -1390,7 +1372,7 @@ function TabProduk() {
               setScannerRowProductId(null);
               fetchData();
             } catch (err: any) {
-              alert(err.message || "Gagal menghubungi server");
+              setError(err.message || "Gagal menghubungi server");
             }
           } else if (scannerTarget === "FORM") {
             setBarcode(cleanCode);
@@ -1401,13 +1383,40 @@ function TabProduk() {
           }
         }}
       />
+
+      <HargaNaikModal
+        isOpen={isHargaNaikOpen}
+        onClose={() => setIsHargaNaikOpen(false)}
+        products={products}
+        categories={categories}
+        onSuccess={(msg) => {
+          setSuccess(msg);
+          fetchData();
+        }}
+        onError={(msg) => setError(msg)}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title="Nonaktifkan Produk?"
+        description={
+          deleteTarget
+            ? `Produk "${deleteTarget.nama}" akan dinonaktifkan dari daftar kasir.`
+            : ""
+        }
+        confirmText="Ya, Nonaktifkan"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => !deleting && setDeleteTarget(null)}
+      />
     </div>
   );
 }
 
 function ProdukContent() {
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       <TabProduk />
     </div>
   );

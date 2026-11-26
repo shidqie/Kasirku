@@ -5,6 +5,7 @@ import { Pencil, Trash2, AlertCircle, CheckCircle, RefreshCw, X } from "lucide-r
 import { Pagination } from "@/components/shared/Pagination";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 interface CategoryItem {
   id: string;
@@ -23,6 +24,8 @@ export default function CategoriesPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [namaInput, setNamaInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,25 +94,33 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDelete = async (cat: CategoryItem) => {
-    if (!confirm(`Hapus kategori "${cat.nama}"?`)) return;
+  const handleDelete = (cat: CategoryItem) => {
+    setDeleteTarget(cat);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(`/api/categories/${cat.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/categories/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal menghapus kategori");
 
-      setSuccess(`Kategori "${cat.nama}" berhasil dihapus`);
+      setSuccess(`Kategori "${deleteTarget.nama}" berhasil dihapus`);
+      setDeleteTarget(null);
       fetchCategories();
     } catch (err: any) {
       setError(err.message);
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header Fixed */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -282,6 +293,21 @@ export default function CategoriesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title="Hapus Kategori?"
+        description={
+          deleteTarget
+            ? `Apakah Anda yakin ingin menghapus kategori "${deleteTarget.nama}"?`
+            : ""
+        }
+        confirmText="Ya, Hapus"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => !deleting && setDeleteTarget(null)}
+      />
     </div>
   );
 }

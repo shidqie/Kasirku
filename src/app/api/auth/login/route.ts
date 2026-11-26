@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { loginSchema } from "@/lib/validations/auth.schema";
 import { login } from "@/services/auth.service";
 import { encryptSession } from "@/lib/auth/session";
+import { getDefaultLandingRoute } from "@/lib/auth/permissions";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,9 +60,11 @@ export async function POST(req: NextRequest) {
       username: result.user.username,
       nama: result.user.nama,
       role: result.user.role,
+      tokoId: result.user.tokoId,
+      permissions: result.user.permissions,
     });
 
-    const targetUrl = result.user.role === "OWNER" ? "/owner/dashboard" : "/kasir";
+    const targetUrl = getDefaultLandingRoute(result.user.role);
 
     if (isFormData) {
       const res = NextResponse.redirect(new URL(targetUrl, baseUrl), 303);

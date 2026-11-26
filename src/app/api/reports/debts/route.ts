@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasAnyPermission } from "@/lib/auth/permissions";
 import { getDebtReport } from "@/services/report.service";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
+  if (!session || !hasAnyPermission(session, ["reports:debts", "reports:operational"])) {
     return NextResponse.json({ error: "Akses ditolak. Laporan utang hanya untuk Pemilik Toko." }, { status: 403 });
   }
 

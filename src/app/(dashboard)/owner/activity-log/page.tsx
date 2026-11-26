@@ -63,7 +63,7 @@ export default function ActivityLogPage() {
   }, [filterEntitas, filterAksi, currentPage]);
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Filter Fixed */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

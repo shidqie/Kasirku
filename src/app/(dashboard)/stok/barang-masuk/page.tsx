@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { PackagePlus, Plus, Trash2, CheckCircle, AlertCircle, RefreshCw, Search } from "lucide-react";
 import { formatRupiah, formatDecimal, formatDateTime } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
+import { Dropdown } from "@/components/shared/Dropdown";
+import { NumberInput } from "@/components/shared/NumberInput";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 
@@ -243,7 +245,7 @@ export default function BarangMasukPage() {
   );
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Tabs Fixed at Top */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -401,48 +403,50 @@ export default function BarangMasukPage() {
                           return (
                             <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/40">
                               <td className="py-2.5 px-3.5">
-                                <select
+                                <Dropdown
+                                  variant="underline"
+                                  searchable
+                                  className="w-full"
+                                  ariaLabel="Pilih produk barang masuk"
                                   value={row.produkId}
-                                  onChange={(e) => handleProductChange(idx, e.target.value)}
-                                  className="w-full bg-transparent text-xs font-semibold text-slate-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-                                >
-                                  {products.map((prod) => (
-                                    <option key={prod.id} value={prod.id}>
-                                      {prod.nama}
-                                    </option>
-                                  ))}
-                                </select>
+                                  onChange={(val) => handleProductChange(idx, val)}
+                                  searchPlaceholder="Cari barang..."
+                                  options={products.map((prod) => ({
+                                    value: prod.id,
+                                    label: prod.nama,
+                                  }))}
+                                />
                                 <span className="text-[10px] text-emerald-600 font-medium block mt-0.5 tabular-nums">
                                   +{formatDecimal(konversiTotal)} {row.satuanDasar}
                                 </span>
                               </td>
                               <td className="py-2.5 px-2">
-                                <input
-                                  type="number"
-                                  step="any"
+                                <NumberInput
                                   min={0.001}
+                                  emptyFallback={1}
                                   required
                                   value={row.qty}
-                                  onChange={(e) => {
+                                  onChange={(val) => {
                                     const updated = [...items];
-                                    updated[idx].qty = parseFloat(e.target.value || "0");
+                                    updated[idx].qty = val;
                                     setItems(updated);
                                   }}
                                   className="w-20 bg-transparent text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none tabular-nums"
                                 />
                               </td>
                               <td className="py-2.5 px-2">
-                                <select
+                                <Dropdown
+                                  variant="underline"
+                                  searchable={false}
+                                  className="w-full"
+                                  ariaLabel="Pilih satuan barang masuk"
                                   value={row.namaSatuan}
-                                  onChange={(e) => handleSatuanChange(idx, e.target.value)}
-                                  className="w-full bg-transparent text-xs text-slate-700 dark:text-zinc-300 focus:outline-none cursor-pointer"
-                                >
-                                  {p?.satuanProduk.map((sat) => (
-                                    <option key={sat.id} value={sat.namaSatuan}>
-                                      {sat.namaSatuan}
-                                    </option>
-                                  ))}
-                                </select>
+                                  onChange={(val) => handleSatuanChange(idx, val)}
+                                  options={(p?.satuanProduk || []).map((sat) => ({
+                                    value: sat.namaSatuan,
+                                    label: sat.namaSatuan,
+                                  }))}
+                                />
                               </td>
                               <td className="py-2.5 px-2">
                                 <div className="flex items-center justify-end gap-1.5">

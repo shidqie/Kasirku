@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { CardListSkeleton, DetailPageSkeleton, TableSkeletonRows } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import { Pagination } from "@/components/shared/Pagination";
+import { NumberInput } from "@/components/shared/NumberInput";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ClipboardCheck,
@@ -214,15 +216,12 @@ function TabHitungFisik() {
                               </td>
                               <td className="py-3 px-3">
                                 <div className="flex items-center justify-center gap-1.5">
-                                  <input
-                                    type="number"
-                                    step="any"
+                                  <NumberInput
                                     min={0}
+                                    emptyFallback={0}
                                     required
                                     value={fisik}
-                                    onChange={(e) =>
-                                      handleStokFisikChange(p.id, parseFloat(e.target.value || "0"))
-                                    }
+                                    onChange={(val) => handleStokFisikChange(p.id, val)}
                                     className="w-24 px-3 h-9 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-center font-sans font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:border-transparent"
                                     style={{ "--tw-ring-color": "var(--primary)" } as any}
                                   />
@@ -444,24 +443,31 @@ function TabPersetujuan() {
     fetchOpnames();
   }, []);
 
-  const handleApprove = async (opnameId: string) => {
-    if (!confirm("Setujui opname ini? Stok produk akan otomatis disesuaikan dengan mutasi OPNAME.")) return;
+  const [approveTargetId, setApproveTargetId] = useState<string | null>(null);
 
+  const handleApprove = (opnameId: string) => {
+    setApproveTargetId(opnameId);
+  };
+
+  const confirmApprove = async () => {
+    if (!approveTargetId) return;
     setProcessing(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const res = await fetch(`/api/opname/${opnameId}/approve`, {
+      const res = await fetch(`/api/opname/${approveTargetId}/approve`, {
         method: "POST",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal menyetujui opname");
 
       setSuccess("Stok opname berhasil disetujui! Seluruh saldo stok telah diperbarui.");
+      setApproveTargetId(null);
       fetchOpnames();
     } catch (err: any) {
       setError(err.message);
+      setApproveTargetId(null);
     } finally {
       setProcessing(false);
     }
@@ -698,6 +704,17 @@ function TabPersetujuan() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(approveTargetId)}
+        title="Setujui Stok Opname?"
+        description="Stok produk akan otomatis disesuaikan dengan mutasi OPNAME."
+        confirmText="Ya, Setujui"
+        variant="default"
+        loading={processing}
+        onConfirm={confirmApprove}
+        onCancel={() => !processing && setApproveTargetId(null)}
+      />
     </div>
   );
 }
@@ -716,7 +733,7 @@ function StokOpnameContent() {
   }, []);
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       <div className="shrink-0 flex items-center gap-6 border-b border-slate-200 dark:border-zinc-800 text-xs">
         <button
           onClick={() => router.push("/stok/opname")}
@@ -738,7 +755,7 @@ function StokOpnameContent() {
         >
           Riwayat
         </button>
-        {userRole === "OWNER" && (
+        {(userRole === "OWNER" || userRole === "KEPALA_TOKO") && (
           <button
             onClick={() => router.push("/stok/opname?tab=persetujuan")}
             className={`pb-3 border-b-2 transition-colors cursor-pointer ${
@@ -747,13 +764,13 @@ function StokOpnameContent() {
                 : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
             }`}
           >
-            Persetujuan Owner
+            Persetujuan
           </button>
         )}
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-4">
-        {activeTab === "persetujuan" && userRole === "OWNER" ? (
+        {activeTab === "persetujuan" && (userRole === "OWNER" || userRole === "KEPALA_TOKO") ? (
           <TabPersetujuan />
         ) : activeTab === "riwayat" ? (
           <TabRiwayat />

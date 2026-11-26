@@ -8,7 +8,11 @@ generator client {
 }
 
 enum Role {
+  SUPER_ADMIN
   OWNER
+  KEPALA_TOKO
+  STAFF_KASIR
+  STAFF_GUDANG
   STAFF
 }
 
@@ -59,6 +63,8 @@ model User {
   username     String   @unique
   nama         String
   role         Role
+  tokoId       String   @default("default") @map("toko_id")
+  permissions  String[] @default([])
   passwordHash String   @map("password_hash")
   aktif        Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
@@ -100,6 +106,9 @@ model PengaturanToko {
   qrisPayload         String?    @map("qris_payload")
   qrisStaticImage     String?    @map("qris_static_image")
   logoToko            String?    @map("logo_toko")
+  statusLayanan       String     @default("AKTIF") @map("status_layanan")
+  paketLangganan      String     @default("PRO") @map("paket_langganan")
+  berlakuHingga       DateTime?  @map("berlaku_hingga")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
   @@map("pengaturan_toko")

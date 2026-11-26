@@ -23,10 +23,14 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { NumberInput } from "@/components/shared/NumberInput";
+import { Dropdown } from "@/components/shared/Dropdown";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { formatRupiah, formatDate } from "@/lib/formatters";
 import { FormSkeleton, TableSkeletonRows } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import { isValidQrisPayload, extractQrisMerchantName } from "@/lib/qris";
+import { DELEGATABLE_PERMISSIONS, getRoleLabel } from "@/lib/auth/permissions";
 import {
   ACCENT_PRESETS,
   AccentColor,
@@ -60,7 +64,8 @@ interface UserItem {
   id: string;
   username: string;
   nama: string;
-  role: "OWNER" | "STAFF";
+  role: string;
+  permissions?: string[];
   aktif: boolean;
   createdAt: string;
 }
@@ -295,20 +300,23 @@ function TabToko() {
               <label className="field-label">
                 Aturan pembulatan kasir
               </label>
-              <select
+              <Dropdown
+                variant="box"
+                searchable={false}
+                ariaLabel="Aturan pembulatan kasir"
                 value={settings.pembulatan}
-                onChange={(e) =>
+                onChange={(val) =>
                   setSettings({
                     ...settings,
-                    pembulatan: e.target.value as "BULAT_0" | "BULAT_100" | "BULAT_500",
+                    pembulatan: val as "BULAT_0" | "BULAT_100" | "BULAT_500",
                   })
                 }
-                className="ctl"
-              >
-                <option value="BULAT_0">Tanpa Pembulatan (Rp 0)</option>
-                <option value="BULAT_100">Bulatkan ke Ratusan Terdekat (Rp 100)</option>
-                <option value="BULAT_500">Bulatkan ke Lima Ratus Terdekat (Rp 500)</option>
-              </select>
+                options={[
+                  { value: "BULAT_0", label: "Tanpa Pembulatan (Rp 0)" },
+                  { value: "BULAT_100", label: "Bulatkan ke Ratusan Terdekat (Rp 100)" },
+                  { value: "BULAT_500", label: "Bulatkan ke Lima Ratus Terdekat (Rp 500)" },
+                ]}
+              />
             </div>
           </div>
 
@@ -342,12 +350,13 @@ function TabToko() {
               <label className="field-label">
                 Ambang utang kasbon lama (hari)
               </label>
-              <input
-                type="number"
+              <NumberInput
+                integer
                 min={1}
+                emptyFallback={30}
                 value={settings.ambangUtangLamaHari}
-                onChange={(e) =>
-                  setSettings({ ...settings, ambangUtangLamaHari: parseInt(e.target.value || "30", 10) })
+                onChange={(val) =>
+                  setSettings({ ...settings, ambangUtangLamaHari: val })
                 }
                 className="ctl"
               />
@@ -722,12 +731,38 @@ function TabPengguna() {
   const [newUsername, setNewUsername] = useState("");
   const [newNama, setNewNama] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<"STAFF" | "OWNER">("STAFF");
+  const [newRole, setNewRole] = useState<string>("STAFF_KASIR");
   const [submittingAdd, setSubmittingAdd] = useState(false);
 
   const [selectedUserForReset, setSelectedUserForReset] = useState<UserItem | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [submittingReset, setSubmittingReset] = useState(false);
+
+  const [delegatingUser, setDelegatingUser] = useState<(UserItem & { permissions?: string[] }) | null>(null);
+  const [delegatedPerms, setDelegatedPerms] = useState<string[]>([]);
+  const [savingDelegation, setSavingDelegation] = useState(false);
+
+  const handleSaveDelegation = async () => {
+    if (!delegatingUser) return;
+    try {
+      setSavingDelegation(true);
+      setError(null);
+      const res = await fetch(`/api/users/${delegatingUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissions: delegatedPerms }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan delegasi izin");
+      setSuccess(`Delegasi izin untuk ${delegatingUser.nama} berhasil diperbarui.`);
+      setDelegatingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingDelegation(false);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -782,23 +817,33 @@ function TabPengguna() {
     }
   };
 
-  const handleToggleAktif = async (user: UserItem) => {
-    const actionName = user.aktif ? "menonaktifkan" : "mengaktifkan";
-    if (!confirm(`Apakah Anda yakin ingin ${actionName} akun "${user.username}"?`)) return;
+  const [toggleTarget, setToggleTarget] = useState<UserItem | null>(null);
+  const [togglingUser, setTogglingUser] = useState(false);
 
+  const handleToggleAktif = (user: UserItem) => {
+    setToggleTarget(user);
+  };
+
+  const confirmToggleAktif = async () => {
+    if (!toggleTarget) return;
+    setTogglingUser(true);
     try {
-      const res = await fetch(`/api/users/${user.id}`, {
+      const res = await fetch(`/api/users/${toggleTarget.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aktif: !user.aktif }),
+        body: JSON.stringify({ aktif: !toggleTarget.aktif }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal mengubah status pengguna");
 
-      setSuccess(`Status akun ${user.username} berhasil diubah.`);
+      setSuccess(`Status akun ${toggleTarget.username} berhasil diubah.`);
+      setToggleTarget(null);
       fetchUsers();
     } catch (err: any) {
       setError(err.message);
+      setToggleTarget(null);
+    } finally {
+      setTogglingUser(false);
     }
   };
 
@@ -895,11 +940,18 @@ function TabPengguna() {
                         className={`text-xs font-semibold ${
                           user.role === "OWNER"
                             ? "text-blue-600"
+                            : user.role === "KEPALA_TOKO"
+                            ? "text-purple-600"
                             : "text-slate-700 dark:text-zinc-300"
                         }`}
                       >
-                        {user.role === "OWNER" ? "Pemilik" : "Staff"}
+                        {getRoleLabel(user.role)}
                       </span>
+                      {Array.isArray((user as any).permissions) && (user as any).permissions.length > 0 && (
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-[10px] font-medium text-slate-600 dark:text-zinc-300">
+                          +{(user as any).permissions.length} izin
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4">
                       <span
@@ -917,6 +969,19 @@ function TabPengguna() {
                     </td>
                     <td className="py-3.5 pl-4 text-center whitespace-nowrap">
                       <div className="inline-flex items-center justify-center gap-1">
+                        {user.role !== "OWNER" && (
+                          <button
+                            onClick={() => {
+                              setDelegatingUser(user as any);
+                              setDelegatedPerms(Array.isArray((user as any).permissions) ? (user as any).permissions : []);
+                            }}
+                            className="h-7 px-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Atur delegasi izin"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>Delegasi Izin</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedUserForReset(user);
@@ -1014,14 +1079,21 @@ function TabPengguna() {
                 <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
                   Peran / Hak Akses
                 </label>
-                <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value as "STAFF" | "OWNER")}
-                  className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-[#F0090F]"
-                >
-                  <option value="STAFF">Staff Toko (Kasir, Stok, Member)</option>
-                  <option value="OWNER">Pemilik Toko (Akses Penuh)</option>
-                </select>
+                <div className="mt-1.5">
+                  <Dropdown
+                    variant="box"
+                    searchable={false}
+                    ariaLabel="Peran atau hak akses"
+                    value={newRole}
+                    onChange={setNewRole}
+                    options={[
+                      { value: "STAFF_KASIR", label: "Staff 1 (Kasir)" },
+                      { value: "STAFF_GUDANG", label: "Staff 2 (Stok / Gudang)" },
+                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Pengawasan)" },
+                      { value: "OWNER", label: "Pemilik Toko (Akses Penuh)" },
+                    ]}
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 pt-3">
@@ -1041,6 +1113,68 @@ function TabPengguna() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {delegatingUser && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 space-y-4">
+            <div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                Delegasi Izin: {delegatingUser.nama}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                Peran: <strong>{getRoleLabel(delegatingUser.role)}</strong>. Pilih kewenangan tambahan yang didelegasikan oleh Pemilik Toko.
+              </p>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800 border border-slate-200 dark:border-zinc-800 rounded-xl">
+              {DELEGATABLE_PERMISSIONS.map((item) => {
+                const checked = delegatedPerms.includes(item.permission);
+                return (
+                  <label
+                    key={item.permission}
+                    className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setDelegatedPerms((prev) => [...prev, item.permission]);
+                        } else {
+                          setDelegatedPerms((prev) => prev.filter((p) => p !== item.permission));
+                        }
+                      }}
+                      className="mt-0.5 rounded border-slate-300"
+                    />
+                    <div className="text-xs">
+                      <p className="font-semibold text-slate-900 dark:text-zinc-100">{item.label}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">{item.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDelegatingUser(null)}
+                className="h-9 px-4 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-semibold cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={savingDelegation}
+                onClick={handleSaveDelegation}
+                className="h-9 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-50 cursor-pointer"
+              >
+                {savingDelegation ? "Menyimpan..." : "Simpan Delegasi Izin"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1089,6 +1223,21 @@ function TabPengguna() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(toggleTarget)}
+        title={toggleTarget?.aktif ? "Nonaktifkan Akun?" : "Aktifkan Akun?"}
+        description={
+          toggleTarget
+            ? `Apakah Anda yakin ingin ${toggleTarget.aktif ? "menonaktifkan" : "mengaktifkan"} akun "${toggleTarget.username}"?`
+            : ""
+        }
+        confirmText={toggleTarget?.aktif ? "Ya, Nonaktifkan" : "Ya, Aktifkan"}
+        variant={toggleTarget?.aktif ? "danger" : "default"}
+        loading={togglingUser}
+        onConfirm={confirmToggleAktif}
+        onCancel={() => !togglingUser && setToggleTarget(null)}
+      />
     </div>
   );
 }
@@ -1619,19 +1768,22 @@ function TabPembayaran() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="field-label">Mode QRIS Default di Kasir</label>
-              <select
+              <Dropdown
+                variant="box"
+                searchable={false}
+                ariaLabel="Mode QRIS default di kasir"
                 value={settings.qrisModeDefault || "DINAMIS"}
-                onChange={(e) =>
+                onChange={(val) =>
                   setSettings({
                     ...settings,
-                    qrisModeDefault: e.target.value as "DINAMIS" | "STATIS",
+                    qrisModeDefault: val as "DINAMIS" | "STATIS",
                   })
                 }
-                className="ctl"
-              >
-                <option value="DINAMIS">QRIS Dinamis (Nominal otomatis terisi)</option>
-                <option value="STATIS">QRIS Statis (Tampilkan kartu QRIS toko)</option>
-              </select>
+                options={[
+                  { value: "DINAMIS", label: "QRIS Dinamis (Nominal otomatis terisi)" },
+                  { value: "STATIS", label: "QRIS Statis (Tampilkan kartu QRIS toko)" },
+                ]}
+              />
             </div>
 
             <div>

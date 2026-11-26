@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeImageSchema } from "./image.schema";
 
 export const createMemberSchema = z.object({
   nama: z.string().min(2, "Nama member minimal 2 karakter"),
@@ -24,7 +25,7 @@ export const payDebtSchema = z
     metode: z.enum(["TUNAI", "TRANSFER"]),
     uangDiterima: z.number().int().optional(),
     catatan: z.string().nullable().optional(),
-    buktiUrl: z.string().nullable().optional(),
+    buktiUrl: safeImageSchema,
   })
   .refine((data) => data.metode !== "TRANSFER" || Boolean(data.buktiUrl?.trim()), {
     message: "Bukti pembayaran wajib diupload untuk metode Transfer / QRIS",

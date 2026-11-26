@@ -256,7 +256,7 @@ export default function MemberListPage() {
   );
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       <div className="shrink-0 space-y-2">
       {/* Header Utama Minimalis (Flat Editorial Style) */}
       <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -440,7 +440,77 @@ export default function MemberListPage() {
 
       {/* Tabel Daftar Member Minimalist (Scrollable Internal, Sticky Header) */}
       <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+        {/* Mobile Card List (< md) */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-zinc-800">
+          {loading ? (
+            <div className="py-8 text-center text-xs text-slate-400">Memuat data pelanggan...</div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="py-10 text-center text-xs text-slate-400">
+              {search
+                ? "Tidak ada pelanggan yang cocok dengan pencarian."
+                : filterDebt === "DEBT"
+                ? "Tidak ada pelanggan yang memiliki utang aktif saat ini."
+                : "Belum ada data pelanggan piutang."}
+            </div>
+          ) : (
+            paginatedMembers.map((m) => {
+              const hasDebt = (m.saldoUtangCache || 0) > 0;
+              return (
+                <div key={m.id} className="py-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/member/${m.id}`}
+                        className="font-semibold text-sm text-slate-900 dark:text-zinc-100 block truncate"
+                      >
+                        {m.nama}
+                      </Link>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                        {m.telepon || "Tanpa No. HP"} {m.alamat ? `· ${m.alamat}` : ""}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-slate-400 block">Total utang</span>
+                      <span
+                        className={`text-sm font-bold tabular-nums ${
+                          hasDebt ? "text-rose-600" : "text-slate-400"
+                        }`}
+                      >
+                        {formatRupiah(m.saldoUtangCache || 0)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/member/${m.id}`}
+                      className="flex-1 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center justify-center gap-1.5"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Detail Bon</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(m)}
+                      className="h-10 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-amber-600 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDelete(m)}
+                      className="h-10 px-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <table className="hidden md:table w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
                 <th className="py-3 pr-4">Nama pelanggan</th>

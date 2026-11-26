@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { Trash2, X, Eye, Pencil } from "lucide-react";
 import { Pagination } from "@/components/shared/Pagination";
+import { Dropdown } from "@/components/shared/Dropdown";
+import { NumberInput } from "@/components/shared/NumberInput";
 import { useToast } from "@/components/shared/ToastProvider";
 
 interface MasterSatuan {
@@ -201,7 +203,7 @@ export default function SatuanKonversiPage() {
   };
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none font-sans">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none font-sans">
       {/* Header & Tabs Fixed at Top */}
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -290,8 +292,7 @@ export default function SatuanKonversiPage() {
             <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
               <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                 <tr>
-                  <th className="py-3 pr-4">Kode</th>
-                  <th className="py-3 px-4">Nama satuan</th>
+                  <th className="py-3 pr-4">Nama Satuan</th>
                   <th className="py-3 px-4">Deskripsi</th>
                   <th className="py-3 px-4">Kategori</th>
                   <th className="py-3 px-4 text-center">Tipe</th>
@@ -301,17 +302,14 @@ export default function SatuanKonversiPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                 {paginatedItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-400">
+                    <td colSpan={5} className="text-center py-12 text-slate-400">
                       Tidak ada satuan yang cocok dengan pencarian.
                     </td>
                   </tr>
                 ) : (
                   (paginatedItems as MasterSatuan[]).map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                      <td className="py-3.5 pr-4 font-mono font-semibold text-slate-900 dark:text-zinc-100">
-                        {s.kode}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-zinc-100">
+                    <tr key={s.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+                      <td className="py-3.5 pr-4 font-semibold text-slate-900 dark:text-zinc-100">
                         {s.nama}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 dark:text-zinc-400">
@@ -367,9 +365,9 @@ export default function SatuanKonversiPage() {
             <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
               <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                 <tr>
-                  <th className="py-3 pr-4">Satuan besar</th>
-                  <th className="py-3 px-4">Isi konversi</th>
-                  <th className="py-3 px-4">Contoh barang</th>
+                  <th className="py-3 pr-4">Satuan Besar</th>
+                  <th className="py-3 px-4 text-right">Isi Konversi</th>
+                  <th className="py-3 px-4">Contoh Produk</th>
                   <th className="py-3 px-4 text-center">Status</th>
                   <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
                 </tr>
@@ -383,18 +381,20 @@ export default function SatuanKonversiPage() {
                   </tr>
                 ) : (
                   (paginatedItems as AturanKonversi[]).map((k) => (
-                    <tr key={k.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                      <td className="py-3.5 pr-4 font-mono font-semibold text-rose-600">
+                    <tr key={k.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+                      <td className="py-3.5 pr-4 font-semibold text-slate-900 dark:text-zinc-100">
                         1 {k.satuanBesar}
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-emerald-600">
-                        = {k.isi} {k.satuanKecil}
+                      <td className="py-3.5 px-4 text-right font-medium text-slate-700 dark:text-zinc-200 tabular-nums">
+                        {k.isi} {k.satuanKecil}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 dark:text-zinc-300">
                         {k.contohBarang}
                       </td>
-                      <td className="py-3.5 px-4 text-center text-xs font-medium text-blue-600">
-                        Template otomatis
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                          Aktif
+                        </span>
                       </td>
                       <td className="py-3.5 pl-4 text-center whitespace-nowrap">
                         <div className="inline-flex items-center justify-center gap-1 text-xs">
@@ -641,15 +641,18 @@ export default function SatuanKonversiPage() {
                 </div>
                 <div>
                   <label className="field-label">Kategori</label>
-                  <select
+                  <Dropdown
+                    variant="box"
+                    searchable={false}
+                    ariaLabel="Kategori satuan"
                     value={katSatuan}
-                    onChange={(e) => setKatSatuan(e.target.value as any)}
-                    className="ctl"
-                  >
-                    <option value="Kecil / Eceran">Kecil / Eceran</option>
-                    <option value="Sedang">Sedang</option>
-                    <option value="Besar / Grosir">Besar / Grosir</option>
-                  </select>
+                    onChange={(v) => setKatSatuan(v as any)}
+                    options={[
+                      { value: "Kecil / Eceran", label: "Kecil / Eceran" },
+                      { value: "Sedang", label: "Sedang" },
+                      { value: "Besar / Grosir", label: "Besar / Grosir" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="field-label">Deskripsi</label>
@@ -738,12 +741,13 @@ export default function SatuanKonversiPage() {
                   </div>
                   <div>
                     <label className="field-label">Isi</label>
-                    <input
-                      type="number"
+                    <NumberInput
+                      integer
                       min={1}
+                      emptyFallback={1}
                       required
                       value={formIsi}
-                      onChange={(e) => setFormIsi(parseInt(e.target.value || "1", 10))}
+                      onChange={setFormIsi}
                       className="ctl font-mono font-bold"
                     />
                   </div>

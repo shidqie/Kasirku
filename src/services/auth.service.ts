@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/session";
+import { resolvePermissions } from "@/lib/auth/permissions";
 import { logActivity } from "./activity-log.service";
 import { Role } from "@prisma/client";
 
@@ -45,17 +46,22 @@ export async function login(username: string, passwordPlain: string, ip?: string
       username: user.username,
       nama: user.nama,
       role: user.role,
+      tokoId: user.tokoId,
+      permissions: resolvePermissions(user.role, user.permissions),
     },
   };
 }
 
-export async function getAllUsers() {
+export async function getAllUsers(tokoId?: string) {
   return prisma.user.findMany({
+    where: tokoId ? { tokoId, role: { not: "SUPER_ADMIN" } } : undefined,
     select: {
       id: true,
       username: true,
       nama: true,
       role: true,
+      tokoId: true,
+      permissions: true,
       aktif: true,
       createdAt: true,
       updatedAt: true,
@@ -65,7 +71,14 @@ export async function getAllUsers() {
 }
 
 export async function createUser(
-  data: { username: string; nama: string; passwordPlain: string; role: Role },
+  data: {
+    username: string;
+    nama: string;
+    passwordPlain: string;
+    role: Role;
+    tokoId?: string;
+    permissions?: string[];
+  },
   actorId: string,
   ip?: string
 ) {
@@ -85,6 +98,8 @@ export async function createUser(
       username: data.username,
       nama: data.nama,
       role: data.role,
+      tokoId: data.tokoId || "default",
+      permissions: data.permissions || [],
       passwordHash,
       aktif: true,
     },
@@ -93,6 +108,8 @@ export async function createUser(
       username: true,
       nama: true,
       role: true,
+      tokoId: true,
+      permissions: true,
       aktif: true,
       createdAt: true,
     },
@@ -113,13 +130,18 @@ export async function createUser(
 
 export async function updateUser(
   id: string,
-  data: { nama?: string; aktif?: boolean },
+  data: { nama?: string; aktif?: boolean; role?: Role; permissions?: string[] },
   actorId: string,
   ip?: string
 ) {
   const sebelum = await prisma.user.findUnique({ where: { id } });
   if (!sebelum) {
     throw new Error("Pengguna tidak ditemukan");
+  }
+
+  // Lindungi agar user tidak menonaktifkan / mengubah role dirinya sendiri
+  if (id === actorId && (data.role !== undefined && data.role !== sebelum.role)) {
+    throw new Error("Tidak dapat mengubah role akun Anda sendiri");
   }
 
   // Lindungi agar Owner tidak menonaktifkan dirinya sendiri jika hanya tersisa 1 owner
@@ -137,12 +159,16 @@ export async function updateUser(
     data: {
       ...(data.nama ? { nama: data.nama } : {}),
       ...(data.aktif !== undefined ? { aktif: data.aktif } : {}),
+      ...(data.role !== undefined ? { role: data.role } : {}),
+      ...(data.permissions !== undefined ? { permissions: data.permissions } : {}),
     },
     select: {
       id: true,
       username: true,
       nama: true,
       role: true,
+      tokoId: true,
+      permissions: true,
       aktif: true,
     },
   });
@@ -150,11 +176,18 @@ export async function updateUser(
   await logActivity({
     userId: actorId,
     role: "OWNER",
-    aksi: data.aktif !== undefined ? (data.aktif ? "AKTIFKAN_USER" : "NONAKTIFKAN_USER") : "UPDATE_USER",
+    aksi:
+      data.permissions !== undefined
+        ? "DELEGASI_IZIN_USER"
+        : data.aktif !== undefined
+        ? data.aktif
+          ? "AKTIFKAN_USER"
+          : "NONAKTIFKAN_USER"
+        : "UPDATE_USER",
     entitas: "User",
     entitasId: id,
-    sebelumJson: { nama: sebelum.nama, aktif: sebelum.aktif },
-    sesudahJson: { nama: updated.nama, aktif: updated.aktif },
+    sebelumJson: { nama: sebelum.nama, role: sebelum.role, permissions: sebelum.permissions, aktif: sebelum.aktif },
+    sesudahJson: { nama: updated.nama, role: updated.role, permissions: updated.permissions, aktif: updated.aktif },
     ip,
   });
 

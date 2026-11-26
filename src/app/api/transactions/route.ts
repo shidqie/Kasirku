@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { checkout, getTransactions } from "@/services/transaction.service";
 import { checkoutSchema } from "@/lib/validations/transaction.schema";
 
@@ -23,6 +24,12 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+  if (!hasPermission(session, "kasir:checkout")) {
+    return NextResponse.json(
+      { error: "Akses ditolak. Anda tidak memiliki izin melakukan transaksi kasir." },
+      { status: 403 }
+    );
   }
 
   try {

@@ -128,7 +128,7 @@ export async function getProducts(params?: {
     ];
   }
 
-  return prisma.produk.findMany({
+  const products = await prisma.produk.findMany({
     where,
     orderBy: { nama: "asc" },
     include: {
@@ -138,6 +138,55 @@ export async function getProducts(params?: {
       },
     },
   });
+
+  // Tandai produk yang harganya naik dalam 7 hari terakhir (dari HARGA_NAIK atau UBAH_PRODUK)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const recentPriceLogs = await prisma.activityLog.findMany({
+    where: {
+      aksi: { in: ["HARGA_NAIK", "UBAH_PRODUK"] },
+      dibuatPada: { gte: sevenDaysAgo },
+    },
+    select: {
+      aksi: true,
+      entitasId: true,
+      sebelumJson: true,
+      sesudahJson: true,
+    },
+    orderBy: { dibuatPada: "desc" },
+    take: 200,
+  });
+
+  const hargaNaikIds = new Set<string>();
+  for (const log of recentPriceLogs) {
+    const sesudah = log.sesudahJson as Record<string, any> | null;
+    if (log.aksi === "HARGA_NAIK") {
+      if (Array.isArray(sesudah?.produkIds)) {
+        for (const id of sesudah.produkIds) {
+          if (typeof id === "string") hargaNaikIds.add(id);
+        }
+      } else if (log.entitasId && log.entitasId !== "ALL") {
+        hargaNaikIds.add(log.entitasId);
+      }
+    } else if (log.aksi === "UBAH_PRODUK" && log.entitasId) {
+      const sebelum = log.sebelumJson as Record<string, any> | null;
+      const beforeList: Array<{ satuan?: string; jual?: number }> = Array.isArray(sebelum?.satuanList)
+        ? sebelum.satuanList
+        : [];
+      const afterList: Array<{ satuan?: string; jual?: number }> = Array.isArray(sesudah?.satuanList)
+        ? sesudah.satuanList
+        : [];
+      const raised = afterList.some((a, i) => {
+        const prev = beforeList.find((b) => b.satuan === a.satuan) || beforeList[i];
+        return typeof a.jual === "number" && typeof prev?.jual === "number" && a.jual > prev.jual;
+      });
+      if (raised) hargaNaikIds.add(log.entitasId);
+    }
+  }
+
+  return products.map((p) => ({
+    ...p,
+    hargaNaik: hargaNaikIds.has(p.id),
+  }));
 }
 
 export async function getProductById(id: string) {
@@ -306,6 +355,119 @@ export async function updateProduct(
   });
 
   return updated;
+}
+
+export interface BulkRaisePriceInput {
+  scope: "SINGLE" | "CATEGORY" | "ALL";
+  produkId?: string;
+  kategoriId?: string;
+  mode: "FIXED" | "PERCENT";
+  amount: number;
+  roundTo?: 0 | 100 | 500;
+  includeHargaBeli?: boolean;
+  role?: string;
+}
+
+export function calculateRaisedPrice(
+  currentPrice: number,
+  faktorKeDasar: number,
+  mode: "FIXED" | "PERCENT",
+  amount: number,
+  roundTo: 0 | 100 | 500 = 0
+): number {
+  let next =
+    mode === "FIXED"
+      ? currentPrice + Math.round(amount * faktorKeDasar)
+      : Math.round(currentPrice * (1 + amount / 100));
+
+  if (roundTo > 0) {
+    next = Math.ceil(next / roundTo) * roundTo;
+  }
+  return Math.max(0, next);
+}
+
+export async function bulkRaisePrices(
+  input: BulkRaisePriceInput,
+  userId: string,
+  ip?: string
+) {
+  const where: Prisma.ProdukWhereInput = { aktif: true };
+  if (input.scope === "SINGLE") {
+    if (!input.produkId) throw new Error("Pilih produk terlebih dahulu");
+    where.id = input.produkId;
+  } else if (input.scope === "CATEGORY") {
+    if (!input.kategoriId) throw new Error("Pilih kategori terlebih dahulu");
+    where.kategoriId = input.kategoriId;
+  }
+
+  const products = await prisma.produk.findMany({
+    where,
+    include: { satuanProduk: true },
+  });
+
+  if (products.length === 0) {
+    throw new Error("Tidak ada produk yang cocok untuk dinaikkan harganya");
+  }
+
+  const roundTo = input.roundTo ?? 0;
+  let updatedUnits = 0;
+
+  await prisma.$transaction(async (tx) => {
+    for (const p of products) {
+      for (const s of p.satuanProduk) {
+        const faktor = Number(s.faktorKeDasar) || 1;
+        const newJual = calculateRaisedPrice(
+          s.hargaJual,
+          faktor,
+          input.mode,
+          input.amount,
+          roundTo
+        );
+        const newBeli = input.includeHargaBeli
+          ? calculateRaisedPrice(
+              s.hargaBeli,
+              faktor,
+              input.mode,
+              input.amount,
+              roundTo
+            )
+          : s.hargaBeli;
+
+        await tx.satuanProduk.update({
+          where: { id: s.id },
+          data: {
+            hargaJual: newJual,
+            ...(input.includeHargaBeli ? { hargaBeli: newBeli } : {}),
+          },
+        });
+        updatedUnits += 1;
+      }
+    }
+  });
+
+  await logActivity({
+    userId,
+    role: input.role || "OWNER",
+    aksi: "HARGA_NAIK",
+    entitas: "Produk",
+    entitasId: input.produkId || input.kategoriId || "ALL",
+    sesudahJson: {
+      scope: input.scope,
+      mode: input.mode,
+      amount: input.amount,
+      roundTo,
+      includeHargaBeli: !!input.includeHargaBeli,
+      produkTerdampak: products.length,
+      satuanDiperbarui: updatedUnits,
+      produkIds: products.map((p) => p.id),
+    },
+    ip,
+  });
+
+  return {
+    produkCount: products.length,
+    unitCount: updatedUnits,
+  };
 }
 
 export async function deleteProduct(id: string, userId: string, ip?: string) {

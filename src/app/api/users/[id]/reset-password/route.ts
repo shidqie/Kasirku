@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { resetPassword } from "@/services/auth.service";
 import { resetPasswordSchema } from "@/lib/validations/auth.schema";
 
@@ -8,7 +9,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
+  if (!session || !hasPermission(session, "users:manage")) {
     return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
   }
 

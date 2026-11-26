@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { updateUser } from "@/services/auth.service";
 import { updateUserSchema } from "@/lib/validations/auth.schema";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasPermission(session, "users:manage")) {
+    return NextResponse.json({ error: "Akses ditolak. Tidak memiliki izin manajemen pengguna." }, { status: 403 });
   }
 
   try {
@@ -19,6 +20,23 @@ export async function PATCH(
       return NextResponse.json(
         { error: validated.error.errors[0]?.message || "Input tidak valid" },
         { status: 400 }
+      );
+    }
+
+    if (
+      (validated.data.permissions !== undefined || validated.data.role !== undefined) &&
+      !hasPermission(session, "users:delegate")
+    ) {
+      return NextResponse.json(
+        { error: "Hanya Pemilik Toko yang dapat mengubah role atau delegasi izin." },
+        { status: 403 }
+      );
+    }
+
+    if (validated.data.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Tidak dapat menetapkan role Super Admin dari pengaturan toko." },
+        { status: 403 }
       );
     }
 

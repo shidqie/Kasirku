@@ -35,7 +35,7 @@ export default function OwnerDashboardPage() {
   }, []);
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden select-none">
+    <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & KPI Grid Fixed at Top */}
       <div className="shrink-0">
         {/* Header */}
@@ -149,9 +149,9 @@ export default function OwnerDashboardPage() {
       </div>
 
         {/* 2-Column Bottom Lists (Each column has fixed header & scrollable list) */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
           {/* Transaksi terkini */}
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="flex flex-col lg:min-h-0 lg:overflow-hidden">
             <div className="shrink-0 pb-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
                 Transaksi terkini
@@ -207,7 +207,7 @@ export default function OwnerDashboardPage() {
           </div>
 
           {/* Penjualan produk terlaris */}
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="flex flex-col lg:min-h-0 lg:overflow-hidden">
             <div className="shrink-0 pb-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
                 Penjualan produk terlaris

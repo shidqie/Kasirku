@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeImageSchema } from "./image.schema";
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Username wajib diisi"),
@@ -9,12 +10,15 @@ export const createUserSchema = z.object({
   username: z.string().min(3, "Username minimal 3 karakter").max(50, "Username maksimal 50 karakter"),
   nama: z.string().min(2, "Nama minimal 2 karakter"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["OWNER", "STAFF"]),
+  role: z.enum(["SUPER_ADMIN", "OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF_GUDANG", "STAFF"]),
+  permissions: z.array(z.string()).optional(),
 });
 
 export const updateUserSchema = z.object({
   nama: z.string().min(2, "Nama minimal 2 karakter").optional(),
   aktif: z.boolean().optional(),
+  role: z.enum(["SUPER_ADMIN", "OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF_GUDANG", "STAFF"]).optional(),
+  permissions: z.array(z.string()).optional(),
 });
 
 export const resetPasswordSchema = z.object({
@@ -46,7 +50,7 @@ export const updateSettingsSchema = z.object({
   bolehJualStokNol: z.boolean(),
   qrisModeDefault: z.enum(["DINAMIS", "STATIS"]).optional(),
   qrisPayload: z.string().nullable().optional(),
-  qrisStaticImage: z.string().nullable().optional(),
-  logoToko: z.string().nullable().optional(),
+  qrisStaticImage: safeImageSchema,
+  logoToko: safeImageSchema,
 });
 

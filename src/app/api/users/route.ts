@@ -2,21 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { getAllUsers, createUser } from "@/services/auth.service";
 import { createUserSchema } from "@/lib/validations/auth.schema";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasPermission(session, "users:manage")) {
+    return NextResponse.json({ error: "Akses ditolak. Tidak memiliki izin manajemen pengguna." }, { status: 403 });
   }
 
-  const users = await getAllUsers();
+  const users = await getAllUsers(session.tokoId || "default");
   return NextResponse.json({ users });
 }
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasPermission(session, "users:manage")) {
+    return NextResponse.json({ error: "Akses ditolak. Tidak memiliki izin menambah pengguna." }, { status: 403 });
   }
 
   try {
@@ -29,6 +30,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (validated.data.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Tidak dapat membuat akun Super Admin dari pengaturan toko." },
+        { status: 403 }
+      );
+    }
+
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const newUser = await createUser(
       {
@@ -36,6 +44,9 @@ export async function POST(req: NextRequest) {
         nama: validated.data.nama,
         passwordPlain: validated.data.password,
         role: validated.data.role,
+        tokoId: session.tokoId || "default",
+        permissions:
+          hasPermission(session, "users:delegate") ? validated.data.permissions : [],
       },
       session.userId,
       ip

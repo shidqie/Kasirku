@@ -4,14 +4,33 @@ import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
 
 const COOKIE_NAME = "kasirku_session";
-const SESSION_SECRET = process.env.SESSION_SECRET || "fallback-secret-key-at-least-32-chars-long";
-const key = new TextEncoder().encode(SESSION_SECRET);
+
+function getSessionSecretKey(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        "SESSION_SECRET wajib diatur minimal 32 karakter pada mode production."
+      );
+    }
+    return new TextEncoder().encode(secret);
+  }
+  return new TextEncoder().encode(
+    secret && secret.length >= 32
+      ? secret
+      : "dev-only-kasirku-session-secret-32-chars"
+  );
+}
+
+const key = getSessionSecretKey();
 
 export interface SessionPayload {
   userId: string;
   username: string;
   nama: string;
   role: Role;
+  tokoId?: string;
+  permissions?: string[];
 }
 
 export async function hashPassword(password: string): Promise<string> {

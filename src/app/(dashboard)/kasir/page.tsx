@@ -29,6 +29,7 @@ import {
   CakeSlice,
   Package,
   Maximize2,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +46,7 @@ import { PinModal } from "@/components/shared/PinModal";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { RiwayatPesananModal } from "@/components/kasir/RiwayatPesananModal";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { NumberInput } from "@/components/shared/NumberInput";
 import { useToast } from "@/components/shared/ToastProvider";
 
 interface SatuanItem {
@@ -62,6 +64,7 @@ interface ProductItem {
   barcode: string | null;
   satuanDasar: string;
   stokCache: number;
+  hargaNaik?: boolean;
   kategori?: { id: string; nama: string } | null;
   satuanProduk: SatuanItem[];
 }
@@ -76,6 +79,7 @@ interface CartItem {
   qty: number;
   availableSatuan: SatuanItem[];
   stokCache: number;
+  hargaNaik?: boolean;
   note?: string;
 }
 
@@ -217,6 +221,7 @@ function QtyStepperInput({
 export default function KasirPOSPage() {
   const toast = useToast();
   const [isClearCartConfirmOpen, setIsClearCartConfirmOpen] = useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
@@ -337,12 +342,16 @@ export default function KasirPOSPage() {
     });
   };
 
+  const hargaNaikCount = products.filter((p) => p.hargaNaik).length;
+
   const filteredProducts = products.filter((p) => {
     let matchCat = false;
     if (selectedCategory === "Semua" || !selectedCategory) {
       matchCat = true;
     } else if (selectedCategory === "Favorit") {
       matchCat = favoriteIds.includes(p.id);
+    } else if (selectedCategory === "Harga Naik") {
+      matchCat = Boolean(p.hargaNaik);
     } else {
       matchCat = (p as any).kategori?.nama === selectedCategory;
     }
@@ -410,6 +419,7 @@ export default function KasirPOSPage() {
           qty: 1,
           availableSatuan: p.satuanProduk,
           stokCache: stokTersedia,
+          hargaNaik: p.hargaNaik,
         },
       ]);
     }
@@ -455,6 +465,7 @@ export default function KasirPOSPage() {
           qty: configQty,
           availableSatuan: configProduct.satuanProduk,
           stokCache: stokTersedia,
+          hargaNaik: configProduct.hargaNaik,
           note: configNote,
         },
       ]);
@@ -737,6 +748,7 @@ export default function KasirPOSPage() {
 
       setCompletedTrx(data.transaksi);
       setIsPayModalOpen(false);
+      setIsMobileCartOpen(false);
       setIsStrukOpen(true);
       setCart([]);
       setDiskonPersen(0);
@@ -777,19 +789,34 @@ export default function KasirPOSPage() {
             {/* Button Riwayat Penjualan */}
             <button
               onClick={() => setIsRiwayatOpen(true)}
-              className="h-11 px-4 rounded-[14px] text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 shrink-0 transition-all hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 flex items-center gap-2 shadow-2xs"
+              className="h-11 px-3 sm:px-4 rounded-[14px] text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 shrink-0 transition-all hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 flex items-center gap-2 shadow-2xs"
               title="Buka Riwayat Penjualan & Transaksi"
             >
               <History className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
-              <span>Riwayat Penjualan</span>
+              <span className="hidden sm:inline">Riwayat Penjualan</span>
+            </button>
+            {/* Mobile Quick Scan Button */}
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="md:hidden h-11 w-11 rounded-[14px] bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 shrink-0 flex items-center justify-center active:scale-95"
+              title="Scan barcode barang"
+              aria-label="Scan barcode barang"
+            >
+              <Barcode className="w-4 h-4" />
             </button>
           </div>
 
           {/* Horizontal Minimalist Category Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
-            {["Semua", "Favorit", ...categories.map((c) => c.nama)].map((cat) => {
+            {[
+              "Semua",
+              "Favorit",
+              ...(hargaNaikCount > 0 ? ["Harga Naik"] : []),
+              ...categories.map((c) => c.nama),
+            ].map((cat) => {
               const isSelected = selectedCategory === cat;
               const isFav = cat === "Favorit";
+              const isHargaNaik = cat === "Harga Naik";
               return (
                 <button
                   key={cat}
@@ -797,6 +824,8 @@ export default function KasirPOSPage() {
                   className={`h-8 px-3.5 rounded-full text-xs font-medium shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
                       ? "bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-semibold"
+                      : isHargaNaik
+                      ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50"
                       : "bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
                   }`}
                 >
@@ -807,6 +836,7 @@ export default function KasirPOSPage() {
                       }`}
                     />
                   )}
+                  {isHargaNaik && <TrendingUp className="w-3.5 h-3.5" />}
                   <span>{cat}</span>
                   {isFav && favoriteIds.length > 0 && (
                     <span
@@ -817,6 +847,17 @@ export default function KasirPOSPage() {
                       }`}
                     >
                       {favoriteIds.length}
+                    </span>
+                  )}
+                  {isHargaNaik && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 rounded-full ${
+                        isSelected
+                          ? "bg-white/20 text-white dark:bg-zinc-900/15 dark:text-zinc-900"
+                          : "bg-amber-200/80 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
+                      }`}
+                    >
+                      {hargaNaikCount}
                     </span>
                   )}
                 </button>
@@ -849,7 +890,7 @@ export default function KasirPOSPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 pb-24 md:pb-4">
               {filteredProducts.map((p) => {
                 const Icon = CATEGORY_ICONS[p.kategori?.nama ?? ""] ?? Package;
                 const defaultSatuan = p.satuanProduk.find((s) => s.isDefault) || p.satuanProduk[0];
@@ -897,12 +938,23 @@ export default function KasirPOSPage() {
                         : undefined
                     }
                   >
-                    {/* Top row: Minimalist icon + Favorite star + In-cart badge */}
+                    {/* Top row: Minimalist icon + Harga Naik badge + Favorite star + In-cart badge */}
                     <div className="flex items-center justify-between gap-1.5 mb-2">
-                      <Icon
-                        className="w-5 h-5 shrink-0 text-slate-400 dark:text-zinc-500"
-                        strokeWidth={1.6}
-                      />
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Icon
+                          className="w-5 h-5 shrink-0 text-slate-400 dark:text-zinc-500"
+                          strokeWidth={1.6}
+                        />
+                        {p.hargaNaik && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold whitespace-nowrap"
+                            title="Harga produk baru saja naik"
+                          >
+                            <TrendingUp className="w-2.5 h-2.5" />
+                            <span>Harga Naik</span>
+                          </span>
+                        )}
+                      </div>
 
                       <div className="flex items-center gap-1 shrink-0">
                         <button
@@ -1040,11 +1092,49 @@ export default function KasirPOSPage() {
         </div>
       </div>
 
-      {/* ═══ PANEL KANAN: Cart + Pembayaran ══════════════════════ */}
+      {/* ═══ MOBILE FLOATING CART BAR ════════════════════════════ */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3 shadow-lg">
+        <div className="min-w-0">
+          <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+            {cart.reduce((s, i) => s + Number(i.qty || 0), 0)} item di keranjang
+          </p>
+          <p className="text-sm font-bold text-slate-900 dark:text-zinc-100 tabular-nums truncate">
+            {formatRupiah(grandTotal)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsMobileCartOpen(true)}
+          className="h-11 px-5 rounded-[14px] text-white font-bold text-xs flex items-center gap-2 shrink-0 active:scale-95 shadow-sm"
+          style={{ background: "var(--primary)" }}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          <span>Keranjang &amp; Bayar</span>
+        </button>
+      </div>
+
+      {/* ═══ PANEL KANAN: Cart + Pembayaran (Drawer di Mobile, Sidebar di Tablet/Desktop) ═══ */}
       <div
-        className="w-[320px] xl:w-[340px] shrink-0 flex flex-col h-full bg-white dark:bg-zinc-900"
-        style={{ borderLeft: "1px solid rgba(0,0,0,0.07)" }}
+        className={`${
+          isMobileCartOpen
+            ? "fixed inset-0 z-40 flex"
+            : "hidden"
+        } md:static md:flex md:w-[300px] lg:w-[320px] xl:w-[340px] shrink-0 flex-col h-full bg-white dark:bg-zinc-900 md:border-l md:border-slate-200/80 dark:md:border-zinc-800`}
       >
+        {/* Mobile Cart Header Close Bar */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+            Keranjang Belanja ({cart.length})
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsMobileCartOpen(false)}
+            className="h-9 px-3 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-200 flex items-center gap-1"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Tutup</span>
+          </button>
+        </div>
         {/* Cart header with Member Dropdown & Barcode Scanner Button */}
         <div className="px-4 pt-3.5 pb-3 shrink-0 border-b border-slate-100 dark:border-zinc-800 relative space-y-2.5">
           <div className="space-y-1.5">
@@ -1221,9 +1311,17 @@ export default function KasirPOSPage() {
 
                     {/* Bottom row: Unit Price + Stepper + Trash */}
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-                        {formatRupiah(item.hargaJual)} / {item.namaSatuan}
-                      </p>
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        <p className="text-[11px] text-slate-400 dark:text-zinc-500">
+                          {formatRupiah(item.hargaJual)} / {item.namaSatuan}
+                        </p>
+                        {item.hargaNaik && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 text-[9px] font-bold">
+                            <TrendingUp className="w-2.5 h-2.5" />
+                            Harga Naik
+                          </span>
+                        )}
+                      </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-1.5 py-0.5">
@@ -1386,14 +1484,12 @@ export default function KasirPOSPage() {
                     >
                       -
                     </button>
-                    <input
-                      type="number"
-                      step="any"
+                    <NumberInput
                       min={0.25}
                       max={maxConfigAllowedQty}
+                      emptyFallback={1}
                       value={configQty}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value || "1");
+                      onChange={(val) => {
                         setConfigQty(Math.max(0.25, Math.min(val, maxConfigAllowedQty)));
                       }}
                       className="w-16 text-center bg-transparent border-none outline-none font-bold text-sm text-slate-900 dark:text-zinc-100"

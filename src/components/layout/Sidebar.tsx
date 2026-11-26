@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingCart,
-  Receipt,
   PackagePlus,
   AlertTriangle,
   ClipboardCheck,
@@ -30,6 +29,7 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { SessionPayload } from "@/lib/auth/session";
+import { hasAnyPermission, hasPermission } from "@/lib/auth/permissions";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 interface SidebarProps {
@@ -90,23 +90,31 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
     }
   };
 
-  const groups: NavGroupConfig[] = isOwner
-    ? [
+  const groups: NavGroupConfig[] = (() => {
+    if (user.role === "SUPER_ADMIN") {
+      return [
+        {
+          key: "platform",
+          title: "PLATFORM",
+          items: [{ label: "Platform Console", href: "/admin", icon: ShieldCheck }],
+        },
+      ];
+    }
+
+    if (user.role === "OWNER") {
+      return [
         {
           key: "utama",
           title: "UTAMA",
           items: [{ label: "Dashboard", href: "/owner/dashboard", icon: LayoutDashboard }],
         },
         {
-          key: "operasional",
-          title: "OPERASIONAL",
+          key: "bisnis",
+          title: "PENJUALAN & PIUTANG",
           collapsible: true,
           items: [
-            { label: "Kasir", href: "/kasir", icon: ShoppingCart },
+            { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
             { label: "Piutang", href: "/member", icon: Users },
-            { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
-            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck, badgeKey: "pendingOpname" },
-            { label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
           ],
         },
         {
@@ -139,21 +147,87 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
             { label: "Checklist Go-Live", href: "/owner/go-live", icon: ShieldCheck, hideIfGoLiveDone: true },
           ],
         },
-      ]
-    : [
+      ];
+    }
+
+    if (user.role === "KEPALA_TOKO") {
+      const kelolaItems: NavItemConfig[] = [];
+      if (hasAnyPermission(user, ["produk:view", "produk:manage"])) {
+        kelolaItems.push({ label: "Produk & Harga", href: "/owner/produk", icon: Package });
+      }
+      if (hasAnyPermission(user, ["reports:sales", "reports:operational"])) {
+        kelolaItems.push({ label: "Laporan Pendapatan", href: "/owner/laporan?tab=sales", icon: TrendingUp });
+      }
+      if (hasAnyPermission(user, ["reports:debts", "reports:operational"])) {
+        kelolaItems.push({ label: "Laporan Piutang", href: "/owner/laporan?tab=debts", icon: Users });
+      }
+      if (hasPermission(user, "reports:top_products")) {
+        kelolaItems.push({ label: "Produk Terlaris", href: "/owner/produk-terlaris", icon: BarChart3 });
+      }
+      if (hasPermission(user, "users:manage")) {
+        kelolaItems.push({ label: "Kelola Staff", href: "/owner/pengaturan?tab=pengguna", icon: Settings });
+      }
+
+      const result: NavGroupConfig[] = [
+        {
+          key: "utama",
+          title: "UTAMA",
+          items: [{ label: "Dashboard", href: "/owner/dashboard", icon: LayoutDashboard }],
+        },
         {
           key: "operasional",
           title: "OPERASIONAL",
           collapsible: true,
           items: [
             { label: "Kasir", href: "/kasir", icon: ShoppingCart },
+            { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
             { label: "Piutang", href: "/member", icon: Users },
             { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
-            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck },
+            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck, badgeKey: "pendingOpname" },
             { label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
           ],
         },
       ];
+
+      if (kelolaItems.length > 0) {
+        result.push({
+          key: "kelola",
+          title: "KELOLA & LAPORAN",
+          collapsible: true,
+          items: kelolaItems,
+        });
+      }
+      return result;
+    }
+
+    if (user.role === "STAFF_GUDANG") {
+      return [
+        {
+          key: "gudang",
+          title: "GUDANG & STOK",
+          items: [
+            { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
+            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck },
+            { label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
+            { label: "Produk", href: "/owner/produk", icon: Package },
+          ],
+        },
+      ];
+    }
+
+    // STAFF_KASIR / STAFF (default kasir)
+    return [
+      {
+        key: "operasional",
+        title: "OPERASIONAL",
+        items: [
+          { label: "Kasir", href: "/kasir", icon: ShoppingCart },
+          { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
+          { label: "Piutang", href: "/member", icon: Users },
+        ],
+      },
+    ];
+  })();
 
   const [collapsedGroups, setCollapsedGroups] = useState<{ [key: string]: boolean }>({});
   const [storeLogo, setStoreLogo] = useState<string>("/logo.png");
@@ -569,14 +643,14 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
         )}
       </aside>
 
-      {/* Mobile & Tablet Drawer (Selalu Full Expanded) */}
+      {/* Mobile & Tablet Drawer (Selalu Full Expanded, muncul dari kanan) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm drawer-backdrop"
             onClick={onClose}
           />
-          <div className="relative w-64 max-w-[85vw] h-full z-10 shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="relative w-64 max-w-[85vw] h-full z-10 shadow-2xl drawer-panel">
             {renderSidebarContent(false)}
           </div>
         </div>
