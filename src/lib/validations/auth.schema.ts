@@ -25,6 +25,15 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(6, "Password baru minimal 6 karakter"),
 });
 
+export const resetPasswordWithPinSchema = z.object({
+  username: z.string().trim().min(1, "Username wajib diisi"),
+  pin: z
+    .string()
+    .length(6, "PIN Owner harus 6 digit angka")
+    .regex(/^\d+$/, "PIN Owner hanya boleh berupa angka"),
+  password: z.string().min(6, "Password baru minimal 6 karakter"),
+});
+
 export const verifyPinSchema = z.object({
   pin: z.string().length(6, "PIN harus 6 digit angka").regex(/^\d+$/, "PIN hanya boleh berupa angka"),
 });

@@ -39,10 +39,11 @@ interface JwtUser {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Izinkan asset statis dan login
+  // Izinkan asset statis, login, dan reset password dengan PIN Owner
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth/login") ||
+    pathname.startsWith("/api/auth/reset-password") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.includes(".")
   ) {

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/session";
 import { resolvePermissions } from "@/lib/auth/permissions";
 import { logActivity } from "./activity-log.service";
+import { verifyOwnerPin } from "./pin.service";
 import { Role } from "@prisma/client";
 
 export async function login(username: string, passwordPlain: string, ip?: string) {
@@ -222,5 +223,56 @@ export async function resetPassword(
   });
 
   return { success: true, message: `Password untuk user '${user.username}' berhasil direset` };
+}
+
+export async function resetPasswordByUsernameWithPin(
+  username: string,
+  pin: string,
+  newPasswordPlain: string,
+  ip?: string
+): Promise<{ success: boolean; status: number; message: string }> {
+  const pinResult = await verifyOwnerPin(pin, undefined, ip);
+  if (!pinResult.valid) {
+    return {
+      success: false,
+      status: pinResult.lockedUntil ? 423 : 403,
+      message: pinResult.message || "PIN Owner salah",
+    };
+  }
+
+  const user = await prisma.user.findUnique({ where: { username } });
+  if (!user) {
+    return { success: false, status: 404, message: `Username '${username}' tidak ditemukan` };
+  }
+
+  if (!user.aktif) {
+    return {
+      success: false,
+      status: 403,
+      message: "Akun telah dinonaktifkan. Hubungi Pemilik Toko.",
+    };
+  }
+
+  const passwordHash = await hashPassword(newPasswordPlain);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+
+  await logActivity({
+    userId: user.id,
+    role: user.role,
+    aksi: "RESET_PASSWORD_DENGAN_PIN_OWNER",
+    entitas: "User",
+    entitasId: user.id,
+    sesudahJson: { username: user.username },
+    ip,
+  });
+
+  return {
+    success: true,
+    status: 200,
+    message: `Password untuk '${user.username}' berhasil direset. Silakan masuk.`,
+  };
 }
 
