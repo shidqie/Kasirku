@@ -180,32 +180,32 @@ export default function LoginPage() {
             {/* Bayangan lantai */}
             <ellipse cx="176" cy="238" rx="120" ry="10" fill="#0B1120" opacity="0.65" />
 
-            {/* Panel pink di belakang monitor */}
-            <rect x="108" y="48" width="166" height="106" rx="10" fill="#FDD5D5" />
+            {/* Panel aksen lembut di belakang monitor */}
+            <rect x="108" y="48" width="166" height="106" rx="10" fill="var(--primary-light, #FEE2E2)" />
 
             {/* Kartu putih di dalam panel */}
             <rect x="162" y="66" width="60" height="70" rx="8" fill="#FFFFFF" />
             <rect x="174" y="80" width="36" height="6" rx="3" fill="#E2E8F0" />
             <rect x="174" y="92" width="36" height="6" rx="3" fill="#E2E8F0" />
-            <rect x="174" y="109" width="36" height="9" rx="4.5" fill="#DC0A12" />
+            <rect x="174" y="109" width="36" height="9" rx="4.5" fill="var(--primary, #F0090F)" />
 
             {/* Lemari putih kanan bawah */}
             <rect x="190" y="156" width="84" height="72" rx="4" fill="#F1F5F9" />
             <line x1="232" y1="156" x2="232" y2="228" stroke="#CBD5E1" strokeWidth="1.5" />
             {/* Buku / folder vertikal di rak */}
-            <rect x="198" y="164" width="6" height="24" rx="1.5" fill="#DC0A12" />
-            <rect x="206" y="164" width="6" height="24" rx="1.5" fill="#F87171" />
-            <rect x="214" y="164" width="6" height="24" rx="1.5" fill="#FCA5A5" />
-            <rect x="222" y="164" width="6" height="24" rx="1.5" fill="#DC0A12" />
+            <rect x="198" y="164" width="6" height="24" rx="1.5" fill="var(--primary, #F0090F)" />
+            <rect x="206" y="164" width="6" height="24" rx="1.5" fill="var(--primary-border, #FCA5A5)" />
+            <rect x="214" y="164" width="6" height="24" rx="1.5" fill="var(--primary-light, #FEE2E2)" />
+            <rect x="222" y="164" width="6" height="24" rx="1.5" fill="var(--primary, #F0090F)" />
 
-            <rect x="198" y="196" width="6" height="24" rx="1.5" fill="#EF4444" />
-            <rect x="206" y="196" width="6" height="24" rx="1.5" fill="#FCA5A5" />
+            <rect x="198" y="196" width="6" height="24" rx="1.5" fill="var(--primary-hover, #D6080E)" />
+            <rect x="206" y="196" width="6" height="24" rx="1.5" fill="var(--primary-border, #FCA5A5)" />
             <rect x="214" y="196" width="6" height="24" rx="1.5" fill="#E2E8F0" />
 
-            {/* Tanaman kaktus merah dalam pot */}
-            <rect x="249" y="190" width="6" height="24" rx="3" fill="#DC0A12" />
-            <rect x="242" y="196" width="5" height="14" rx="2.5" fill="#EF4444" />
-            <rect x="257" y="198" width="5" height="12" rx="2.5" fill="#EF4444" />
+            {/* Tanaman kaktus dalam pot */}
+            <rect x="249" y="190" width="6" height="24" rx="3" fill="var(--primary, #F0090F)" />
+            <rect x="242" y="196" width="5" height="14" rx="2.5" fill="var(--primary-border, #FCA5A5)" />
+            <rect x="257" y="198" width="5" height="12" rx="2.5" fill="var(--primary-border, #FCA5A5)" />
             <path d="M242 212H262L259 228H245L242 212Z" fill="#1E293B" />
 
             {/* Kaki meja */}
@@ -216,11 +216,11 @@ export default function LoginPage() {
             <rect x="139" y="142" width="8" height="6" fill="#64748B" />
             <rect x="133" y="147" width="20" height="3" rx="1.5" fill="#CBD5E1" />
 
-            {/* Meja merah */}
-            <rect x="82" y="148" width="128" height="7" rx="3.5" fill="#DC0A12" />
+            {/* Meja warna primary */}
+            <rect x="82" y="148" width="128" height="7" rx="3.5" fill="var(--primary, #F0090F)" />
 
-            {/* Kursi bar merah */}
-            <rect x="64" y="176" width="28" height="7" rx="3.5" fill="#DC0A12" />
+            {/* Kursi bar warna primary */}
+            <rect x="64" y="176" width="28" height="7" rx="3.5" fill="var(--primary, #F0090F)" />
             <rect x="76" y="183" width="4" height="50" fill="#334155" />
             <rect x="66" y="213" width="24" height="3.5" rx="1.75" fill="#334155" />
             <rect x="64" y="230" width="28" height="4" rx="2" fill="#334155" />
@@ -255,10 +255,10 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* Panel Kanan: Latar Merah + Kartu Login Gelap */}
+      {/* Panel Kanan: Latar Primary + Kartu Login Gelap */}
       <section
         className="relative flex items-center justify-center p-6 sm:p-10 overflow-hidden min-h-screen"
-        style={{ backgroundColor: "#DC0A12" }}
+        style={{ backgroundColor: "var(--primary, #F0090F)" }}
       >
         {/* Dekorasi lingkaran konsentris di pojok kanan bawah */}
         <div
@@ -282,7 +282,7 @@ export default function LoginPage() {
           <div className="space-y-3">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-              style={{ backgroundColor: "#DC0A12" }}
+              style={{ backgroundColor: "var(--primary, #F0090F)" }}
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5a7 7 0 1 0 5.3 11.5" />
@@ -344,7 +344,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Masukkan username"
-                    className="w-full pl-10 pr-4 h-11 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-4 h-11 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={loading}
                   />
@@ -368,7 +368,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Masukkan password"
-                    className="w-full pl-10 pr-10 h-11 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-10 h-11 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={loading}
                   />
@@ -389,7 +389,7 @@ export default function LoginPage() {
                   disabled={loading}
                   className="w-full h-11 rounded-xl text-white font-semibold text-sm shadow-lg hover:opacity-95 active:scale-[0.99] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: "#DC0A12",
+                    backgroundColor: "var(--primary, #F0090F)",
                     border: "none",
                   }}
                 >
@@ -413,7 +413,7 @@ export default function LoginPage() {
                   }}
                   className="w-full text-center text-xs text-slate-400 hover:text-white transition-colors py-1"
                 >
-                  Lupa password? Reset dengan PIN Owner
+                  Lupa Password
                 </button>
               </div>
             </form>
@@ -435,7 +435,7 @@ export default function LoginPage() {
                     value={resetUsername}
                     onChange={(e) => setResetUsername(e.target.value)}
                     placeholder="Masukkan username"
-                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={resetLoading}
                   />
@@ -459,7 +459,7 @@ export default function LoginPage() {
                     value={ownerPin}
                     onChange={(e) => setOwnerPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="••••••"
-                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm tracking-[0.25em] placeholder:tracking-normal placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm tracking-[0.25em] placeholder:tracking-normal placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={resetLoading}
                   />
@@ -481,7 +481,7 @@ export default function LoginPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Minimal 6 karakter"
-                    className="w-full pl-10 pr-10 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-10 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={resetLoading}
                   />
@@ -511,7 +511,7 @@ export default function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ulangi password baru"
-                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-[#DC0A12] transition-all"
+                    className="w-full pl-10 pr-4 h-10 rounded-xl text-white text-sm placeholder:text-slate-500 border border-slate-700/80 focus:outline-none focus:border-[var(--primary)] transition-all"
                     style={{ backgroundColor: "#161F30" }}
                     disabled={resetLoading}
                   />
@@ -524,7 +524,7 @@ export default function LoginPage() {
                   disabled={resetLoading}
                   className="w-full h-11 rounded-xl text-white font-semibold text-sm shadow-lg hover:opacity-95 active:scale-[0.99] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: "#DC0A12",
+                    backgroundColor: "var(--primary, #F0090F)",
                     border: "none",
                   }}
                 >
