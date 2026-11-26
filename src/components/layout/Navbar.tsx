@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { formatDateTime } from "@/lib/formatters";
 import { Menu } from "lucide-react";
+import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 
 interface NavbarProps {
   storeName: string;
@@ -116,8 +117,9 @@ export function Navbar({ storeName, onMenuToggle }: NavbarProps) {
         </nav>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-zinc-400 font-sans">
-        <span className="hidden sm:inline px-3 py-1 text-slate-500 dark:text-zinc-400">
+      <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-500 dark:text-zinc-400 font-sans">
+        <OfflineIndicator />
+        <span className="hidden sm:inline px-2 py-1 text-slate-500 dark:text-zinc-400">
           {currentDate ? formatDateTime(currentDate) : "Memuat jam..."}
         </span>
       </div>

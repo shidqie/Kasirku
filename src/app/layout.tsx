@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/shared/ToastProvider";
+import { OfflineProvider } from "@/components/offline/OfflineProvider";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -74,7 +75,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans selection:bg-red-100 selection:text-red-900">
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <OfflineProvider>{children}</OfflineProvider>
+        </ToastProvider>
       </body>
     </html>
   );
