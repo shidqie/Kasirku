@@ -78,30 +78,20 @@ async function getBase64Image(url: string): Promise<string | null> {
   }
 }
 
-export async function generateBonMemberPDF(
+async function renderMemberBonToDoc(
+  doc: jsPDF,
   member: MemberPDFData,
   storeInfo: StoreInfo,
-  logoBase64Override?: string
-): Promise<void> {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const fontFamily = await registerPdfFont(doc);
-
-  let logoBase64: string | null = logoBase64Override || storeInfo.logoToko || null;
-  if (!logoBase64 && typeof window !== "undefined") {
-    // Try circular store logo first, fallback to transparent logo
-    logoBase64 = await getBase64Image("/img/Logo%20Toko%20Gagan%202.png");
-    if (!logoBase64) {
-      logoBase64 = await getBase64Image("/logo.png");
-    }
-  }
-
+  fontFamily: string,
+  logoBase64: string | null,
+  options?: { skipHeader?: boolean; skipFooter?: boolean; startY?: number }
+): Promise<{ bons: BonEntry[]; finalY: number }> {
   const pageW = 210;
   const pageH = 297;
   const marginL = 16;
   const marginR = 194;
   const contentW = marginR - marginL; // 178mm
-  let y = 0;
+  let y = options?.startY ?? 0;
 
   const font = (size: number, bold = false, italic = false) => {
     let style = "normal";
@@ -222,8 +212,10 @@ export async function generateBonMemberPDF(
     }
   };
 
-  // 1. Initial Page Header
-  drawPageHeader();
+  // 1. Initial Page Header (opsional jika digabung dalam rekap semua)
+  if (!options?.skipHeader) {
+    drawPageHeader();
+  }
 
   // 2. Pelanggan & Total Utang Strip (Tanpa Limit Kasbon)
   draw(...C_DARK);
@@ -629,35 +621,68 @@ export async function generateBonMemberPDF(
   y += 4;
 
   // 5. Footer Minimalis (Centered)
-  checkPage(26);
-  draw(...C_BORDER);
-  doc.setLineWidth(0.25);
-  doc.line(marginL, y, marginR, y);
-  y += 7;
+  if (!options?.skipFooter) {
+    checkPage(26);
+    draw(...C_BORDER);
+    doc.setLineWidth(0.25);
+    doc.line(marginL, y, marginR, y);
+    y += 7;
 
-  const centerX = pageW / 2;
-  const nowDate = new Date();
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  const nowStr = `${pad2(nowDate.getDate())}/${pad2(nowDate.getMonth() + 1)}/${nowDate.getFullYear()} ${pad2(
-    nowDate.getHours()
-  )}.${pad2(nowDate.getMinutes())}`;
+    const centerX = pageW / 2;
+    const nowDate = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const nowStr = `${pad2(nowDate.getDate())}/${pad2(nowDate.getMonth() + 1)}/${nowDate.getFullYear()} ${pad2(
+      nowDate.getHours()
+    )}.${pad2(nowDate.getMinutes())}`;
 
-  const footerBonText =
-    storeInfo.footerBon?.trim() ||
-    "Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda.";
-  const footerBonLines = footerBonText.split("\n").map((l) => l.trim()).filter(Boolean);
+    const footerBonText =
+      storeInfo.footerBon?.trim() ||
+      "Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda.";
+    const footerBonLines = footerBonText.split("\n").map((l) => l.trim()).filter(Boolean);
 
-  footerBonLines.forEach((line, idx) => {
-    const isLast = idx === footerBonLines.length - 1;
-    font(isLast ? 9 : 8, isLast);
-    color(...(isLast ? C_DARK : C_MUTED));
-    doc.text(line, centerX, y, { align: "center" });
-    y += 5.5;
-  });
+    footerBonLines.forEach((line, idx) => {
+      const isLast = idx === footerBonLines.length - 1;
+      font(isLast ? 9 : 8, isLast);
+      color(...(isLast ? C_DARK : C_MUTED));
+      doc.text(line, centerX, y, { align: "center" });
+      y += 5.5;
+    });
 
-  font(7.5, false);
-  color(...C_LIGHT_MUTED);
-  doc.text(`Dicetak otomatis dari Kasirku POS · ${nowStr}`, centerX, y, { align: "center" });
+    font(7.5, false);
+    color(...C_LIGHT_MUTED);
+    doc.text(`Dicetak otomatis dari Kasirku POS · ${nowStr}`, centerX, y, { align: "center" });
+  }
+
+  return { bons, finalY: y };
+}
+
+export async function generateBonMemberPDF(
+  member: MemberPDFData,
+  storeInfo: StoreInfo,
+  logoBase64Override?: string
+): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const fontFamily = await registerPdfFont(doc);
+
+  let logoBase64: string | null = logoBase64Override || storeInfo.logoToko || null;
+  if (!logoBase64 && typeof window !== "undefined") {
+    // Try circular store logo first, fallback to transparent logo
+    logoBase64 = await getBase64Image("/img/Logo%20Toko%20Gagan%202.png");
+    if (!logoBase64) {
+      logoBase64 = await getBase64Image("/logo.png");
+    }
+  }
+
+  const { bons } = await renderMemberBonToDoc(doc, member, storeInfo, fontFamily, logoBase64);
+
+  const pageH = 297;
+  const marginR = 194;
+  const font = (size: number, bold = false) => {
+    doc.setFont(fontFamily, bold ? "bold" : "normal");
+    doc.setFontSize(size);
+  };
+  const color = (...rgb: [number, number, number]) => doc.setTextColor(...rgb);
 
   // 7. Page numbers across all pages
   const totalPages = doc.getNumberOfPages();
@@ -698,6 +723,7 @@ export interface AllMemberSummaryRow {
   alamat?: string | null;
   batasKasbon: number;
   saldoUtangCache: number;
+  detail?: MemberPDFData;
 }
 
 export async function generateAllMembersPDF(
@@ -728,51 +754,65 @@ export async function generateAllMembersPDF(
   const color = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
   const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
 
-  // Top red bar
-  doc.setFillColor(...C_RED_TOP);
-  doc.rect(0, 0, pageW, 3, "F");
-
+  const centerX = pageW / 2;
   let y = 14;
+
+  // Logo bulat tengah
+  const logoSize = 11;
   if (logoBase64) {
     try {
       const fmt = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-      doc.addImage(logoBase64, fmt, marginL, y - 3, 14, 14, undefined, "FAST");
+      doc.addImage(logoBase64, fmt, centerX - logoSize / 2, y, logoSize, logoSize);
     } catch {}
+  } else {
+    doc.setFillColor(...C_RED_TOP);
+    doc.circle(centerX, y + logoSize / 2, logoSize / 2, "F");
   }
+  y += logoSize + 4;
 
-  const textStartX = logoBase64 ? marginL + 18 : marginL;
-  font(13, true);
+  // Nama Toko (Centered)
+  font(15, true);
   color(...C_DARK);
-  doc.text(storeInfo.namaToko || "Toko Sembako", textStartX, y + 2);
+  doc.text((storeInfo.namaToko || "Toko Sembako").toUpperCase(), centerX, y, { align: "center" });
+  y += 5.5;
 
-  font(7.5, false);
+  // Alamat & Telepon (Centered)
+  font(9.5, false);
   color(...C_MUTED);
-  if (storeInfo.alamat) {
-    doc.text(storeInfo.alamat, textStartX, y + 6.5, { maxWidth: 95 });
-  }
-  if (storeInfo.telepon) {
-    doc.text(`Telp/WA: ${storeInfo.telepon}`, textStartX, y + 10.5);
-  }
+  const alamatTelp = [storeInfo.alamat, storeInfo.telepon].filter(Boolean).join(" · ") || "Kasirku POS";
+  const alamatLines: string[] = doc.splitTextToSize(alamatTelp, contentW - 12);
+  doc.text(alamatLines, centerX, y, { align: "center" });
+  y += alamatLines.length * 4.4 + 3;
 
-  // Title on right
-  font(11, true);
-  color(...C_DARK);
-  doc.text("REKAP PIUTANG PELANGGAN", marginR, y + 2, { align: "right" });
-  font(7.5, false);
-  color(...C_MUTED);
-  const now = new Date();
-  const tglCetak = now.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  doc.text(`Filter: ${filterLabel} · Dicetak ${tglCetak}`, marginR, y + 6.5, { align: "right" });
-
-  y += 17;
+  // Divider 1
   doc.setDrawColor(...C_BORDER);
   doc.setLineWidth(0.3);
   doc.line(marginL, y, marginR, y);
   y += 6;
+
+  // Judul Rekap (Centered)
+  font(13, true);
+  color(...C_DARK);
+  doc.text("REKAP PIUTANG PELANGGAN", centerX, y, { align: "center" });
+  y += 4;
+
+  // Divider 2
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(marginL, y, marginR, y);
+  y += 5.5;
+
+  const now = new Date();
+  const printedDateLong = now.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  font(8, false);
+  color(...C_MUTED);
+  doc.text(`${filterLabel} · Dicetak - ${printedDateLong}`, centerX, y, { align: "center" });
+  y += 7;
 
   // Summary boxes
   const totalPelanggan = members.length;
@@ -860,6 +900,65 @@ export async function generateAllMembersPDF(
     y += rowH;
   });
 
+  // Render rincian nota bon tiap pelanggan secara berkesinambungan (dipisah garis)
+  const detailedMembers = members.filter((m) => Boolean(m.detail));
+  if (detailedMembers.length > 0) {
+    y += 8;
+    for (let i = 0; i < detailedMembers.length; i++) {
+      const m = detailedMembers[i];
+      if (!m.detail) continue;
+
+      if (y + 52 > pageH - 22) {
+        doc.addPage();
+        y = 16;
+      } else if (i > 0) {
+        y += 6;
+      }
+
+      const { finalY } = await renderMemberBonToDoc(
+        doc,
+        m.detail,
+        storeInfo,
+        fontFamily,
+        logoBase64,
+        { skipHeader: true, skipFooter: true, startY: y }
+      );
+      y = finalY + 4;
+    }
+  }
+
+  // Footer centered di bagian paling bawah dokumen
+  if (y + 28 > pageH - 20) {
+    doc.addPage();
+    y = 18;
+  } else {
+    y += 8;
+  }
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.25);
+  doc.line(marginL, y, marginR, y);
+  y += 6.5;
+
+  const footerBonText =
+    storeInfo.footerBon?.trim() ||
+    "Harap simpan bukti transaksi ini sebagai arsip pembayaran.\nTerima kasih atas kepercayaan Anda.";
+  const footerBonLines = footerBonText.split("\n").map((l) => l.trim()).filter(Boolean);
+  footerBonLines.forEach((line, idx) => {
+    const isLast = idx === footerBonLines.length - 1;
+    font(isLast ? 9 : 8, isLast);
+    color(...(isLast ? C_DARK : C_MUTED));
+    doc.text(line, centerX, y, { align: "center" });
+    y += 5.5;
+  });
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const nowStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(
+    now.getHours()
+  )}.${pad(now.getMinutes())}`;
+  font(7.5, false);
+  color(...C_LIGHT_MUTED);
+  doc.text(`Dicetak otomatis dari Kasirku POS · ${nowStr}`, centerX, y, { align: "center" });
+
   // Page numbers
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
@@ -869,7 +968,6 @@ export async function generateAllMembersPDF(
     doc.text(`Halaman ${p} dari ${totalPages}`, marginR, pageH - 8, { align: "right" });
   }
 
-  const pad = (n: number) => String(n).padStart(2, "0");
   const tglStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   doc.save(`REKAP_PIUTANG_SEMUA_${tglStr}.pdf`);
 }

@@ -3074,105 +3074,116 @@ export default function MemberDetailPage() {
         </div>
       )}
 
-      {/* MODAL KELOLA ANGGOTA PENGAMBIL */}
+      {/* SLIDE DRAWER KELOLA ANGGOTA PENGAMBIL */}
       {isManageMembersOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
           onClick={() => setIsManageMembersOpen(false)}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 space-y-4 font-sans"
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-md shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col font-sans drawer-panel"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
-              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
-                Anggota Pelanggan ({member.nama})
-              </h3>
+            {/* Header Drawer */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                  Anggota Pelanggan
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pelanggan utama: <strong className="text-slate-700 dark:text-zinc-300">{member.nama}</strong>
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsManageMembersOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSubMembers} className="space-y-4">
-              <div>
-                <label className="text-[11px] font-medium text-slate-500 block mb-1.5">
-                  Tambah Nama Anggota
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newSubMemberInput}
-                    onChange={(e) => setNewSubMemberInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddSubMemberChip();
-                      }
-                    }}
-                    placeholder="Contoh: Pak Joko / Anak"
-                    className="ctl-sm flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddSubMemberChip}
-                    className="px-3 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold hover:opacity-90 shrink-0 cursor-pointer"
-                  >
-                    + Tambah
-                  </button>
+            <form onSubmit={handleSaveSubMembers} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                <div>
+                  <label className="text-[11px] font-medium text-slate-500 block mb-1.5">
+                    Tambah Nama Anggota
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubMemberInput}
+                      onChange={(e) => setNewSubMemberInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddSubMemberChip();
+                        }
+                      }}
+                      placeholder="Contoh: Pak Joko / Anak"
+                      className="ctl-sm flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubMemberChip}
+                      className="px-3.5 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold hover:opacity-90 shrink-0 cursor-pointer"
+                    >
+                      + Tambah
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-[11px] font-medium text-slate-500 block">
+                    Daftar Anggota ({editingSubMembers.length})
+                  </span>
+                  {editingSubMembers.length === 0 ? (
+                    <p className="text-xs text-slate-400 py-5 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                      Belum ada nama anggota tambahan
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                      {editingSubMembers.map((name) => (
+                        <span
+                          key={name}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-zinc-200"
+                        >
+                          <span>{name}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditingSubMembers((prev) => prev.filter((item) => item !== name))
+                            }
+                            className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                            title="Hapus anggota"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-medium text-slate-500 block">
-                  Daftar Anggota ({editingSubMembers.length})
-                </span>
-                {editingSubMembers.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-3 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
-                    Belum ada nama anggota tambahan
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-                    {editingSubMembers.map((name) => (
-                      <span
-                        key={name}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-zinc-200"
-                      >
-                        <span>{name}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditingSubMembers((prev) => prev.filter((item) => item !== name))
-                          }
-                          className="text-slate-400 hover:text-rose-600 cursor-pointer"
-                          title="Hapus anggota"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsManageMembersOpen(false)}
-                  className="w-1/2 h-9 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-700 dark:text-zinc-300 font-medium rounded-xl text-xs transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingSubMembers}
-                  className="w-1/2 h-9 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all cursor-pointer"
-                >
-                  {savingSubMembers ? "Menyimpan..." : "Simpan Anggota"}
-                </button>
+              {/* Sticky Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 shrink-0">
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsManageMembersOpen(false)}
+                    className="w-1/2 h-10 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 text-slate-700 dark:text-zinc-300 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingSubMembers}
+                    className="w-1/2 h-10 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    {savingSubMembers ? "Menyimpan..." : "Simpan Anggota"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

@@ -183,6 +183,7 @@ export async function buildOfflineSyntheticResponse(
         namaSnapshot: it?.namaSnapshot || product?.nama || "Produk",
         satuanSnapshot: it?.satuanSnapshot || satuan?.namaSatuan || product?.satuanDasar || "pcs",
         hargaSatuan,
+        hargaJualSnapshot: Number(it?.hargaJualSnapshot ?? hargaSatuan),
         subtotal: itemSubtotal,
       };
     });

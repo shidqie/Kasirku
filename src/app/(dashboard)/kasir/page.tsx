@@ -747,7 +747,41 @@ export default function KasirPOSPage() {
         throw new Error(data.error || "Gagal memproses transaksi");
       }
 
-      setCompletedTrx(data.transaksi);
+      const isOfflineTrx =
+        Boolean(data?.isOfflineQueued) || res.headers.get("X-Offline-Queued") === "true";
+
+      const completed = isOfflineTrx
+        ? {
+            ...data.transaksi,
+            subtotal: data.transaksi?.subtotal || subtotal,
+            diskon: data.transaksi?.diskon ?? diskonNominal,
+            pembulatan: data.transaksi?.pembulatan ?? pembulatan,
+            total: data.transaksi?.total || grandTotal,
+            items: cart.map((it) => ({
+              produkId: it.produkId,
+              satuanProdukId: it.satuanProdukId,
+              namaSnapshot: it.nama,
+              satuanSnapshot: it.namaSatuan,
+              qty: it.qty,
+              hargaSatuan: it.hargaJual,
+              hargaJualSnapshot: it.hargaJual,
+              subtotal: Math.round(it.qty * it.hargaJual),
+            })),
+            pembayaran: [
+              {
+                metode: metodeBayar,
+                jumlah: grandTotal,
+                uangDiterima: metodeBayar === "TUNAI" ? uangDiterima : grandTotal,
+                kembalian: metodeBayar === "TUNAI" ? kembalian : 0,
+              },
+            ],
+            ...(selectedMember
+              ? { member: { id: selectedMember.id, nama: selectedMember.nama } }
+              : {}),
+          }
+        : data.transaksi;
+
+      setCompletedTrx(completed);
       setIsPayModalOpen(false);
       setIsMobileCartOpen(false);
       setIsStrukOpen(true);
