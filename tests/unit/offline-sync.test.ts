@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as offlineDb from "@/lib/offline/offline-db";
-import { resolveOfflineGetJson } from "@/lib/offline/offline-sync";
+import { buildOfflineSyntheticResponse, resolveOfflineGetJson } from "@/lib/offline/offline-sync";
 
 describe("resolveOfflineGetJson", () => {
   const sampleProducts = [
@@ -91,5 +91,42 @@ describe("resolveOfflineGetJson", () => {
     )) as { results: typeof sampleProducts };
     expect(res.results).toHaveLength(1);
     expect(res.results[0].satuanProduk[0].hargaJual).toBe(72000);
+  });
+
+  it("buildOfflineSyntheticResponse mengisi harga, subtotal, total, dan pembayaran struk saat checkout offline", async () => {
+    vi.spyOn(offlineDb, "idbGetCache").mockImplementation(async (url) => {
+      if (url === "/api/products") {
+        return { url, data: { products: sampleProducts }, updatedAt: Date.now() };
+      }
+      if (url === "/api/settings") {
+        return { url, data: { settings: { pembulatan: "BULAT_0" } }, updatedAt: Date.now() };
+      }
+      return null;
+    });
+
+    const res = await buildOfflineSyntheticResponse(
+      "/api/transactions",
+      "POST",
+      JSON.stringify({
+        items: [{ produkId: "p2", satuanProdukId: "s2", qty: 2 }],
+        diskon: 0,
+        metodePembayaran: "TUNAI",
+        uangDiterima: 50000,
+      })
+    );
+    const json = await res.json();
+    expect(json.transaksi.subtotal).toBe(35000);
+    expect(json.transaksi.total).toBe(35000);
+    expect(json.transaksi.items[0]).toMatchObject({
+      namaSnapshot: "Gula Pasir 1kg",
+      satuanSnapshot: "kg",
+      hargaSatuan: 17500,
+      subtotal: 35000,
+    });
+    expect(json.transaksi.pembayaran[0]).toMatchObject({
+      metode: "TUNAI",
+      uangDiterima: 50000,
+      kembalian: 15000,
+    });
   });
 });

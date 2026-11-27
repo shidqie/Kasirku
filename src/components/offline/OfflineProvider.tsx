@@ -232,7 +232,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
             method as "POST" | "PATCH" | "PUT" | "DELETE",
             bodyStr
           );
-          return buildOfflineSyntheticResponse(
+          return await buildOfflineSyntheticResponse(
             parsedUrl.pathname,
             method,
             bodyStr
@@ -249,7 +249,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
             method as "POST" | "PATCH" | "PUT" | "DELETE",
             bodyStr
           );
-          return buildOfflineSyntheticResponse(
+          return await buildOfflineSyntheticResponse(
             parsedUrl.pathname,
             method,
             bodyStr

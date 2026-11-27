@@ -128,14 +128,26 @@ export async function removeOfflineQueueItem(id: string): Promise<void> {
   notifyOfflineQueueChanged();
 }
 
+function computeOfflineRounding(val: number, aturan?: string): number {
+  if (aturan === "BULAT_100") {
+    const sisa = val % 100;
+    return sisa === 0 ? 0 : sisa >= 50 ? 100 - sisa : -sisa;
+  }
+  if (aturan === "BULAT_500") {
+    const sisa = val % 500;
+    return sisa === 0 ? 0 : sisa >= 250 ? 500 - sisa : -sisa;
+  }
+  return 0;
+}
+
 /**
  * Bangun respons sintetis saat offline agar alur UI (termasuk cetak struk kasir) tetap berjalan mulus.
  */
-export function buildOfflineSyntheticResponse(
+export async function buildOfflineSyntheticResponse(
   url: string,
   method: string,
   bodyStr: string | null
-): Response {
+): Promise<Response> {
   let parsedBody: any = {};
   try {
     if (bodyStr) parsedBody = JSON.parse(bodyStr);
@@ -147,6 +159,57 @@ export function buildOfflineSyntheticResponse(
       .getMinutes()
       .toString()
       .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
+
+    const [productsCache, settingsCache, membersCache] = await Promise.all([
+      getCachedApiJson("/api/products"),
+      getCachedApiJson("/api/settings"),
+      parsedBody?.memberId ? getCachedApiJson("/api/members") : Promise.resolve(null),
+    ]);
+
+    const cachedProducts: any[] = (productsCache?.data as { products?: any[] } | undefined)?.products || [];
+    const cachedSettings: any = (settingsCache?.data as { settings?: any } | undefined)?.settings || {};
+    const cachedMembers: any[] = (membersCache?.data as { members?: any[] } | undefined)?.members || [];
+
+    const rawItems: any[] = Array.isArray(parsedBody?.items) ? parsedBody.items : [];
+    const enrichedItems = rawItems.map((it) => {
+      const qty = Number(it?.qty || 0);
+      const product = cachedProducts.find((p) => p?.id === it?.produkId);
+      const satuan = product?.satuanProduk?.find((s: any) => s?.id === it?.satuanProdukId) || product?.satuanProduk?.[0];
+      const hargaSatuan = Number(it?.hargaSatuan ?? satuan?.hargaJual ?? 0);
+      const itemSubtotal = Number(it?.subtotal ?? Math.round(qty * hargaSatuan));
+      return {
+        ...it,
+        qty,
+        namaSnapshot: it?.namaSnapshot || product?.nama || "Produk",
+        satuanSnapshot: it?.satuanSnapshot || satuan?.namaSatuan || product?.satuanDasar || "pcs",
+        hargaSatuan,
+        subtotal: itemSubtotal,
+      };
+    });
+
+    const computedSubtotal = enrichedItems.reduce((sum, it) => sum + Number(it.subtotal || 0), 0);
+    const subtotal = Number(parsedBody?.subtotal ?? computedSubtotal);
+    const diskon = Number(parsedBody?.diskon || 0);
+    const setelahDiskon = Math.max(0, subtotal - diskon);
+    const pembulatan =
+      parsedBody?.pembulatan !== undefined
+        ? Number(parsedBody.pembulatan)
+        : computeOfflineRounding(setelahDiskon, cachedSettings?.pembulatan);
+    const total = Number(parsedBody?.total ?? Math.max(0, setelahDiskon + pembulatan));
+
+    const metode = parsedBody?.pembayaran?.metode || parsedBody?.metodePembayaran || "TUNAI";
+    const uangDiterima = Number(parsedBody?.pembayaran?.uangDiterima ?? parsedBody?.uangDiterima ?? total);
+    const kembalian =
+      parsedBody?.pembayaran?.kembalian !== undefined
+        ? Number(parsedBody.pembayaran.kembalian)
+        : metode === "TUNAI"
+        ? Math.max(0, uangDiterima - total)
+        : 0;
+
+    const matchedMember = parsedBody?.memberId
+      ? cachedMembers.find((m) => m?.id === parsedBody.memberId)
+      : null;
+
     return new Response(
       JSON.stringify({
         message: "Transaksi disimpan offline & akan otomatis terupload saat online",
@@ -154,14 +217,22 @@ export function buildOfflineSyntheticResponse(
         transaksi: {
           id: `offline-${Date.now()}`,
           nomorStruk: offlineNumber,
-          subtotal: parsedBody?.subtotal || 0,
-          diskon: parsedBody?.diskon || 0,
-          pembulatan: parsedBody?.pembulatan || 0,
-          total: parsedBody?.total || 0,
+          subtotal,
+          diskon,
+          pembulatan,
+          total,
           status: "SELESAI",
           dibuatPada: now.toISOString(),
-          items: Array.isArray(parsedBody?.items) ? parsedBody.items : [],
-          pembayaran: parsedBody?.pembayaran ? [parsedBody.pembayaran] : [],
+          items: enrichedItems,
+          pembayaran: [
+            {
+              metode,
+              jumlah: total,
+              uangDiterima,
+              kembalian,
+            },
+          ],
+          ...(matchedMember ? { member: { id: matchedMember.id, nama: matchedMember.nama } } : {}),
         },
       }),
       {
