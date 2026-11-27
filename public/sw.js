@@ -1,4 +1,4 @@
-const CACHE_NAME = "kasirku-pos-shell-v1";
+const CACHE_NAME = "kasirku-pos-shell-v2";
 const CORE_ASSETS = [
   "/favicon.png",
   "/logo.png",

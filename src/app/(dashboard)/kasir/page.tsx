@@ -253,6 +253,9 @@ export default function KasirPOSPage() {
   const [qrisMode, setQrisMode] = useState<"DINAMIS" | "STATIS">("DINAMIS");
   const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
   const [isQrisZoomed, setIsQrisZoomed] = useState(false);
+  const [isQuickQrisOpen, setIsQuickQrisOpen] = useState(false);
+  const [quickQrisAmount, setQuickQrisAmount] = useState<number>(0);
+  const [quickQrisDataUrl, setQuickQrisDataUrl] = useState<string | null>(null);
   const [uangDiterima, setUangDiterima] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -709,6 +712,32 @@ export default function KasirPOSPage() {
     };
   }, [isPayModalOpen, metodeBayar, qrisMode, grandTotal, storeInfo?.qrisPayload, storeInfo?.qrisStaticImage]);
 
+  useEffect(() => {
+    let active = true;
+    const rawPayload = storeInfo?.qrisPayload;
+    if (!isQuickQrisOpen || quickQrisAmount <= 0 || !isValidQrisPayload(rawPayload)) {
+      setQuickQrisDataUrl(null);
+      return;
+    }
+
+    const dynamicPayload = convertStaticQrisToDynamic(rawPayload, quickQrisAmount);
+    QRCode.toDataURL(dynamicPayload, {
+      width: 560,
+      margin: 2,
+      color: { dark: "#0F172A", light: "#FFFFFF" },
+    })
+      .then((url) => {
+        if (active) setQuickQrisDataUrl(url);
+      })
+      .catch(() => {
+        if (active) setQuickQrisDataUrl(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isQuickQrisOpen, quickQrisAmount, storeInfo?.qrisPayload]);
+
   const openPaymentModal = () => {
     if (cart.length === 0) return;
     setUangDiterima(grandTotal);
@@ -724,7 +753,14 @@ export default function KasirPOSPage() {
       const payload = {
         idempotencyKey,
         memberId: metodeBayar === "KASBON" || selectedMember ? selectedMember?.id : null,
-        items: cart.map((it) => ({ produkId: it.produkId, satuanProdukId: it.satuanProdukId, qty: it.qty })),
+        items: cart.map((it) => ({
+          produkId: it.produkId,
+          satuanProdukId: it.satuanProdukId,
+          nama: it.nama,
+          harga: Number(it.hargaJual),
+          qty: Number(it.qty),
+          subtotal: Math.round(Number(it.qty) * Number(it.hargaJual)),
+        })),
         diskon: diskonNominal,
         metodePembayaran: metodeBayar,
         uangDiterima: metodeBayar === "TUNAI" ? uangDiterima : grandTotal,
@@ -821,6 +857,19 @@ export default function KasirPOSPage() {
                 style={{ "--tw-ring-color": "var(--primary)" } as any}
               />
             </div>
+            {/* Button Quick QRIS Dinamis */}
+            <button
+              type="button"
+              onClick={() => {
+                setQuickQrisAmount(0);
+                setIsQuickQrisOpen(true);
+              }}
+              className="h-11 px-3 sm:px-3.5 rounded-[14px] text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 shrink-0 transition-all hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 flex items-center gap-2 shadow-2xs cursor-pointer"
+              title="Buat QRIS Dinamis Cepat"
+            >
+              <QrCode className="w-4 h-4 text-[#F0090F]" />
+              <span className="hidden sm:inline">Quick QRIS</span>
+            </button>
             {/* Button Riwayat Penjualan */}
             <button
               onClick={() => setIsRiwayatOpen(true)}
@@ -1899,6 +1948,133 @@ export default function KasirPOSPage() {
               >
                 {submitting ? "Memproses..." : "Konfirmasi Pembayaran"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Quick QRIS Dinamis (Input Nominal Langsung) */}
+      {isQuickQrisOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
+          onClick={() => setIsQuickQrisOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xl border border-slate-200/80 dark:border-zinc-800 p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-1"
+                  style={{
+                    backgroundColor: "var(--primary-light, #FEE2E2)",
+                    color: "var(--primary, #F0090F)",
+                  }}
+                >
+                  Quick QRIS Dinamis
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-zinc-100">
+                  {extractQrisMerchantName(storeInfo?.qrisPayload) || storeInfo?.namaToko || "Pembayaran QRIS"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQuickQrisOpen(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 flex items-center justify-center text-slate-600 dark:text-zinc-300 shrink-0 cursor-pointer"
+                title="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Input Nominal Total */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                Total yang harus dibayar
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">
+                  Rp
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  value={quickQrisAmount ? quickQrisAmount.toLocaleString("id-ID") : ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setQuickQrisAmount(digits ? parseInt(digits, 10) : 0);
+                  }}
+                  placeholder="0"
+                  className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xl font-black text-right text-slate-900 dark:text-zinc-100 tabular-nums focus:outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {[5000, 10000, 20000, 50000, 100000].map((addVal) => (
+                  <button
+                    key={addVal}
+                    type="button"
+                    onClick={() => setQuickQrisAmount((prev) => prev + addVal)}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
+                  >
+                    +{addVal >= 1000 ? `${addVal / 1000}rb` : addVal}
+                  </button>
+                ))}
+                {quickQrisAmount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickQrisAmount(0)}
+                    className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-semibold hover:bg-rose-100 transition-colors cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Area QRIS Dinamis */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-center space-y-3">
+              {!isValidQrisPayload(storeInfo?.qrisPayload) ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400 py-4 leading-relaxed">
+                  Kode QRIS Dinamis toko belum diatur.{" "}
+                  <Link href="/owner/pengaturan?tab=pembayaran" className="underline font-semibold">
+                    Atur di Pengaturan Pembayaran
+                  </Link>
+                  .
+                </p>
+              ) : quickQrisAmount <= 0 ? (
+                <div className="py-8 space-y-2 text-slate-400">
+                  <QrCode className="w-12 h-12 mx-auto opacity-40" />
+                  <p className="text-xs">Masukkan total bayar di atas untuk membuat QRIS</p>
+                </div>
+              ) : (
+                <>
+                  <div className="w-60 h-60 mx-auto bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+                    {quickQrisDataUrl ? (
+                      <img
+                        src={quickQrisDataUrl}
+                        alt="Quick QRIS Dinamis"
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                    ) : (
+                      <QrCode className="w-32 h-32 text-slate-800 animate-pulse" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
+                      Total Tagihan
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 tabular-nums">
+                      {formatRupiah(quickQrisAmount)}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                      Tunjukkan ke konsumen untuk langsung scan (nominal otomatis terisi).
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

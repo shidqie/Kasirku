@@ -226,6 +226,14 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
           { label: "Piutang", href: "/member", icon: Users },
         ],
       },
+      {
+        key: "datamaster",
+        title: "DATA MASTER",
+        collapsible: true,
+        items: [
+          { label: "Produk & Harga", href: "/owner/produk", icon: Package },
+        ],
+      },
     ];
   })();
 
@@ -643,14 +651,14 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
         )}
       </aside>
 
-      {/* Mobile & Tablet Drawer (Selalu Full Expanded, muncul dari kanan) */}
+      {/* Mobile & Tablet Drawer (Selalu Full Expanded, muncul dari kiri) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+        <div className="fixed inset-0 z-50 lg:hidden flex justify-start">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm drawer-backdrop"
             onClick={onClose}
           />
-          <div className="relative w-64 max-w-[85vw] h-full z-10 shadow-2xl drawer-panel">
+          <div className="relative w-64 max-w-[85vw] h-[100dvh] z-10 shadow-2xl drawer-panel-left">
             {renderSidebarContent(false)}
           </div>
         </div>

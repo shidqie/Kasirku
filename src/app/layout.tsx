@@ -1,15 +1,24 @@
 import "@/lib/polyfills";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/shared/ToastProvider";
 import { OfflineProvider } from "@/components/offline/OfflineProvider";
+import { MobileViewportGuard } from "@/components/shared/MobileViewportGuard";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://tokogagan.biz.id"),
@@ -75,7 +84,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans selection:bg-red-100 selection:text-red-900">
+      <body className="min-h-[100dvh] bg-slate-50 text-slate-900 antialiased font-sans selection:bg-red-100 selection:text-red-900">
+        <MobileViewportGuard />
         <ToastProvider>
           <OfflineProvider>{children}</OfflineProvider>
         </ToastProvider>

@@ -16,9 +16,35 @@ export interface OfflineSyncItem {
 }
 
 const DB_NAME = "kasirku_offline_db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_CACHE = "api_cache";
 const STORE_QUEUE = "sync_queue";
+
+/**
+ * Normalisasi payload produk dari Prisma (Decimal/string) ke Number agar aman di IndexedDB.
+ */
+export function normalizeProductsCachePayload(data: unknown): unknown {
+  if (!data || typeof data !== "object") return data;
+  const obj = data as { products?: any[] };
+  if (!Array.isArray(obj.products)) return data;
+
+  return {
+    ...obj,
+    products: obj.products.map((p) => ({
+      ...p,
+      stokCache: Number(p?.stokCache ?? 0),
+      stokMinimum: Number(p?.stokMinimum ?? 0),
+      satuanProduk: Array.isArray(p?.satuanProduk)
+        ? p.satuanProduk.map((s: any) => ({
+            ...s,
+            faktorKeDasar: Number(s?.faktorKeDasar ?? 1),
+            hargaJual: Number(s?.hargaJual ?? 0),
+            hargaBeli: Number(s?.hargaBeli ?? 0),
+          }))
+        : [],
+    })),
+  };
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -28,13 +54,30 @@ function openDb(): Promise<IDBDatabase> {
     }
 
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      const oldVersion = event.oldVersion || 0;
       if (!db.objectStoreNames.contains(STORE_CACHE)) {
         db.createObjectStore(STORE_CACHE, { keyPath: "url" });
       }
       if (!db.objectStoreNames.contains(STORE_QUEUE)) {
         db.createObjectStore(STORE_QUEUE, { keyPath: "id" });
+      }
+      // Migrasi v1 -> v2: normalisasi harga produk yang sudah tersimpan di api_cache
+      if (oldVersion > 0 && oldVersion < 2 && request.transaction) {
+        try {
+          const cacheStore = request.transaction.objectStore(STORE_CACHE);
+          const getReq = cacheStore.get("/api/products");
+          getReq.onsuccess = () => {
+            const entry = getReq.result as OfflineCacheEntry | undefined;
+            if (entry) {
+              cacheStore.put({
+                ...entry,
+                data: normalizeProductsCachePayload(entry.data),
+              });
+            }
+          };
+        } catch {}
       }
     };
     request.onsuccess = () => resolve(request.result);

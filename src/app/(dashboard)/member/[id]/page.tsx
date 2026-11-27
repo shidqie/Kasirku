@@ -32,7 +32,9 @@ import {
   Image as ImageIcon,
   QrCode,
   Maximize2,
+  Barcode,
 } from "lucide-react";
+import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import QRCode from "qrcode";
 import {
   convertStaticQrisToDynamic,
@@ -193,6 +195,7 @@ export default function MemberDetailPage() {
   const [loadingMasterProducts, setLoadingMasterProducts] = useState(false);
   const [quickProductSearch, setQuickProductSearch] = useState("");
   const [isQuickProductDropdownOpen, setIsQuickProductDropdownOpen] = useState(false);
+  const [isManualScannerOpen, setIsManualScannerOpen] = useState(false);
   const quickSearchRef = useRef<HTMLDivElement>(null);
 
   // Buat Produk Baru Cepat dari Kasbon Manual
@@ -2652,31 +2655,45 @@ export default function MemberDetailPage() {
                     <label className="text-[11px] font-medium text-slate-500 block mb-1">
                       Masukan Produk
                     </label>
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Cari produk dari data master (nama atau barcode)..."
-                        value={quickProductSearch}
-                        onFocus={() => {
-                          fetchMasterProducts();
-                        }}
-                        onChange={(e) => {
-                          setQuickProductSearch(e.target.value);
-                        }}
-                        className="w-full pl-9 pr-8 h-9 bg-slate-50/80 dark:bg-zinc-800 focus:bg-white border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-                      />
-                      {quickProductSearch && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickProductSearch("");
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Cari nama produk"
+                          value={quickProductSearch}
+                          onFocus={() => {
+                            fetchMasterProducts();
                           }}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                          onChange={(e) => {
+                            setQuickProductSearch(e.target.value);
+                          }}
+                          className="w-full pl-9 pr-8 h-9 bg-slate-50/80 dark:bg-zinc-800 focus:bg-white border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                        {quickProductSearch && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickProductSearch("");
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchMasterProducts();
+                          setIsManualScannerOpen(true);
+                        }}
+                        className="h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                        title="Scan barcode produk"
+                      >
+                        <Barcode className="w-4 h-4 text-[#F0090F]" />
+                        <span>Scan</span>
+                      </button>
                     </div>
                   </div>
 
@@ -2799,14 +2816,22 @@ export default function MemberDetailPage() {
                                       <label className="text-[10px] font-medium text-slate-500 block mb-0.5">
                                         Harga Jual (Rp)
                                       </label>
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        value={quickNewHarga || ""}
-                                        onChange={(e) => setQuickNewHarga(Math.max(0, Number(e.target.value) || 0))}
-                                        placeholder="0"
-                                        className="ctl-sm w-full text-right"
-                                      />
+                                      <div className="relative">
+                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400 pointer-events-none">
+                                          Rp
+                                        </span>
+                                        <input
+                                          type="text"
+                                          inputMode="numeric"
+                                          value={quickNewHarga ? quickNewHarga.toLocaleString("id-ID") : ""}
+                                          onChange={(e) => {
+                                            const digits = e.target.value.replace(/\D/g, "");
+                                            setQuickNewHarga(digits ? parseInt(digits, 10) : 0);
+                                          }}
+                                          placeholder="0"
+                                          className="ctl-sm w-full pl-8 text-right font-semibold tabular-nums"
+                                        />
+                                      </div>
                                     </div>
                                   </div>
 
@@ -3544,6 +3569,23 @@ export default function MemberDetailPage() {
         loading={reconciling}
         onConfirm={confirmReconcile}
         onCancel={() => !reconciling && setIsReconcileOpen(false)}
+      />
+
+      <BarcodeScannerModal
+        isOpen={isManualScannerOpen}
+        onClose={() => setIsManualScannerOpen(false)}
+        onScanSuccess={(code) => {
+          const clean = code.trim().toLowerCase();
+          const matched = masterProducts.find(
+            (p) => p.barcode && String(p.barcode).trim().toLowerCase() === clean
+          );
+          if (matched) {
+            handleSelectMasterProduct(matched);
+          } else {
+            setQuickProductSearch(code.trim());
+          }
+          setIsManualScannerOpen(false);
+        }}
       />
     </div>
   );

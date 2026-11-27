@@ -3,7 +3,10 @@ import { z } from "zod";
 export const checkoutItemSchema = z.object({
   produkId: z.string().min(1, "Produk wajib dipilih"),
   satuanProdukId: z.string().min(1, "Satuan wajib dipilih"),
+  nama: z.string().min(1).optional(),
+  harga: z.number().nonnegative("Harga tidak boleh negatif").optional(),
   qty: z.number().positive("Jumlah harus lebih dari 0"),
+  subtotal: z.number().nonnegative("Subtotal tidak boleh negatif").optional(),
 });
 
 export const checkoutSchema = z.object({

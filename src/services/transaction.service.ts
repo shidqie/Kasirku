@@ -8,7 +8,10 @@ import { generateUUID } from "@/lib/formatters";
 export interface CheckoutItemInput {
   produkId: string;
   satuanProdukId: string;
+  nama?: string;
+  harga?: number;
   qty: number;
+  subtotal?: number;
 }
 
 export interface CheckoutInput {
@@ -111,6 +114,13 @@ export async function checkout(
     subtotal: number;
   }[] = [];
 
+  const priceDiscrepancies: {
+    produkId: string;
+    nama: string;
+    hargaKlien: number;
+    hargaServer: number;
+  }[] = [];
+
   for (const item of input.items) {
     const p = productMap.get(item.produkId);
     if (!p) throw new Error(`Produk dengan ID ${item.produkId} tidak ditemukan`);
@@ -132,17 +142,31 @@ export async function checkout(
       );
     }
 
-    const itemSubtotal = Math.round(item.qty * s.hargaJual);
+    const hargaSnapshot =
+      typeof item.harga === "number" && Number.isFinite(item.harga)
+        ? Math.round(item.harga)
+        : s.hargaJual;
+
+    if (hargaSnapshot !== s.hargaJual) {
+      priceDiscrepancies.push({
+        produkId: p.id,
+        nama: p.nama,
+        hargaKlien: hargaSnapshot,
+        hargaServer: s.hargaJual,
+      });
+    }
+
+    const itemSubtotal = Math.round(item.qty * hargaSnapshot);
     subtotalKotor += itemSubtotal;
 
     preparedItems.push({
       produkId: p.id,
-      namaSnapshot: p.nama,
+      namaSnapshot: item.nama?.trim() || p.nama,
       satuanSnapshot: s.namaSatuan,
       faktorKeDasarSnapshot: faktorDecimal,
       qty: qtyDecimal,
       qtyDasar,
-      hargaJualSnapshot: s.hargaJual,
+      hargaJualSnapshot: hargaSnapshot,
       hargaBeliSnapshot: s.hargaBeli,
       subtotal: itemSubtotal,
     });
@@ -290,9 +314,25 @@ export async function checkout(
       nomorStruk: resultTransaksi?.nomorStruk,
       total: totalAkhir,
       metode: input.metodePembayaran,
+      ...(priceDiscrepancies.length > 0 ? { priceDiscrepancies } : {}),
     },
     ip,
   });
+
+  if (priceDiscrepancies.length > 0) {
+    await logActivity({
+      userId: kasir.id,
+      role: kasir.role,
+      aksi: "PERBEDAAN_HARGA_SYNC_OFFLINE",
+      entitas: "Transaksi",
+      entitasId: resultTransaksi?.id,
+      sesudahJson: {
+        nomorStruk: resultTransaksi?.nomorStruk,
+        priceDiscrepancies,
+      },
+      ip,
+    });
+  }
 
   return { transaksi: resultTransaksi, isDuplicate: false };
 }

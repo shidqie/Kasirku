@@ -20,9 +20,9 @@ export function DashboardShell({ user, storeName, children }: DashboardShellProp
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen w-full bg-white dark:bg-[#121214] flex flex-col transition-colors overflow-x-hidden">
+      <div className="min-h-[100dvh] w-full bg-white dark:bg-[#121214] flex flex-col transition-colors overflow-x-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         {/* Full Page Shell Container */}
-        <div className="w-full h-screen h-dvh flex overflow-hidden">
+        <div className="w-full h-[100dvh] flex overflow-hidden">
           {/* Sidebar Component */}
           <Sidebar
             user={user}
