@@ -183,6 +183,14 @@ export default function MemberDetailPage() {
   const [isQuickProductDropdownOpen, setIsQuickProductDropdownOpen] = useState(false);
   const quickSearchRef = useRef<HTMLDivElement>(null);
 
+  // Buat Produk Baru Cepat dari Kasbon Manual
+  const [showQuickCreateProduct, setShowQuickCreateProduct] = useState(false);
+  const [quickNewNama, setQuickNewNama] = useState("");
+  const [quickNewSatuan, setQuickNewSatuan] = useState("pcs");
+  const [quickNewHarga, setQuickNewHarga] = useState<number>(0);
+  const [creatingQuickProduct, setCreatingQuickProduct] = useState(false);
+  const [quickCreateError, setQuickCreateError] = useState<string | null>(null);
+
   // Modal Ubah Batas Limit Kasbon Member
   const [isEditLimitOpen, setIsEditLimitOpen] = useState(false);
   const [newLimitKasbon, setNewLimitKasbon] = useState<number>(1000000);
@@ -366,6 +374,7 @@ export default function MemberDetailPage() {
       );
       return {
         id: dateKey,
+        mutasiId: sortedSubs.length === 1 ? sortedSubs[0].id : undefined,
         tipe: sortedSubs.length === 1 ? sortedSubs[0].tipe : "GROUPED",
         dibuatPada: sortedSubs[0].dibuatPada,
         label:
@@ -393,13 +402,19 @@ export default function MemberDetailPage() {
     return groupedList;
   }, [member, sortOrder]);
 
-  // Hitung status pembayaran tiap bon secara FIFO berdasarkan saldo utang member saat ini
-  const bonStatusMap = useMemo(() => {
-    const map: Record<string, "LUNAS" | "CICIL" | "BELUM_LUNAS"> = {};
+  // Hitung status & rincian cicilan tiap bon secara FIFO berdasarkan saldo utang member saat ini
+  const bonPaymentInfoMap = useMemo(() => {
+    const map: Record<
+      string,
+      { status: "LUNAS" | "CICIL" | "BELUM_LUNAS"; totalBon: number; terbayar: number; sisaBon: number }
+    > = {};
     if (!member || allKasbonEntries.length === 0) return map;
 
     if (Number(member.saldoUtangCache || 0) <= 0) {
-      for (const b of allKasbonEntries) map[b.id] = "LUNAS";
+      for (const b of allKasbonEntries) {
+        const totalBon = b.sisa > 0 ? b.sisa : b.total;
+        map[b.id] = { status: "LUNAS", totalBon, terbayar: totalBon, sisaBon: 0 };
+      }
       return map;
     }
 
@@ -415,17 +430,30 @@ export default function MemberDetailPage() {
     for (const b of chronological) {
       const bonAmt = b.sisa > 0 ? b.sisa : b.total;
       if (bonAmt <= 0 || remainingPaid >= bonAmt) {
-        map[b.id] = "LUNAS";
+        map[b.id] = { status: "LUNAS", totalBon: bonAmt, terbayar: bonAmt, sisaBon: 0 };
         remainingPaid = Math.max(0, remainingPaid - bonAmt);
       } else if (remainingPaid > 0) {
-        map[b.id] = "CICIL";
+        map[b.id] = {
+          status: "CICIL",
+          totalBon: bonAmt,
+          terbayar: remainingPaid,
+          sisaBon: Math.max(0, bonAmt - remainingPaid),
+        };
         remainingPaid = 0;
       } else {
-        map[b.id] = "BELUM_LUNAS";
+        map[b.id] = { status: "BELUM_LUNAS", totalBon: bonAmt, terbayar: 0, sisaBon: bonAmt };
       }
     }
     return map;
   }, [member, allKasbonEntries]);
+
+  const bonStatusMap = useMemo(() => {
+    const map: Record<string, "LUNAS" | "CICIL" | "BELUM_LUNAS"> = {};
+    for (const [id, info] of Object.entries(bonPaymentInfoMap)) {
+      map[id] = info.status;
+    }
+    return map;
+  }, [bonPaymentInfoMap]);
 
   // User Story D6: Kirim Ringkasan ke WhatsApp Member
   const handleShareWhatsApp = () => {
@@ -631,6 +659,67 @@ export default function MemberDetailPage() {
     setIsQuickProductDropdownOpen(false);
   };
 
+  const handleQuickCreateProduct = async () => {
+    const namaTrimmed = quickNewNama.trim();
+    const satuanTrimmed = quickNewSatuan.trim() || "pcs";
+    if (namaTrimmed.length < 2) {
+      setQuickCreateError("Nama produk minimal 2 karakter.");
+      return;
+    }
+    if (quickNewHarga < 0) {
+      setQuickCreateError("Harga jual tidak boleh negatif.");
+      return;
+    }
+
+    setCreatingQuickProduct(true);
+    setQuickCreateError(null);
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: namaTrimmed,
+          satuanDasar: satuanTrimmed,
+          stokMinimum: 0,
+          satuanList: [
+            {
+              namaSatuan: satuanTrimmed,
+              faktorKeDasar: 1,
+              hargaJual: Math.round(quickNewHarga || 0),
+              hargaBeli: 0,
+              isDefault: true,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Gagal membuat produk baru");
+      }
+
+      const created = data.product;
+      if (created) {
+        setMasterProducts((prev) => [created, ...prev]);
+        handleSelectMasterProduct(created, created.satuanProduk?.[0]);
+      } else {
+        handleSelectMasterProduct({
+          nama: namaTrimmed,
+          satuanDasar: satuanTrimmed,
+          satuanProduk: [{ namaSatuan: satuanTrimmed, hargaJual: Math.round(quickNewHarga || 0), isDefault: true }],
+        });
+      }
+      setShowQuickCreateProduct(false);
+      setQuickNewNama("");
+      setQuickNewSatuan("pcs");
+      setQuickNewHarga(0);
+      setSuccess(`Produk "${namaTrimmed}" berhasil dibuat & ditambahkan`);
+    } catch (err: any) {
+      setQuickCreateError(err?.message || "Gagal membuat produk baru");
+    } finally {
+      setCreatingQuickProduct(false);
+    }
+  };
+
   const handleAddManualItem = () => {
     setManualItems([
       ...manualItems,
@@ -751,7 +840,10 @@ export default function MemberDetailPage() {
 
   // Aksi Pembayaran Bon Spesifik
   const handleOpenPayForBon = (bon: any) => {
-    const amountToPay = bon.sisa > 0 ? bon.sisa : bon.total;
+    const bonInfo = bonPaymentInfoMap[bon.id];
+    const sisaBon = bonInfo ? bonInfo.sisaBon : bon.sisa > 0 ? bon.sisa : bon.total;
+    const maxPay = Number(member?.saldoUtangCache || 0);
+    const amountToPay = maxPay > 0 ? Math.min(maxPay, sisaBon > 0 ? sisaBon : maxPay) : sisaBon;
     setPayAmount(amountToPay);
     setPayUangDiterima(amountToPay);
     setPayCatatan(`Pembayaran ${bon.label}`);
@@ -768,7 +860,7 @@ export default function MemberDetailPage() {
   // Callback setelah PIN Owner terverifikasi
   const handlePinVerifiedForEdit = () => {
     if (!bonToEdit) return;
-    setEditMutasiId(bonToEdit.id);
+    setEditMutasiId(bonToEdit.mutasiId || bonToEdit.subEntries?.[0]?.id || bonToEdit.id);
     const d = bonToEdit.dibuatPada instanceof Date ? bonToEdit.dibuatPada : new Date(bonToEdit.dibuatPada);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -1176,7 +1268,8 @@ export default function MemberDetailPage() {
                         const cleanLabel = String(bon.label || "").replace(/^ID Bon:\s*/i, "");
                         const isExpanded = !!expandedBonIds[bon.id];
                         const totalBarang = Array.isArray(bon.items) ? bon.items.length : 0;
-                        const payStatus = bonStatusMap[bon.id] || "BELUM_LUNAS";
+                        const payInfo = bonPaymentInfoMap[bon.id];
+                        const payStatus = payInfo?.status || "BELUM_LUNAS";
 
                         return (
                           <div
@@ -1202,7 +1295,7 @@ export default function MemberDetailPage() {
                                     </span>
                                   ) : payStatus === "CICIL" ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80">
-                                      Cicilan
+                                      Cicilan{payInfo && payInfo.terbayar > 0 ? ` · Sisa ${formatRupiah(payInfo.sisaBon)}` : ""}
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/80">
@@ -1242,7 +1335,7 @@ export default function MemberDetailPage() {
                                         <span>
                                           Diambil oleh <strong>{sub.pengambil}</strong> · Jam {subJam} WIB
                                         </span>
-                                        <span className="text-slate-400">Kasir: {sub.kasir}</span>
+                                        <span className="text-slate-400">Dilayani Oleh : {sub.kasir}</span>
                                       </div>
                                       <div className="space-y-1">
                                         {(sub.items || []).map((it: any, iIdx: number) => (
@@ -1263,9 +1356,19 @@ export default function MemberDetailPage() {
                                   );
                                 })}
                                 <div className="flex items-center justify-between pt-1">
-                                  <span className="text-xs text-slate-500">
-                                    Sisa: <strong className="text-rose-600">{formatRupiah(bon.sisa)}</strong>
-                                  </span>
+                                  <div className="text-xs text-slate-500 space-y-0.5">
+                                    {payInfo && payInfo.terbayar > 0 && (
+                                      <div>
+                                        Cicilan terbayar: <strong className="text-emerald-600">{formatRupiah(payInfo.terbayar)}</strong>
+                                      </div>
+                                    )}
+                                    <div>
+                                      Sisa:{" "}
+                                      <strong className={ (payInfo ? payInfo.sisaBon : bon.sisa) <= 0 ? "text-emerald-600" : "text-rose-600" }>
+                                        {formatRupiah(payInfo ? payInfo.sisaBon : bon.sisa)}
+                                      </strong>
+                                    </div>
+                                  </div>
                                   <button
                                     type="button"
                                     disabled={member.saldoUtangCache <= 0}
@@ -1303,7 +1406,8 @@ export default function MemberDetailPage() {
                         const cleanLabel = String(bon.label || "").replace(/^ID Bon:\s*/i, "");
                         const isExpanded = !!expandedBonIds[bon.id];
                         const totalBarang = Array.isArray(bon.items) ? bon.items.length : 0;
-                        const payStatus = bonStatusMap[bon.id] || "BELUM_LUNAS";
+                        const payInfo = bonPaymentInfoMap[bon.id];
+                        const payStatus = payInfo?.status || "BELUM_LUNAS";
 
                         return (
                           <Fragment key={bon.id}>
@@ -1328,7 +1432,12 @@ export default function MemberDetailPage() {
                                 {totalBarang > 0 ? `${totalBarang} barang` : "-"}
                               </td>
                               <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-zinc-100 tabular-nums whitespace-nowrap">
-                                {formatRupiah(bon.sisa > 0 ? bon.sisa : bon.total)}
+                                <div>{formatRupiah(bon.sisa > 0 ? bon.sisa : bon.total)}</div>
+                                {payStatus === "CICIL" && payInfo && payInfo.terbayar > 0 && (
+                                  <div className="text-[10px] font-medium text-amber-600 dark:text-amber-400 mt-0.5">
+                                    Bayar {formatRupiah(payInfo.terbayar)} · Sisa {formatRupiah(payInfo.sisaBon)}
+                                  </div>
+                                )}
                               </td>
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 {payStatus === "LUNAS" ? (
@@ -1407,11 +1516,24 @@ export default function MemberDetailPage() {
                                                 )}
                                                 <span>·</span>
                                                 <span>
-                                                  Kasir:{" "}
+                                                  Dilayani Oleh :{" "}
                                                   <strong className="font-medium text-slate-700 dark:text-zinc-300">
                                                     {sub.kasir}
                                                   </strong>
                                                 </span>
+                                                {sub.tipe === "MANUAL" && bon.subEntries && bon.subEntries.length > 1 && (
+                                                  <>
+                                                    <span>·</span>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleRequestEditBon(sub)}
+                                                      className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 underline underline-offset-2 cursor-pointer"
+                                                    >
+                                                      <Pencil className="w-3 h-3" />
+                                                      <span>Edit</span>
+                                                    </button>
+                                                  </>
+                                                )}
                                               </div>
                                             </div>
 
@@ -1475,12 +1597,32 @@ export default function MemberDetailPage() {
                                           {formatRupiah(bon.bayarDp)}
                                         </span>
                                       </div>
+                                      {payInfo && payInfo.terbayar > 0 && (
+                                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                                          <span>Sudah Dibayar (Cicilan)</span>
+                                          <span className="font-medium tabular-nums">
+                                            -{formatRupiah(payInfo.terbayar)}
+                                          </span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between items-baseline pt-2 mt-2 border-t border-slate-200 dark:border-zinc-800">
-                                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-500">
-                                          Sisa
+                                        <span
+                                          className={`text-xs font-semibold ${
+                                            (payInfo ? payInfo.sisaBon : bon.sisa) <= 0
+                                              ? "text-emerald-600 dark:text-emerald-400"
+                                              : "text-rose-600 dark:text-rose-500"
+                                          }`}
+                                        >
+                                          Sisa Pembayaran
                                         </span>
-                                        <span className="text-sm font-bold text-rose-600 dark:text-rose-500 tabular-nums">
-                                          {formatRupiah(bon.sisa)}
+                                        <span
+                                          className={`text-sm font-bold tabular-nums ${
+                                            (payInfo ? payInfo.sisaBon : bon.sisa) <= 0
+                                              ? "text-emerald-600 dark:text-emerald-400"
+                                              : "text-rose-600 dark:text-rose-500"
+                                          }`}
+                                        >
+                                          {formatRupiah(payInfo ? payInfo.sisaBon : bon.sisa)}
                                         </span>
                                       </div>
                                     </div>
@@ -1656,16 +1798,38 @@ export default function MemberDetailPage() {
 
             <form onSubmit={handlePayDebtSubmit} className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                {selectedBonToPay && (
-                  <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-100 dark:border-zinc-800">
-                    <span className="text-slate-500">
-                      Membayar <strong className="text-slate-800 dark:text-zinc-200">{selectedBonToPay.label}</strong>
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
-                      {formatRupiah(selectedBonToPay.sisa > 0 ? selectedBonToPay.sisa : selectedBonToPay.total)}
-                    </span>
-                  </div>
-                )}
+                {selectedBonToPay && (() => {
+                  const bonInfo = bonPaymentInfoMap[selectedBonToPay.id];
+                  const totalBon = bonInfo?.totalBon ?? (selectedBonToPay.sisa > 0 ? selectedBonToPay.sisa : selectedBonToPay.total);
+                  const sudahBayar = bonInfo?.terbayar ?? 0;
+                  const sisaBon = bonInfo?.sisaBon ?? totalBon;
+                  return (
+                    <div className="rounded-xl bg-slate-50/90 dark:bg-zinc-800/70 border border-slate-200/80 dark:border-zinc-700 p-3 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">
+                          Membayar <strong className="text-slate-800 dark:text-zinc-200">{selectedBonToPay.label}</strong>
+                        </span>
+                        <span className="font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
+                          {formatRupiah(totalBon)}
+                        </span>
+                      </div>
+                      {sudahBayar > 0 && (
+                        <>
+                          <div className="flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                            <span>Sudah dibayar (Cicilan)</span>
+                            <span className="font-semibold tabular-nums">-{formatRupiah(sudahBayar)}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/70 dark:border-zinc-700">
+                            <span className="font-semibold text-amber-700 dark:text-amber-400">Sisa tagihan bon</span>
+                            <span className="font-bold text-amber-700 dark:text-amber-400 tabular-nums">
+                              {formatRupiah(sisaBon)}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -1696,11 +1860,12 @@ export default function MemberDetailPage() {
 
                   {/* Tombol cepat Cicilan / Lunas */}
                   {(() => {
+                    const selectedBonSisa = selectedBonToPay
+                      ? bonPaymentInfoMap[selectedBonToPay.id]?.sisaBon ??
+                        (selectedBonToPay.sisa > 0 ? selectedBonToPay.sisa : selectedBonToPay.total)
+                      : member.saldoUtangCache;
                     const baseTarget = selectedBonToPay
-                      ? Math.min(
-                          member.saldoUtangCache,
-                          selectedBonToPay.sisa > 0 ? selectedBonToPay.sisa : selectedBonToPay.total
-                        )
+                      ? Math.min(member.saldoUtangCache, selectedBonSisa)
                       : member.saldoUtangCache;
                     const presets = [
                       { label: "25%", amount: Math.max(1000, Math.round((baseTarget * 0.25) / 500) * 500) },
@@ -2250,7 +2415,8 @@ export default function MemberDetailPage() {
                     </div>
                   </div>
 
-                  {/* Daftar Produk */}
+                  {/* Daftar Produk (tampil saat mengetik di search bar) */}
+                  {quickProductSearch.trim() && (
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
@@ -2276,10 +2442,133 @@ export default function MemberDetailPage() {
                       return (
                         <div className="border border-slate-200/90 dark:border-zinc-800 rounded-xl bg-slate-50/40 dark:bg-zinc-900/40 max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
                           {filteredMaster.length === 0 ? (
-                            <div className="py-4 text-center text-xs text-slate-400">
-                              {masterProducts.length === 0
-                                ? "Memuat daftar produk..."
-                                : "Produk tidak ditemukan. Ketik manual di tabel di bawah."}
+                            <div className="p-3.5 text-xs space-y-2.5">
+                              {masterProducts.length === 0 ? (
+                                <p className="text-center text-slate-400 py-2">Memuat daftar produk...</p>
+                              ) : !showQuickCreateProduct ? (
+                                <div className="text-center space-y-2.5 py-1">
+                                  <p className="text-slate-500 dark:text-zinc-400">
+                                    Produk <span className="font-semibold text-slate-700 dark:text-zinc-200">&ldquo;{quickProductSearch.trim()}&rdquo;</span> tidak ditemukan di daftar.
+                                  </p>
+                                  <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setQuickNewNama(quickProductSearch.trim());
+                                        setQuickNewSatuan("pcs");
+                                        setQuickNewHarga(0);
+                                        setQuickCreateError(null);
+                                        setShowQuickCreateProduct(true);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white font-semibold text-xs shadow-sm hover:opacity-95 transition-opacity cursor-pointer"
+                                      style={{ backgroundColor: "var(--primary, #F0090F)" }}
+                                    >
+                                      <Plus className="w-3.5 h-3.5" />
+                                      <span>Buat Data Produk &ldquo;{quickProductSearch.trim()}&rdquo;</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleSelectMasterProduct({
+                                          nama: quickProductSearch.trim(),
+                                          satuanDasar: "pcs",
+                                          satuanProduk: [{ namaSatuan: "pcs", hargaJual: 0, isDefault: true }],
+                                        });
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 font-medium text-xs hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>Masukkan ke Daftar Barang Saja</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl p-3 space-y-2.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-slate-800 dark:text-zinc-100">
+                                      Buat Data Produk Baru
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowQuickCreateProduct(false);
+                                        setQuickCreateError(null);
+                                      }}
+                                      className="text-slate-400 hover:text-slate-600 p-0.5"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+
+                                  {quickCreateError && (
+                                    <p className="text-[11px] text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-lg px-2.5 py-1.5">
+                                      {quickCreateError}
+                                    </p>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                    <div className="sm:col-span-6">
+                                      <label className="text-[10px] font-medium text-slate-500 block mb-0.5">
+                                        Nama Produk *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={quickNewNama}
+                                        onChange={(e) => setQuickNewNama(e.target.value)}
+                                        placeholder="Nama produk"
+                                        className="ctl-sm w-full"
+                                      />
+                                    </div>
+                                    <div className="sm:col-span-3">
+                                      <label className="text-[10px] font-medium text-slate-500 block mb-0.5">
+                                        Satuan *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={quickNewSatuan}
+                                        onChange={(e) => setQuickNewSatuan(e.target.value)}
+                                        placeholder="pcs / kg"
+                                        className="ctl-sm w-full"
+                                      />
+                                    </div>
+                                    <div className="sm:col-span-3">
+                                      <label className="text-[10px] font-medium text-slate-500 block mb-0.5">
+                                        Harga Jual (Rp)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        value={quickNewHarga || ""}
+                                        onChange={(e) => setQuickNewHarga(Math.max(0, Number(e.target.value) || 0))}
+                                        placeholder="0"
+                                        className="ctl-sm w-full text-right"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-end gap-2 pt-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowQuickCreateProduct(false);
+                                        setQuickCreateError(null);
+                                      }}
+                                      disabled={creatingQuickProduct}
+                                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-zinc-800"
+                                    >
+                                      Batal
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleQuickCreateProduct}
+                                      disabled={creatingQuickProduct}
+                                      className="px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:opacity-95 disabled:opacity-50"
+                                      style={{ backgroundColor: "var(--primary, #F0090F)" }}
+                                    >
+                                      {creatingQuickProduct ? "Menyimpan..." : "Simpan & Tambahkan"}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             filteredMaster.map((p, index) => {
@@ -2361,6 +2650,7 @@ export default function MemberDetailPage() {
                       );
                     })()}
                   </div>
+                  )}
                 </div>
 
                 {/* Daftar Barang Belanja */}
@@ -2611,18 +2901,29 @@ export default function MemberDetailPage() {
         description="Mengubah data dan rincian nota bon memerlukan PIN Pemilik Toko untuk menjaga integritas pembukuan piutang."
       />
 
-      {/* MODAL EDIT KASBON MANUAL (DENGAN PIN OWNER) */}
+      {/* SLIDE DRAWER EDIT KASBON MANUAL (DENGAN PIN OWNER) */}
       {isEditBonOpen && bonToEdit && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200/80 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col font-sans">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+          onClick={() => {
+            setIsEditBonOpen(false);
+            setBonToEdit(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 h-full w-full max-w-2xl shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col font-sans drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Drawer */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0">
               <div>
-                <h3 className="font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
-                  <Pencil className="w-5 h-5 text-amber-600" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-amber-600" />
                   <span>Edit Rincian Nota Bon ({bonToEdit.label})</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Pelanggan: <strong className="text-slate-800">{member.nama}</strong> · Memerlukan otorisasi PIN Pemilik Toko
+                  Pelanggan: <span className="font-medium text-slate-700 dark:text-zinc-300">{member.nama}</span>
+                  {" · "}Memerlukan otorisasi PIN Pemilik Toko
                 </p>
               </div>
               <button
@@ -2631,220 +2932,222 @@ export default function MemberDetailPage() {
                   setIsEditBonOpen(false);
                   setBonToEdit(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitEditBon} className="flex-1 overflow-y-auto space-y-4 py-3.5 pr-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
-                    Tanggal Transaksi *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={editTanggal}
-                    onChange={(e) => setEditTanggal(e.target.value)}
-                    className="w-full px-3 h-8.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
+            <form onSubmit={handleSubmitEditBon} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                {/* Info Transaksi */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Tanggal Transaksi <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editTanggal}
+                      onChange={(e) => setEditTanggal(e.target.value)}
+                      className="ctl-sm font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Anggota Pengambil <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editPengambil}
+                      onChange={(e) => setEditPengambil(e.target.value)}
+                      className="ctl-sm font-medium"
+                    />
+                  </div>
                 </div>
 
+                {/* Catatan Tambahan */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
-                    Anggota Pengambil *
+                  <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                    Catatan Tambahan (Opsional)
                   </label>
                   <input
                     type="text"
-                    required
-                    value={editPengambil}
-                    onChange={(e) => setEditPengambil(e.target.value)}
-                    className="w-full px-3 h-8.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
+                    placeholder="Contoh: Perubahan atas permintaan pengambil"
+                    value={editCatatan}
+                    onChange={(e) => setEditCatatan(e.target.value)}
+                    className="ctl-sm"
                   />
                 </div>
-              </div>
 
-              {/* Tabel Rincian Belanja Edit */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Daftar Barang Belanja ({editItems.length} Baris)
-                  </span>
-                  <span className="text-[11px] text-slate-400 hidden sm:inline">
-                    💡 Tekan <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[10px] font-mono text-slate-700">Enter</kbd> di kolom harga untuk tambah baris
-                  </span>
-                </div>
-
-                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs min-w-[560px]">
-                      <thead className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                        <tr>
-                          <th className="py-2.5 px-3 w-8 text-center text-slate-400 font-mono">#</th>
-                          <th className="py-2.5 px-3">Nama Barang</th>
-                          <th className="py-2.5 px-2 w-20 text-center">Jumlah</th>
-                          <th className="py-2.5 px-2 w-24 text-center">Satuan</th>
-                          <th className="py-2.5 px-3 w-32 text-right">Harga Satuan</th>
-                          <th className="py-2.5 px-3 w-32 text-right">Subtotal</th>
-                          <th className="py-2.5 px-2 w-10 text-center"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {editItems.map((item, idx) => {
-                          const isLast = idx === editItems.length - 1;
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">
-                                {idx + 1}
-                              </td>
-                              <td className="py-2 px-3">
-                                <input
-                                  type="text"
-                                  required
-                                  list="kasbon-items-suggestion"
-                                  placeholder="Nama barang..."
-                                  value={item.nama}
-                                  onChange={(e) => handleEditItemChange(idx, "nama", e.target.value)}
-                                  className="w-full px-2.5 h-8 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-                                />
-                              </td>
-                              <td className="py-2 px-2">
-                                <NumberInput
-                                  min={0.1}
-                                  emptyFallback={1}
-                                  required
-                                  value={item.qty}
-                                  onChange={(val) => handleEditItemChange(idx, "qty", String(val))}
-                                  className="w-full px-2 h-8 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs font-semibold text-center text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                                />
-                              </td>
-                              <td className="py-2 px-2">
-                                <input
-                                  type="text"
-                                  required
-                                  list="kasbon-units-suggestion"
-                                  value={item.satuan}
-                                  onChange={(e) => handleEditItemChange(idx, "satuan", e.target.value)}
-                                  className="w-full px-2 h-8 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs text-center text-slate-700 focus:outline-none focus:border-blue-500 transition-colors"
-                                />
-                              </td>
-                              <td className="py-2 px-3">
-                                <div className="relative">
-                                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
-                                    Rp
-                                  </span>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    required
-                                    placeholder="0"
-                                    value={item.harga ? item.harga.toLocaleString("id-ID") : ""}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        if (isLast) handleAddEditItem();
-                                      }
-                                    }}
-                                    onChange={(e) => {
-                                      const digits = e.target.value.replace(/\D/g, "");
-                                      handleEditItemChange(idx, "harga", digits ? parseInt(digits, 10) : 0);
-                                    }}
-                                    className="w-full pl-7 pr-2 h-8 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs text-right font-semibold text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-                                  />
-                                </div>
-                              </td>
-                              <td className="py-2 px-3 text-right tabular-nums font-bold text-slate-800 text-xs">
-                                {formatRupiah(item.subtotal)}
-                              </td>
-                              <td className="py-2 px-2 text-center">
-                                {editItems.length > 1 ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveEditItem(idx)}
-                                    className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors mx-auto"
-                                    title="Hapus baris ini"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                ) : (
-                                  <span className="w-7 h-7 block" />
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Tombol Tambah Baris */}
-                  <div className="bg-slate-50/90 px-3 py-2 border-t border-slate-200/80 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={handleAddEditItem}
-                      className="h-7 px-3 bg-white hover:bg-amber-50 hover:text-amber-600 border border-slate-200 hover:border-amber-200 text-slate-700 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-2xs"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Tambah Baris Barang</span>
-                    </button>
-                    <span className="text-[11px] text-slate-400">
-                      Total item: <strong className="text-slate-700">{editItems.length}</strong>
+                {/* Daftar Barang Belanja */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                      Daftar Barang ({editItems.length})
+                    </span>
+                    <span className="text-[11px] text-slate-400 hidden sm:inline">
+                      Tekan Enter di kolom harga untuk tambah baris
                     </span>
                   </div>
+
+                  <div className="border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs min-w-[520px]">
+                        <thead className="border-b border-slate-100 dark:border-zinc-800 text-[11px] font-medium text-slate-400 bg-slate-50/70 dark:bg-zinc-800/40">
+                          <tr>
+                            <th className="py-2 px-2.5 w-8 text-center font-medium">#</th>
+                            <th className="py-2 px-2.5 font-medium">Barang</th>
+                            <th className="py-2 px-1.5 w-16 text-center font-medium">Qty</th>
+                            <th className="py-2 px-1.5 w-20 text-center font-medium">Satuan</th>
+                            <th className="py-2 px-2 w-28 text-right font-medium">Harga</th>
+                            <th className="py-2 px-3 w-24 text-right font-medium">Subtotal</th>
+                            <th className="py-2 px-1.5 w-8"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                          {editItems.map((item, idx) => {
+                            const isLast = idx === editItems.length - 1;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                                <td className="py-2 px-2.5 text-center text-slate-400 font-mono text-[11px]">
+                                  {idx + 1}
+                                </td>
+                                <td className="py-2 px-2">
+                                  <input
+                                    type="text"
+                                    required
+                                    list="kasbon-items-suggestion"
+                                    placeholder="Nama barang..."
+                                    value={item.nama}
+                                    onChange={(e) => handleEditItemChange(idx, "nama", e.target.value)}
+                                    className="w-full px-2 h-8 bg-transparent hover:bg-slate-50 focus:bg-white dark:focus:bg-zinc-800 border border-transparent focus:border-slate-200 dark:focus:border-zinc-700 rounded-lg text-xs font-medium text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none transition-colors"
+                                  />
+                                </td>
+                                <td className="py-2 px-1">
+                                  <NumberInput
+                                    min={0.1}
+                                    emptyFallback={1}
+                                    required
+                                    value={item.qty}
+                                    onChange={(val) => handleEditItemChange(idx, "qty", String(val))}
+                                    className="w-full px-1.5 h-8 bg-transparent hover:bg-slate-50 focus:bg-white dark:focus:bg-zinc-800 border border-transparent focus:border-slate-200 dark:focus:border-zinc-700 rounded-lg text-xs font-semibold text-center text-slate-800 dark:text-zinc-100 focus:outline-none transition-colors"
+                                  />
+                                </td>
+                                <td className="py-2 px-1">
+                                  <input
+                                    type="text"
+                                    required
+                                    list="kasbon-units-suggestion"
+                                    value={item.satuan}
+                                    onChange={(e) => handleEditItemChange(idx, "satuan", e.target.value)}
+                                    className="w-full px-1.5 h-8 bg-transparent hover:bg-slate-50 focus:bg-white dark:focus:bg-zinc-800 border border-transparent focus:border-slate-200 dark:focus:border-zinc-700 rounded-lg text-xs text-center text-slate-700 dark:text-zinc-300 focus:outline-none transition-colors"
+                                  />
+                                </td>
+                                <td className="py-2 px-2">
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                                      Rp
+                                    </span>
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      required
+                                      placeholder="0"
+                                      value={item.harga ? item.harga.toLocaleString("id-ID") : ""}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          if (isLast) handleAddEditItem();
+                                        }
+                                      }}
+                                      onChange={(e) => {
+                                        const digits = e.target.value.replace(/\D/g, "");
+                                        handleEditItemChange(idx, "harga", digits ? parseInt(digits, 10) : 0);
+                                      }}
+                                      className="w-full pl-6 pr-2 h-8 bg-transparent hover:bg-slate-50 focus:bg-white dark:focus:bg-zinc-800 border border-transparent focus:border-slate-200 dark:focus:border-zinc-700 rounded-lg text-xs text-right font-semibold text-slate-800 dark:text-zinc-100 focus:outline-none transition-colors"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="py-2 px-3 text-right tabular-nums font-bold text-slate-800 dark:text-zinc-200 text-xs">
+                                  {formatRupiah(item.subtotal)}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {editItems.length > 1 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveEditItem(idx)}
+                                      className="w-6 h-6 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors mx-auto cursor-pointer"
+                                      title="Hapus baris"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <span className="w-6 h-6 block" />
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="px-3 py-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={handleAddEditItem}
+                        className="h-7 px-2.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-xs font-medium rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Baris</span>
+                      </button>
+                      <span className="text-[11px] text-slate-400">
+                        Total item: <strong className="text-slate-600 dark:text-zinc-300">{editItems.length}</strong>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Total Belanja */}
-              <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider block">
-                    Total Belanja Bon Baru
-                  </span>
-                  <p className="text-[11px] text-amber-700 mt-0.5">
-                    Saldo utang member akan disesuaikan otomatis dengan selisih nominal baru.
-                  </p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <span className="text-xl sm:text-2xl font-black text-amber-900 tabular-nums">
+              {/* Sticky Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 shrink-0 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-medium text-slate-600 dark:text-zinc-300 block">
+                      Total Belanja Bon Baru
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Saldo utang member disesuaikan otomatis
+                    </span>
+                  </div>
+                  <span className="text-lg font-black text-amber-600 dark:text-amber-400 tabular-nums">
                     {formatRupiah(totalEditBelanja)}
                   </span>
                 </div>
-              </div>
 
-              {/* Catatan Tambahan */}
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1">
-                  Catatan Tambahan (Opsional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Perubahan atas permintaan pengambil"
-                  value={editCatatan}
-                  onChange={(e) => setEditCatatan(e.target.value)}
-                  className="w-full px-3 h-8.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-2.5 pt-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditBonOpen(false);
-                    setBonToEdit(null);
-                  }}
-                  className="w-1/3 h-10 bg-slate-100 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 font-medium rounded-xl text-xs transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingEdit || totalEditBelanja <= 0}
-                  className="w-2/3 h-10 bg-amber-600 hover:bg-amber-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white font-medium rounded-xl text-xs shadow-2xs hover:shadow-xs transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {submittingEdit ? "Menyimpan..." : "Simpan Perubahan Bon"}
-                </button>
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditBonOpen(false);
+                      setBonToEdit(null);
+                    }}
+                    className="w-1/3 h-10 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 text-slate-700 dark:text-zinc-300 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingEdit || totalEditBelanja <= 0}
+                    className="w-2/3 h-10 bg-amber-600 hover:bg-amber-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold rounded-xl text-xs transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    {submittingEdit ? "Menyimpan..." : "Simpan Perubahan Bon"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
