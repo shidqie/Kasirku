@@ -690,3 +690,186 @@ export async function generateBonMemberPDF(
 
   doc.save(`TRANSAKSI_BON_${tokoSlug}_${tglStr}_${urutanBon}.pdf`);
 }
+
+export interface AllMemberSummaryRow {
+  kode: string;
+  nama: string;
+  telepon?: string | null;
+  alamat?: string | null;
+  batasKasbon: number;
+  saldoUtangCache: number;
+}
+
+export async function generateAllMembersPDF(
+  members: AllMemberSummaryRow[],
+  storeInfo: StoreInfo,
+  filterLabel = "Semua Pelanggan"
+): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const fontFamily = await registerPdfFont(doc);
+
+  let logoBase64: string | null = storeInfo.logoToko || null;
+  if (!logoBase64 && typeof window !== "undefined") {
+    logoBase64 = await getBase64Image("/img/Logo%20Toko%20Gagan%202.png");
+    if (!logoBase64) logoBase64 = await getBase64Image("/logo.png");
+  }
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginL = 14;
+  const marginR = pageW - 14;
+  const contentW = marginR - marginL;
+
+  const font = (size: number, bold = false) => {
+    doc.setFont(fontFamily, bold ? "bold" : "normal");
+    doc.setFontSize(size);
+  };
+  const color = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+
+  // Top red bar
+  doc.setFillColor(...C_RED_TOP);
+  doc.rect(0, 0, pageW, 3, "F");
+
+  let y = 14;
+  if (logoBase64) {
+    try {
+      const fmt = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      doc.addImage(logoBase64, fmt, marginL, y - 3, 14, 14, undefined, "FAST");
+    } catch {}
+  }
+
+  const textStartX = logoBase64 ? marginL + 18 : marginL;
+  font(13, true);
+  color(...C_DARK);
+  doc.text(storeInfo.namaToko || "Toko Sembako", textStartX, y + 2);
+
+  font(7.5, false);
+  color(...C_MUTED);
+  if (storeInfo.alamat) {
+    doc.text(storeInfo.alamat, textStartX, y + 6.5, { maxWidth: 95 });
+  }
+  if (storeInfo.telepon) {
+    doc.text(`Telp/WA: ${storeInfo.telepon}`, textStartX, y + 10.5);
+  }
+
+  // Title on right
+  font(11, true);
+  color(...C_DARK);
+  doc.text("REKAP PIUTANG PELANGGAN", marginR, y + 2, { align: "right" });
+  font(7.5, false);
+  color(...C_MUTED);
+  const now = new Date();
+  const tglCetak = now.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  doc.text(`Filter: ${filterLabel} · Dicetak ${tglCetak}`, marginR, y + 6.5, { align: "right" });
+
+  y += 17;
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(marginL, y, marginR, y);
+  y += 6;
+
+  // Summary boxes
+  const totalPelanggan = members.length;
+  const totalUtang = members.reduce((sum, m) => sum + Number(m.saldoUtangCache || 0), 0);
+  const jumlahBerutang = members.filter((m) => Number(m.saldoUtangCache || 0) > 0).length;
+
+  const boxW = (contentW - 6) / 3;
+  const drawSummaryBox = (x: number, label: string, val: string, isDanger = false) => {
+    doc.setFillColor(...C_BG_CARD);
+    doc.setDrawColor(...C_BORDER);
+    doc.roundedRect(x, y, boxW, 14, 2, 2, "FD");
+    font(7, false);
+    color(...C_MUTED);
+    doc.text(label, x + 3.5, y + 5);
+    font(10.5, true);
+    if (isDanger) color(...C_RED_TEXT);
+    else color(...C_DARK);
+    doc.text(val, x + 3.5, y + 11);
+  };
+
+  drawSummaryBox(marginL, "Total Pelanggan", `${totalPelanggan} orang`);
+  drawSummaryBox(marginL + boxW + 3, "Pelanggan Berutang", `${jumlahBerutang} orang`);
+  drawSummaryBox(marginL + (boxW + 3) * 2, "Total Saldo Piutang", rp(totalUtang), totalUtang > 0);
+  y += 20;
+
+  // Table Header
+  const drawTableHeader = (startY: number) => {
+    doc.setFillColor(...C_BG_HEADER);
+    doc.rect(marginL, startY, contentW, 7.5, "F");
+    font(7.5, true);
+    color(...C_MUTED);
+    doc.text("No", marginL + 2.5, startY + 5);
+    doc.text("Kode", marginL + 11, startY + 5);
+    doc.text("Nama Pelanggan", marginL + 31, startY + 5);
+    doc.text("No. HP / WA", marginL + 84, startY + 5);
+    doc.text("Status", marginL + 124, startY + 5);
+    doc.text("Total Utang", marginR - 2.5, startY + 5, { align: "right" });
+    return startY + 7.5;
+  };
+
+  y = drawTableHeader(y);
+
+  members.forEach((m, idx) => {
+    if (y > pageH - 22) {
+      doc.addPage();
+      doc.setFillColor(...C_RED_TOP);
+      doc.rect(0, 0, pageW, 3, "F");
+      y = drawTableHeader(14);
+    }
+
+    const rowH = 7.5;
+    if (idx % 2 === 1) {
+      doc.setFillColor(250, 251, 252);
+      doc.rect(marginL, y, contentW, rowH, "F");
+    }
+
+    doc.setDrawColor(...C_BORDER);
+    doc.setLineWidth(0.2);
+    doc.line(marginL, y + rowH, marginR, y + rowH);
+
+    const utang = Number(m.saldoUtangCache || 0);
+    font(7.5, false);
+    color(...C_MUTED);
+    doc.text(String(idx + 1), marginL + 2.5, y + 5);
+    doc.text(m.kode, marginL + 11, y + 5);
+
+    font(8, true);
+    color(...C_DARK);
+    doc.text(m.nama.slice(0, 26), marginL + 31, y + 5);
+
+    font(7.5, false);
+    color(...C_MUTED);
+    doc.text((m.telepon || "-").slice(0, 18), marginL + 84, y + 5);
+
+    font(7.5, true);
+    if (utang > 0) color(...C_RED_TEXT);
+    else color(22, 163, 74);
+    doc.text(utang > 0 ? "Belum Lunas" : "Lunas", marginL + 124, y + 5);
+
+    font(8, true);
+    if (utang > 0) color(...C_RED_TEXT);
+    else color(...C_DARK);
+    doc.text(rp(utang), marginR - 2.5, y + 5, { align: "right" });
+
+    y += rowH;
+  });
+
+  // Page numbers
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    font(6.5, false);
+    color(...C_LIGHT_MUTED);
+    doc.text(`Halaman ${p} dari ${totalPages}`, marginR, pageH - 8, { align: "right" });
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const tglStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  doc.save(`REKAP_PIUTANG_SEMUA_${tglStr}.pdf`);
+}

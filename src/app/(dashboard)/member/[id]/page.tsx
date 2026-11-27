@@ -6,6 +6,7 @@ import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   DollarSign,
@@ -29,7 +30,15 @@ import {
   CreditCard,
   Upload,
   Image as ImageIcon,
+  QrCode,
+  Maximize2,
 } from "lucide-react";
+import QRCode from "qrcode";
+import {
+  convertStaticQrisToDynamic,
+  extractQrisMerchantName,
+  isValidQrisPayload,
+} from "@/lib/qris";
 import { formatRupiah, formatDateTime, formatDecimal, formatDayDate } from "@/lib/formatters";
 import { generateBonMemberPDF } from "@/lib/pdf-bon-member";
 import { PinModal } from "@/components/shared/PinModal";
@@ -108,6 +117,9 @@ export default function MemberDetailPage() {
   const [previewBuktiUrl, setPreviewBuktiUrl] = useState<string | null>(null);
   const [selectedBonToPay, setSelectedBonToPay] = useState<any>(null);
   const [submittingPay, setSubmittingPay] = useState(false);
+  const [qrisMode, setQrisMode] = useState<"DINAMIS" | "STATIS">("DINAMIS");
+  const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
+  const [isQrisZoomed, setIsQrisZoomed] = useState(false);
 
   const handleBuktiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -196,6 +208,59 @@ export default function MemberDetailPage() {
   const [newLimitKasbon, setNewLimitKasbon] = useState<number>(1000000);
   const [submittingLimit, setSubmittingLimit] = useState(false);
 
+  // Modal Kelola Anggota Pengambil (subMembers)
+  const [isManageMembersOpen, setIsManageMembersOpen] = useState(false);
+  const [editingSubMembers, setEditingSubMembers] = useState<string[]>([]);
+  const [newSubMemberInput, setNewSubMemberInput] = useState("");
+  const [savingSubMembers, setSavingSubMembers] = useState(false);
+
+  const handleOpenManageMembers = () => {
+    setEditingSubMembers(Array.isArray(member?.subMembers) ? [...member.subMembers] : []);
+    setNewSubMemberInput("");
+    setError(null);
+    setIsManageMembersOpen(true);
+  };
+
+  const handleAddSubMemberChip = () => {
+    const trimmed = newSubMemberInput.trim();
+    if (!trimmed) return;
+    if (!editingSubMembers.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      setEditingSubMembers((prev) => [...prev, trimmed]);
+    }
+    setNewSubMemberInput("");
+  };
+
+  const handleSaveSubMembers = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const pendingTrimmed = newSubMemberInput.trim();
+    const finalList =
+      pendingTrimmed && !editingSubMembers.some((s) => s.toLowerCase() === pendingTrimmed.toLowerCase())
+        ? [...editingSubMembers, pendingTrimmed]
+        : editingSubMembers;
+
+    setSavingSubMembers(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/members/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subMembers: finalList }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Gagal menyimpan daftar anggota");
+
+      setSuccess("Daftar anggota pengambil berhasil diperbarui.");
+      setIsManageMembersOpen(false);
+      setNewSubMemberInput("");
+      fetchMember();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingSubMembers(false);
+    }
+  };
+
   const handleUpdateLimit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittingLimit(true);
@@ -248,7 +313,13 @@ export default function MemberDetailPage() {
       const uData = await uRes.json();
 
       if (mRes.ok) setMember(mData.member);
-      if (sRes.ok) setStoreInfo(sData.settings || {});
+      if (sRes.ok) {
+        const loadedSettings = sData.settings || {};
+        setStoreInfo(loadedSettings);
+        if (loadedSettings.qrisModeDefault === "STATIS" || loadedSettings.qrisModeDefault === "DINAMIS") {
+          setQrisMode(loadedSettings.qrisModeDefault);
+        }
+      }
       if (uRes.ok) {
         setCurrentUserRole(uData.user?.role || "STAFF");
         setCurrentUserName(uData.user?.nama || "Kasir");
@@ -263,6 +334,40 @@ export default function MemberDetailPage() {
   useEffect(() => {
     if (memberId) fetchMember();
   }, [memberId]);
+
+  useEffect(() => {
+    let active = true;
+    const rawPayload = storeInfo?.qrisPayload;
+    if (!isPayOpen || payMethod !== "TRANSFER" || payAmount <= 0) {
+      setQrisDataUrl(null);
+      return;
+    }
+
+    if (isValidQrisPayload(rawPayload)) {
+      const targetPayload =
+        qrisMode === "DINAMIS"
+          ? convertStaticQrisToDynamic(rawPayload, payAmount)
+          : rawPayload.trim();
+
+      QRCode.toDataURL(targetPayload, {
+        width: 560,
+        margin: 2,
+        color: { dark: "#0F172A", light: "#FFFFFF" },
+      })
+        .then((url) => {
+          if (active) setQrisDataUrl(url);
+        })
+        .catch(() => {
+          if (active) setQrisDataUrl(null);
+        });
+    } else {
+      setQrisDataUrl(null);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [isPayOpen, payMethod, payAmount, qrisMode, storeInfo?.qrisPayload]);
 
   // Gabungkan dan urutkan seluruh nota kasbon (Kasir POS + Kasbon Manual) sesuai tanggal
   // HARUS diletakkan sebelum early return agar tidak melanggar aturan Hooks React!
@@ -1111,15 +1216,37 @@ export default function MemberDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/80 dark:divide-zinc-800 items-start">
           {/* 1. Nama member */}
           <div className="py-5 md:pr-6">
-            <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
-              Nama Pelanggan
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 block">
+                Nama Pelanggan
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenManageMembers}
+                className="text-xs text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-medium underline underline-offset-4 cursor-pointer"
+              >
+                {member.subMembers && member.subMembers.length > 0 ? "Kelola Anggota" : "+ Tambah Anggota"}
+              </button>
+            </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-zinc-100 mt-1">
               {member.nama}
             </p>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
               {member.telepon || "Tanpa No HP"} {member.alamat ? `· ${member.alamat}` : ""}
             </p>
+            {member.subMembers && member.subMembers.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[11px] text-slate-400">Anggota:</span>
+                {member.subMembers.map((subName: string) => (
+                  <span
+                    key={subName}
+                    className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-[11px] font-medium text-slate-700 dark:text-zinc-300"
+                  >
+                    {subName}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 2. Limit semua maks + Progress Bar */}
@@ -1937,6 +2064,98 @@ export default function MemberDetailPage() {
                   </div>
                 )}
 
+                {payMethod === "TRANSFER" && (
+                  <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-center space-y-3">
+                    <div className="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-zinc-900">
+                      {(["DINAMIS", "STATIS"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setQrisMode(mode)}
+                          className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            qrisMode === mode
+                              ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 shadow-xs"
+                              : "text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200"
+                          }`}
+                        >
+                          {mode === "DINAMIS" ? "QRIS Dinamis" : "QRIS Statis"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(() => {
+                      const hasStaticImg = Boolean(storeInfo?.qrisStaticImage);
+                      const hasValidPayload = isValidQrisPayload(storeInfo?.qrisPayload);
+                      const activeImg =
+                        qrisMode === "DINAMIS"
+                          ? hasValidPayload
+                            ? qrisDataUrl
+                            : null
+                          : hasValidPayload
+                          ? qrisDataUrl
+                          : hasStaticImg
+                          ? storeInfo.qrisStaticImage
+                          : null;
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setIsQrisZoomed(true)}
+                            className="w-44 h-44 mx-auto bg-white p-3 rounded-2xl border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center overflow-hidden hover:border-slate-300 transition-all cursor-pointer"
+                            title="Klik untuk memperbesar QRIS"
+                          >
+                            {activeImg ? (
+                              <img
+                                src={activeImg}
+                                alt={qrisMode === "DINAMIS" ? "QRIS Dinamis" : "QRIS Statis"}
+                                className="w-full h-full object-contain rounded-lg"
+                              />
+                            ) : (
+                              <QrCode className="w-24 h-24 text-slate-800" />
+                            )}
+                          </button>
+
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setIsQrisZoomed(true)}
+                              className="h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 text-[11px] font-semibold text-slate-700 dark:text-zinc-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Perbesar QRIS untuk Konsumen</span>
+                            </button>
+                          </div>
+
+                          {qrisMode === "DINAMIS" && !hasValidPayload ? (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                              Kode QRIS toko belum diatur untuk nominal otomatis.{" "}
+                              <Link href="/owner/pengaturan?tab=pembayaran" className="underline font-semibold">
+                                Atur di Pengaturan
+                              </Link>{" "}
+                              atau gunakan mode <strong>QRIS Statis</strong>.
+                            </p>
+                          ) : qrisMode === "STATIS" && !hasStaticImg && !hasValidPayload ? (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                              Foto/kode QRIS Statis belum diupload.{" "}
+                              <Link href="/owner/pengaturan?tab=pembayaran" className="underline font-semibold">
+                                Upload di Pengaturan Toko
+                              </Link>
+                              .
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                              {qrisMode === "DINAMIS"
+                                ? `Nominal ${formatRupiah(payAmount)} otomatis terisi saat pelanggan scan QRIS.`
+                                : "Pelanggan scan kartu QRIS toko lalu memasukkan nominal secara manual."}
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 <div>
                   <label className="text-[11px] font-medium text-slate-500 block mb-1.5">
                     Catatan (opsional)
@@ -2053,6 +2272,85 @@ export default function MemberDetailPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PERBESAR QRIS UNTUK PELANGGAN */}
+      {isQrisZoomed && isPayOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+          onClick={() => setIsQrisZoomed(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white text-slate-900 shadow-2xl p-6 space-y-5 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-left">
+                <span
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold mb-1.5"
+                  style={{
+                    backgroundColor: "var(--primary-light, #FEE2E2)",
+                    color: "var(--primary, #F0090F)",
+                  }}
+                >
+                  {qrisMode === "DINAMIS"
+                    ? "QRIS Dinamis • Nominal Otomatis"
+                    : "QRIS Statis • Input Nominal Manual"}
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {extractQrisMerchantName(storeInfo?.qrisPayload) || storeInfo?.namaToko || "Scan QRIS"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrisZoomed(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 cursor-pointer"
+                title="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="py-2 px-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Nominal Pembayaran Piutang
+              </p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight mt-0.5">
+                {formatRupiah(payAmount)}
+              </p>
+            </div>
+
+            <div className="w-64 h-64 mx-auto bg-white p-4 rounded-3xl border border-slate-200 shadow-inner flex items-center justify-center">
+              {(qrisMode === "DINAMIS"
+                ? isValidQrisPayload(storeInfo?.qrisPayload)
+                  ? qrisDataUrl
+                  : null
+                : isValidQrisPayload(storeInfo?.qrisPayload)
+                ? qrisDataUrl
+                : storeInfo?.qrisStaticImage) ? (
+                <img
+                  src={
+                    (qrisMode === "DINAMIS"
+                      ? qrisDataUrl
+                      : isValidQrisPayload(storeInfo?.qrisPayload)
+                      ? qrisDataUrl
+                      : storeInfo?.qrisStaticImage) || ""
+                  }
+                  alt="QRIS Pembayaran Piutang"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              ) : (
+                <QrCode className="w-40 h-40 text-slate-800" />
+              )}
+            </div>
+
+            <p className="text-xs text-slate-500">
+              {qrisMode === "DINAMIS"
+                ? `Scan QRIS di atas — nominal ${formatRupiah(payAmount)} otomatis terisi di aplikasi e-wallet / m-banking.`
+                : `Scan QRIS di atas lalu masukkan nominal ${formatRupiah(payAmount)} secara manual.`}
+            </p>
           </div>
         </div>
       )}
@@ -2242,10 +2540,9 @@ export default function MemberDetailPage() {
 
                   <div ref={pengambilDropdownRef} className="relative">
                     <label className="text-[11px] font-medium text-slate-500 block mb-1">
-                      Anggota Pengambil <span className="text-rose-500">*</span>
+                      Nama yang mengambil : <span className="text-rose-500">*</span>
                     </label>
-                    {member.subMembers && member.subMembers.length > 0 &&
-                    [member.nama, ...member.subMembers].includes(manualPengambil) ? (
+                    {[member.nama, ...(member.subMembers || [])].includes(manualPengambil) ? (
                       <>
                         <button
                           type="button"
@@ -2261,8 +2558,8 @@ export default function MemberDetailPage() {
                         </button>
 
                         {isPengambilDropdownOpen && (
-                          <div className="absolute top-full mt-1.5 left-0 right-0 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl z-50 p-1 animate-in fade-in zoom-in-95 duration-100">
-                            {[member.nama, ...member.subMembers].map((nameOption: string) => {
+                          <div className="absolute top-full mt-1.5 left-0 right-0 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl z-50 p-1 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+                            {[member.nama, ...(member.subMembers || [])].map((nameOption: string) => {
                               const isSelected = manualPengambil === nameOption;
                               return (
                                 <button
@@ -2307,19 +2604,17 @@ export default function MemberDetailPage() {
                           onChange={(e) => setManualPengambil(e.target.value)}
                           className="ctl-sm pr-8 font-medium"
                         />
-                        {member.subMembers && member.subMembers.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setManualPengambil(member.nama);
-                              setIsPengambilDropdownOpen(true);
-                            }}
-                            title="Pilih dari daftar"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                          >
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setManualPengambil(member.nama);
+                            setIsPengambilDropdownOpen(true);
+                          }}
+                          title="Pilih dari daftar anggota"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2773,6 +3068,111 @@ export default function MemberDetailPage() {
                     {submittingManual ? "Menyimpan..." : "Simpan Kasbon Manual"}
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KELOLA ANGGOTA PENGAMBIL */}
+      {isManageMembersOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsManageMembersOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 space-y-4 font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                Anggota Pelanggan ({member.nama})
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsManageMembersOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSubMembers} className="space-y-4">
+              <div>
+                <label className="text-[11px] font-medium text-slate-500 block mb-1.5">
+                  Tambah Nama Anggota
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newSubMemberInput}
+                    onChange={(e) => setNewSubMemberInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSubMemberChip();
+                      }
+                    }}
+                    placeholder="Contoh: Pak Joko / Anak"
+                    className="ctl-sm flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSubMemberChip}
+                    className="px-3 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold hover:opacity-90 shrink-0 cursor-pointer"
+                  >
+                    + Tambah
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-medium text-slate-500 block">
+                  Daftar Anggota ({editingSubMembers.length})
+                </span>
+                {editingSubMembers.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-3 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                    Belum ada nama anggota tambahan
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200/80 dark:border-zinc-800">
+                    {editingSubMembers.map((name) => (
+                      <span
+                        key={name}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-zinc-200"
+                      >
+                        <span>{name}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingSubMembers((prev) => prev.filter((item) => item !== name))
+                          }
+                          className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                          title="Hapus anggota"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsManageMembersOpen(false)}
+                  className="w-1/2 h-9 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-700 dark:text-zinc-300 font-medium rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSubMembers}
+                  className="w-1/2 h-9 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-50 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-all cursor-pointer"
+                >
+                  {savingSubMembers ? "Menyimpan..." : "Simpan Anggota"}
+                </button>
               </div>
             </form>
           </div>

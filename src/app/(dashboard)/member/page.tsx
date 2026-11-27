@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { formatRupiah } from "@/lib/formatters";
 import { formatMemberCode } from "@/lib/codification";
+import { generateAllMembersPDF } from "@/lib/pdf-bon-member";
 import { Pagination } from "@/components/shared/Pagination";
 
 interface MemberItem {
@@ -45,6 +46,7 @@ export default function MemberListPage() {
   const [filterDebt, setFilterDebt] = useState<DebtFilter>("ALL");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [downloadingAllPdf, setDownloadingAllPdf] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -264,6 +266,45 @@ export default function MemberListPage() {
     return map;
   }, [members]);
 
+  const handleDownloadAllPDF = async () => {
+    if (filteredMembers.length === 0) return;
+    setDownloadingAllPdf(true);
+    try {
+      let storeInfo = { namaToko: "Toko Sembako" } as any;
+      try {
+        const sRes = await fetch("/api/settings");
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          if (sData?.settings) storeInfo = sData.settings;
+        }
+      } catch {}
+
+      const filterLabel =
+        filterDebt === "DEBT"
+          ? "Punya Utang"
+          : filterDebt === "CLEARED"
+          ? "Lunas"
+          : "Semua Pelanggan";
+
+      await generateAllMembersPDF(
+        filteredMembers.map((m) => ({
+          kode: memberCodeMap[m.id] || "MBR-0001",
+          nama: m.nama,
+          telepon: m.telepon,
+          alamat: m.alamat,
+          batasKasbon: m.batasKasbon,
+          saldoUtangCache: m.saldoUtangCache,
+        })),
+        storeInfo,
+        filterLabel
+      );
+    } catch (err: any) {
+      setError(err?.message || "Gagal membuat PDF rekap pelanggan");
+    } finally {
+      setDownloadingAllPdf(false);
+    }
+  };
+
   const paginatedMembers = filteredMembers.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -283,12 +324,24 @@ export default function MemberListPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="h-10 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all text-xs shrink-0 self-start sm:self-auto cursor-pointer"
-        >
-          Tambah pelanggan
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            disabled={downloadingAllPdf || filteredMembers.length === 0}
+            onClick={handleDownloadAllPDF}
+            className="h-10 px-4 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 active:scale-95 disabled:opacity-40 text-slate-700 dark:text-zinc-200 font-semibold rounded-xl transition-all text-xs inline-flex items-center gap-2 cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-500" />
+            <span>{downloadingAllPdf ? "Membuat PDF..." : "Unduh PDF Semua"}</span>
+          </button>
+
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="h-10 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all text-xs cursor-pointer"
+          >
+            Tambah pelanggan
+          </button>
+        </div>
       </div>
 
       {/* Ringkasan 3 Kolom (Flat Editorial Style + Hairline Dividers) */}
