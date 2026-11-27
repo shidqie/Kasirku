@@ -286,14 +286,28 @@ export default function MemberListPage() {
           ? "Lunas"
           : "Semua Pelanggan";
 
+      const detailList = await Promise.all(
+        filteredMembers.map(async (m) => {
+          try {
+            const res = await fetch(`/api/members/${m.id}`);
+            if (res.ok) {
+              const d = await res.json();
+              return d?.member || undefined;
+            }
+          } catch {}
+          return undefined;
+        })
+      );
+
       await generateAllMembersPDF(
-        filteredMembers.map((m) => ({
+        filteredMembers.map((m, i) => ({
           kode: memberCodeMap[m.id] || "MBR-0001",
           nama: m.nama,
           telepon: m.telepon,
           alamat: m.alamat,
           batasKasbon: m.batasKasbon,
           saldoUtangCache: m.saldoUtangCache,
+          detail: detailList[i],
         })),
         storeInfo,
         filterLabel
