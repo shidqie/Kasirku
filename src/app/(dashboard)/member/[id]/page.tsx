@@ -2202,133 +2202,7 @@ export default function MemberDetailPage() {
                   </div>
                 </div>
 
-                {/* Pencarian Cepat Produk Master */}
-                <div ref={quickSearchRef} className="relative">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Cari produk dari data master (nama atau barcode)..."
-                      value={quickProductSearch}
-                      onFocus={() => {
-                        fetchMasterProducts();
-                        setIsQuickProductDropdownOpen(true);
-                      }}
-                      onChange={(e) => {
-                        setQuickProductSearch(e.target.value);
-                        setIsQuickProductDropdownOpen(true);
-                      }}
-                      className="w-full pl-9 pr-8 h-9 bg-slate-50/80 dark:bg-zinc-800 focus:bg-white border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    {quickProductSearch && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuickProductSearch("");
-                          setIsQuickProductDropdownOpen(false);
-                        }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Dropdown Hasil Pencarian Master Produk */}
-                  {isQuickProductDropdownOpen && quickProductSearch.trim() && (
-                    <div className="absolute top-full mt-1.5 left-0 right-0 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 p-1 font-sans">
-                      {masterProducts
-                        .filter((p) => {
-                          const q = quickProductSearch.toLowerCase().trim();
-                          return (
-                            p.nama?.toLowerCase().includes(q) ||
-                            p.barcode?.toLowerCase().includes(q) ||
-                            p.kategori?.nama?.toLowerCase().includes(q)
-                          );
-                        })
-                        .slice(0, 20)
-                        .map((p) => {
-                          const satuanList =
-                            Array.isArray(p.satuanProduk) && p.satuanProduk.length > 0
-                              ? p.satuanProduk
-                              : [{ id: "default", namaSatuan: p.satuanDasar || "pcs", hargaJual: 0 }];
-
-                          if (satuanList.length === 1) {
-                            const s = satuanList[0];
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => handleSelectMasterProduct(p, s)}
-                                className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-lg flex items-center justify-between text-xs transition-colors group cursor-pointer"
-                              >
-                                <div>
-                                  <p className="font-semibold text-slate-800 dark:text-zinc-100 group-hover:text-blue-600">
-                                    {p.nama}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400">
-                                    {s.namaSatuan || p.satuanDasar}
-                                    {p.barcode ? ` · ${p.barcode}` : ""}
-                                  </p>
-                                </div>
-                                <span className="font-bold text-slate-800 dark:text-zinc-200 group-hover:text-blue-600 shrink-0 pl-3">
-                                  {formatRupiah(s.hargaJual)}
-                                </span>
-                              </button>
-                            );
-                          }
-
-                          return (
-                            <div
-                              key={p.id}
-                              className="px-3 py-2 hover:bg-slate-50/70 dark:hover:bg-zinc-800/60 rounded-lg text-xs transition-colors"
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <p className="font-semibold text-slate-800 dark:text-zinc-100">
-                                  {p.nama}
-                                </p>
-                                {p.barcode && (
-                                  <span className="text-[10px] text-slate-400 font-mono">
-                                    {p.barcode}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {satuanList.map((s: any, sIdx: number) => (
-                                  <button
-                                    key={s.id || sIdx}
-                                    type="button"
-                                    onClick={() => handleSelectMasterProduct(p, s)}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 dark:bg-zinc-800 dark:hover:bg-blue-950/50 text-slate-700 hover:text-blue-600 dark:text-zinc-300 border border-slate-200/80 hover:border-blue-200 text-[11px] font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer active:scale-95"
-                                  >
-                                    <span>{s.namaSatuan || p.satuanDasar}</span>
-                                    <span className="font-bold text-slate-900 dark:text-zinc-100">
-                                      {formatRupiah(s.hargaJual)}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                      {masterProducts.filter((p) => {
-                        const q = quickProductSearch.toLowerCase().trim();
-                        return (
-                          p.nama?.toLowerCase().includes(q) ||
-                          p.barcode?.toLowerCase().includes(q) ||
-                          p.kategori?.nama?.toLowerCase().includes(q)
-                        );
-                      }).length === 0 && (
-                        <div className="py-4 text-center text-xs text-slate-400">
-                          Produk tidak ditemukan. Ketik manual di tabel di bawah.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Catatan Tambahan (di bawah search bar) */}
+                {/* Catatan Tambahan (dipindahkan ke atas) */}
                 <div>
                   <label className="text-[11px] font-medium text-slate-500 block mb-1">
                     Catatan (Opsional)
@@ -2340,6 +2214,153 @@ export default function MemberDetailPage() {
                     onChange={(e) => setManualCatatan(e.target.value)}
                     className="ctl-sm"
                   />
+                </div>
+
+                {/* Masukan Produk & Daftar Produk */}
+                <div ref={quickSearchRef} className="space-y-2.5">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Masukan Produk
+                    </label>
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Cari produk dari data master (nama atau barcode)..."
+                        value={quickProductSearch}
+                        onFocus={() => {
+                          fetchMasterProducts();
+                        }}
+                        onChange={(e) => {
+                          setQuickProductSearch(e.target.value);
+                        }}
+                        className="w-full pl-9 pr-8 h-9 bg-slate-50/80 dark:bg-zinc-800 focus:bg-white border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-800 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                      />
+                      {quickProductSearch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickProductSearch("");
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Daftar Produk */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                        Daftar Produk
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        Klik produk untuk menambahkan
+                      </span>
+                    </div>
+                    {(() => {
+                      const q = quickProductSearch.toLowerCase().trim();
+                      const filteredMaster = masterProducts
+                        .filter((p) => {
+                          if (!q) return true;
+                          return (
+                            p.nama?.toLowerCase().includes(q) ||
+                            p.barcode?.toLowerCase().includes(q) ||
+                            p.kategori?.nama?.toLowerCase().includes(q)
+                          );
+                        })
+                        .slice(0, 30);
+
+                      return (
+                        <div className="border border-slate-200/90 dark:border-zinc-800 rounded-xl bg-slate-50/40 dark:bg-zinc-900/40 max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
+                          {filteredMaster.length === 0 ? (
+                            <div className="py-4 text-center text-xs text-slate-400">
+                              {masterProducts.length === 0
+                                ? "Memuat daftar produk..."
+                                : "Produk tidak ditemukan. Ketik manual di tabel di bawah."}
+                            </div>
+                          ) : (
+                            filteredMaster.map((p, index) => {
+                              const satuanList =
+                                Array.isArray(p.satuanProduk) && p.satuanProduk.length > 0
+                                  ? p.satuanProduk
+                                  : [{ id: "default", namaSatuan: p.satuanDasar || "pcs", hargaJual: 0 }];
+
+                              if (satuanList.length === 1) {
+                                const s = satuanList[0];
+                                return (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => handleSelectMasterProduct(p, s)}
+                                    className="w-full text-left px-3 py-2 hover:bg-white dark:hover:bg-zinc-800 flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                                  >
+                                    <div className="min-w-0 flex items-center gap-2">
+                                      <span className="text-[11px] font-semibold text-slate-400 w-5 shrink-0">
+                                        {index + 1}.
+                                      </span>
+                                      <div className="min-w-0">
+                                        <p className="font-semibold text-slate-800 dark:text-zinc-100 group-hover:text-blue-600 truncate">
+                                          {p.nama}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400">
+                                          {s.namaSatuan || p.satuanDasar}
+                                          {p.barcode ? ` · ${p.barcode}` : ""}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className="font-bold text-slate-800 dark:text-zinc-200 group-hover:text-blue-600 shrink-0 pl-3">
+                                      {formatRupiah(s.hargaJual)}
+                                    </span>
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  key={p.id}
+                                  className="px-3 py-2 hover:bg-white/80 dark:hover:bg-zinc-800/60 text-xs transition-colors"
+                                >
+                                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <div className="min-w-0 flex items-center gap-2">
+                                      <span className="text-[11px] font-semibold text-slate-400 w-5 shrink-0">
+                                        {index + 1}.
+                                      </span>
+                                      <p className="font-semibold text-slate-800 dark:text-zinc-100 truncate">
+                                        {p.nama}
+                                      </p>
+                                    </div>
+                                    {p.barcode && (
+                                      <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                                        {p.barcode}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5 pl-7">
+                                    {satuanList.map((s: any, sIdx: number) => (
+                                      <button
+                                        key={s.id || sIdx}
+                                        type="button"
+                                        onClick={() => handleSelectMasterProduct(p, s)}
+                                        className="px-2.5 py-1 rounded-lg bg-white hover:bg-blue-50 dark:bg-zinc-800 dark:hover:bg-blue-950/50 text-slate-700 hover:text-blue-600 dark:text-zinc-300 border border-slate-200/80 hover:border-blue-200 text-[11px] font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                      >
+                                        <span>{s.namaSatuan || p.satuanDasar}</span>
+                                        <span className="font-bold text-slate-900 dark:text-zinc-100">
+                                          {formatRupiah(s.hargaJual)}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* Daftar Barang Belanja */}

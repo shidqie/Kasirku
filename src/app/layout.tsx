@@ -12,6 +12,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://tokogagan.biz.id"),
   title: "Kasirku POS - Toko Gagan 2",
   description: "Aplikasi POS Toko Sembako Cepat, Akurat, dan Terintegrasi",
   icons: {

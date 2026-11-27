@@ -1,6 +1,7 @@
 # 🔐 Catatan Kredensial & Akses POS Kasirku
 
-### 🌐 Akses Jaringan Lokal (Wi-Fi)
+### 🌐 Akses Jaringan Lokal (Wi-Fi) & Production
+- **URL Production:** `https://tokogagan.biz.id`
 Aplikasi dapat dibuka langsung dari HP / Tablet / Laptop lain yang terhubung ke jaringan Wi-Fi yang sama:
 - **URL Wi-Fi Lokal:** `http://192.168.1.6:3000` (atau IP perangkat server saat ini)
 - **URL Komputer Lokal:** `http://localhost:3000`
