@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import { formatRupiah } from "@/lib/formatters";
+import { formatMemberCode } from "@/lib/codification";
 import { Pagination } from "@/components/shared/Pagination";
 
 interface MemberItem {
@@ -250,6 +251,19 @@ export default function MemberListPage() {
     }
   };
 
+  const memberCodeMap = useMemo(() => {
+    const sorted = [...members].sort((a: any, b: any) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return ta - tb;
+    });
+    const map: Record<string, string> = {};
+    sorted.forEach((m: any, idx: number) => {
+      map[m.id] = formatMemberCode(idx + 1);
+    });
+    return map;
+  }, [members]);
+
   const paginatedMembers = filteredMembers.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -461,9 +475,12 @@ export default function MemberListPage() {
                     <div className="min-w-0">
                       <Link
                         href={`/member/${m.id}`}
-                        className="font-semibold text-sm text-slate-900 dark:text-zinc-100 block truncate"
+                        className="font-semibold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2 truncate"
                       >
-                        {m.nama}
+                        <span className="text-[10px] font-mono font-semibold text-slate-400 shrink-0">
+                          {memberCodeMap[m.id]}
+                        </span>
+                        <span className="truncate">{m.nama}</span>
                       </Link>
                       <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
                         {m.telepon || "Tanpa No. HP"} {m.alamat ? `· ${m.alamat}` : ""}
@@ -544,10 +561,13 @@ export default function MemberListPage() {
                       <td className="py-3.5 px-4">
                         <Link
                           href={`/member/${m.id}`}
-                          className="font-semibold text-slate-900 hover:text-blue-600 transition-colors truncate block"
+                          className="font-semibold text-slate-900 hover:text-blue-600 transition-colors flex items-center gap-2 truncate"
                           title={`Lihat detail ${m.nama}`}
                         >
-                          {m.nama}
+                          <span className="text-[11px] font-mono font-medium text-slate-400 shrink-0">
+                            {memberCodeMap[m.id]}
+                          </span>
+                          <span className="truncate">{m.nama}</span>
                         </Link>
                       </td>
 

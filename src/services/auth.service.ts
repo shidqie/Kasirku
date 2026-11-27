@@ -131,13 +131,22 @@ export async function createUser(
 
 export async function updateUser(
   id: string,
-  data: { nama?: string; aktif?: boolean; role?: Role; permissions?: string[] },
+  data: { nama?: string; username?: string; aktif?: boolean; role?: Role; permissions?: string[] },
   actorId: string,
   ip?: string
 ) {
   const sebelum = await prisma.user.findUnique({ where: { id } });
   if (!sebelum) {
     throw new Error("Pengguna tidak ditemukan");
+  }
+
+  if (data.username && data.username !== sebelum.username) {
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: data.username },
+    });
+    if (existingUsername) {
+      throw new Error(`Username '${data.username}' sudah digunakan`);
+    }
   }
 
   // Lindungi agar user tidak menonaktifkan / mengubah role dirinya sendiri
@@ -159,6 +168,7 @@ export async function updateUser(
     where: { id },
     data: {
       ...(data.nama ? { nama: data.nama } : {}),
+      ...(data.username ? { username: data.username } : {}),
       ...(data.aktif !== undefined ? { aktif: data.aktif } : {}),
       ...(data.role !== undefined ? { role: data.role } : {}),
       ...(data.permissions !== undefined ? { permissions: data.permissions } : {}),
@@ -274,5 +284,46 @@ export async function resetPasswordByUsernameWithPin(
     status: 200,
     message: `Password untuk '${user.username}' berhasil direset. Silakan masuk.`,
   };
+}
+
+export async function deleteUser(id: string, actorId: string, ip?: string) {
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) {
+    throw new Error("Pengguna tidak ditemukan");
+  }
+  if (id === actorId) {
+    throw new Error("Tidak dapat menghapus akun Anda sendiri");
+  }
+  if (target.role === "SUPER_ADMIN") {
+    throw new Error("Tidak dapat menghapus akun Super Admin");
+  }
+  if (target.role === "OWNER") {
+    const ownerCount = await prisma.user.count({
+      where: { role: "OWNER", aktif: true },
+    });
+    if (ownerCount <= 1) {
+      throw new Error("Tidak dapat menghapus satu-satunya akun Pemilik");
+    }
+  }
+
+  try {
+    await prisma.user.delete({ where: { id } });
+  } catch {
+    throw new Error(
+      `Akun '${target.username}' sudah memiliki riwayat transaksi atau aktivitas sehingga tidak bisa dihapus permanen. Gunakan Nonaktifkan.`
+    );
+  }
+
+  await logActivity({
+    userId: actorId,
+    role: "OWNER",
+    aksi: "HAPUS_USER",
+    entitas: "User",
+    entitasId: id,
+    sebelumJson: { username: target.username, nama: target.nama, role: target.role },
+    ip,
+  });
+
+  return { success: true, message: `Pengguna '${target.username}' berhasil dihapus` };
 }
 

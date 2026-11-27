@@ -21,6 +21,7 @@ import {
   QrCode,
   Upload,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { NumberInput } from "@/components/shared/NumberInput";
@@ -742,6 +743,77 @@ function TabPengguna() {
   const [delegatedPerms, setDelegatedPerms] = useState<string[]>([]);
   const [savingDelegation, setSavingDelegation] = useState(false);
 
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [editNama, setEditNama] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editRole, setEditRole] = useState<string>("STAFF_KASIR");
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
+  const [submittingDelete, setSubmittingDelete] = useState(false);
+
+  const handleOpenEditUser = (u: UserItem) => {
+    setEditingUser(u);
+    setEditNama(u.nama);
+    setEditUsername(u.username);
+    setEditRole(u.role === "STAFF" ? "STAFF_KASIR" : u.role);
+    setError(null);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSubmittingEdit(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: editNama.trim(),
+          username: editUsername.trim(),
+          role: editRole,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memperbarui pengguna");
+
+      setSuccess(`Data pengguna ${editNama.trim()} berhasil diperbarui.`);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!deletingUser) return;
+    setSubmittingDelete(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/users/${deletingUser.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus pengguna");
+
+      setSuccess(data.message || `Pengguna ${deletingUser.username} berhasil dihapus.`);
+      setDeletingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+      setDeletingUser(null);
+    } finally {
+      setSubmittingDelete(false);
+    }
+  };
+
   const handleSaveDelegation = async () => {
     if (!delegatingUser) return;
     try {
@@ -808,7 +880,7 @@ function TabPengguna() {
       setNewUsername("");
       setNewNama("");
       setNewPassword("");
-      setNewRole("STAFF");
+      setNewRole("STAFF_KASIR");
       fetchUsers();
     } catch (err: any) {
       setError(err.message);
@@ -969,6 +1041,14 @@ function TabPengguna() {
                     </td>
                     <td className="py-3.5 pl-4 text-center whitespace-nowrap">
                       <div className="inline-flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleOpenEditUser(user)}
+                          className="h-7 px-2.5 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          title="Edit nama, username, atau peran"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
                         {user.role !== "OWNER" && (
                           <button
                             onClick={() => {
@@ -1013,6 +1093,16 @@ function TabPengguna() {
                             </>
                           )}
                         </button>
+                        {user.role !== "OWNER" && (
+                          <button
+                            onClick={() => setDeletingUser(user)}
+                            className="h-7 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Hapus akun pengguna"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1028,7 +1118,7 @@ function TabPengguna() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
             <h3 className="font-bold text-lg text-slate-800 mb-1">Tambah Pengguna Baru</h3>
             <p className="text-xs text-slate-500 mb-5">
-              Akun baru dibuat langsung oleh Pemilik tanpa registrasi publik.
+              Akun baru dibuat langsung oleh Pemilik. Peran Kasir dapat dibuat lebih dari 1 akun (mis. Kasir 1, Kasir 2).
             </p>
 
             <form onSubmit={handleCreateUser} className="space-y-4">
@@ -1116,6 +1206,96 @@ function TabPengguna() {
           </div>
         </div>
       )}
+
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95">
+            <h3 className="font-bold text-lg text-slate-800 dark:text-zinc-100 mb-1">
+              Edit Pengguna
+            </h3>
+            <p className="text-xs text-slate-500 mb-5">
+              Ubah nama lengkap, username, atau peran akun @{editingUser.username}.
+            </p>
+
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider font-sans">
+                  Nama Lengkap
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editNama}
+                  onChange={(e) => setEditNama(e.target.value)}
+                  className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:border-[#F0090F]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider font-sans">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:border-[#F0090F]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider font-sans">
+                  Peran / Hak Akses
+                </label>
+                <div className="mt-1.5">
+                  <Dropdown
+                    variant="box"
+                    searchable={false}
+                    ariaLabel="Peran atau hak akses"
+                    value={editRole}
+                    onChange={setEditRole}
+                    options={[
+                      { value: "STAFF_KASIR", label: "Staff 1 (Kasir)" },
+                      { value: "STAFF_GUDANG", label: "Staff 2 (Stok / Gudang)" },
+                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Pengawasan)" },
+                      { value: "OWNER", label: "Pemilik Toko (Akses Penuh)" },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="w-1/2 h-11 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-700 dark:text-zinc-300 font-semibold rounded-xl text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="w-1/2 h-11 bg-[#F0090F] hover:bg-[#D6080E] active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md"
+                >
+                  {submittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={Boolean(deletingUser)}
+        title={`Hapus akun "${deletingUser?.nama || ""}"?`}
+        description={`Akun @${deletingUser?.username || ""} akan dihapus permanen jika belum memiliki riwayat transaksi.`}
+        confirmText="Ya, Hapus Akun"
+        variant="danger"
+        loading={submittingDelete}
+        onConfirm={handleConfirmDeleteUser}
+        onCancel={() => !submittingDelete && setDeletingUser(null)}
+      />
 
       {delegatingUser && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">

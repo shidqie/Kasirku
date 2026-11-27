@@ -1014,84 +1014,54 @@ export default function MemberDetailPage() {
           </p>
         </div>
 
-        {/* Centralized Action Buttons */}
-        <div className="flex items-center gap-2.5 relative" ref={actionMenuRef}>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* Primary Action: Terima pembayaran utang */}
           <button
+            type="button"
             disabled={member.saldoUtangCache <= 0}
             onClick={() => {
               setPayAmount(member.saldoUtangCache);
               setPayUangDiterima(member.saldoUtangCache);
               setIsPayOpen(true);
             }}
-            className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 text-white font-semibold rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 text-white font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>Terima Pembayaran</span>
           </button>
 
-          {/* Centralized Action Menu Button */}
+          {/* Tambah Kasbon Manual */}
           <button
-            onClick={() => setIsActionMenuOpen((prev) => !prev)}
-            className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
-            title="Menu Aksi Terpusat"
+            type="button"
+            onClick={handleOpenManualKasbon}
+            className="h-9 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
           >
-            <span>Aksi &amp; kelola</span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                isActionMenuOpen ? "rotate-180" : ""
-              }`}
-            />
+            <Plus className="w-3.5 h-3.5 text-[#F0090F]" />
+            <span>Tambah Kasbon</span>
           </button>
 
-          {/* Centralized Dropdown Menu */}
-          {isActionMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl z-50 py-2 divide-y divide-slate-100 dark:divide-zinc-800 animate-in fade-in zoom-in-95 duration-150">
-              {/* Group 1: Kasbon */}
-              <div className="px-1.5 py-1 space-y-0.5">
-                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
-                  Transaksi Kasbon
-                </span>
-                <button
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    handleOpenManualKasbon();
-                  }}
-                  className="w-full text-left px-2.5 py-2 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-xl text-xs text-slate-800 dark:text-zinc-200 flex items-center gap-2.5 transition-colors font-semibold"
-                >
-                  <Plus className="w-4 h-4 text-[#F0090F]" />
-                  <span>Tambah Kasbon Manual</span>
-                </button>
-              </div>
+          {/* Unduh Rincian Bon (PDF) */}
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            className="h-9 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            title="Unduh Rincian Bon (PDF)"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-500" />
+            <span>Unduh PDF</span>
+          </button>
 
-              {/* Group 2: Dokumen & Komunikasi */}
-              <div className="px-1.5 py-1 space-y-0.5">
-                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
-                  Dokumen & Komunikasi
-                </span>
-                <button
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    handleDownloadPDF();
-                  }}
-                  className="w-full text-left px-2.5 py-2 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-xl text-xs text-slate-800 dark:text-zinc-200 flex items-center gap-2.5 transition-colors font-semibold"
-                >
-                  <FileText className="w-4 h-4 text-blue-500" />
-                  <span>Unduh Rincian Bon (PDF)</span>
-                </button>
-                <button
-                  disabled={!member.telepon || !member.telepon.trim()}
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    handleShareWhatsApp();
-                  }}
-                  className="w-full text-left px-2.5 py-2 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-xl text-xs text-slate-800 dark:text-zinc-200 flex items-center gap-2.5 transition-colors font-semibold disabled:opacity-40"
-                >
-                  <Share2 className="w-4 h-4 text-emerald-500" />
-                  <span>Kirim Rincian via WhatsApp</span>
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Kirim Rincian via WhatsApp */}
+          <button
+            type="button"
+            disabled={!member.telepon || !member.telepon.trim()}
+            onClick={handleShareWhatsApp}
+            className="h-9 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-40 cursor-pointer"
+            title="Kirim Rincian via WhatsApp"
+          >
+            <Share2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Kirim WA</span>
+          </button>
         </div>
       </div>
 

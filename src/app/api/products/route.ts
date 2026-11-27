@@ -23,12 +23,12 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ products });
 }
 
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasAnyPermission } from "@/lib/auth/permissions";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasPermission(session, "produk:manage")) {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:kasbon", "piutang:view"])) {
+    return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
   try {

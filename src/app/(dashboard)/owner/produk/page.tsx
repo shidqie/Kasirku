@@ -24,6 +24,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
+import { formatProductCode } from "@/lib/codification";
 import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
@@ -517,9 +518,9 @@ function TabProduk() {
                     ? Math.floor(stok / Number(satuanGrosir.faktorKeDasar))
                     : null;
 
-                  // ID Barang: format BRG-NNN berdasarkan urutan
+                  // ID Barang: format PRD-[KAT]-NNN berdasarkan kategori & urutan
                   const globalIdx = (currentPage - 1) * pageSize + idx + 1;
-                  const idBarang = `BRG-${String(globalIdx).padStart(3, "0")}`;
+                  const idBarang = formatProductCode(p.kategori?.nama, globalIdx);
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">

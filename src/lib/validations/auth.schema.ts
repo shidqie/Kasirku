@@ -16,6 +16,7 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = z.object({
   nama: z.string().min(2, "Nama minimal 2 karakter").optional(),
+  username: z.string().trim().min(3, "Username minimal 3 karakter").max(50, "Username maksimal 50 karakter").optional(),
   aktif: z.boolean().optional(),
   role: z.enum(["SUPER_ADMIN", "OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF_GUDANG", "STAFF"]).optional(),
   permissions: z.array(z.string()).optional(),

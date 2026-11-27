@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { updateUser } from "@/services/auth.service";
+import { deleteUser, updateUser } from "@/services/auth.service";
 import { updateUserSchema } from "@/lib/validations/auth.schema";
 import { hasPermission } from "@/lib/auth/permissions";
 
@@ -47,6 +47,30 @@ export async function PATCH(
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Gagal memperbarui pengguna" },
+      { status: 400 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession();
+  if (!session || !hasPermission(session, "users:manage")) {
+    return NextResponse.json(
+      { error: "Akses ditolak. Tidak memiliki izin menghapus pengguna." },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
+    const result = await deleteUser(params.id, session.userId, ip);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Gagal menghapus pengguna" },
       { status: 400 }
     );
   }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "./activity-log.service";
 import { getSettings } from "./settings.service";
+import { formatBonCode } from "@/lib/codification";
 import { Prisma, MetodePembayaran } from "@prisma/client";
 
 export interface CreateMemberInput {
@@ -534,9 +535,23 @@ export async function tambahKasbonManual(
   }
 
   const tanggalCatat = input.tanggal ? new Date(input.tanggal) : new Date();
+  const startOfDay = new Date(tanggalCatat);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setDate(endOfDay.getDate() + 1);
+
+  const countSameDay = await prisma.kasbonMutasi.count({
+    where: {
+      tipe: "KASBON",
+      transaksiId: null,
+      dibuatPada: { gte: startOfDay, lt: endOfDay },
+    },
+  });
+  const kodeBon = formatBonCode(tanggalCatat, countSameDay + 1);
 
   // Format catatan lengkap dengan JSON rincian barang & pengambil
   const dataCatatan = {
+    kodeBon,
     pengambil: input.pengambil,
     kasir: actor.nama || "Kasir",
     tanggal: tanggalCatat.toISOString(),
@@ -639,9 +654,18 @@ export async function editKasbonManual(
   }
 
   const tanggalCatat = input.tanggal ? new Date(input.tanggal) : oldMutasi.dibuatPada;
+  let existingKodeBon: string | undefined;
+  if (oldMutasi.catatan?.includes("|| JSON:")) {
+    try {
+      const parsedOld = JSON.parse(oldMutasi.catatan.split("|| JSON:")[1]);
+      existingKodeBon = parsedOld?.kodeBon;
+    } catch {}
+  }
+  const kodeBon = existingKodeBon || formatBonCode(tanggalCatat, 1);
 
   // Format catatan lengkap dengan JSON rincian barang & pengambil
   const dataCatatan = {
+    kodeBon,
     pengambil: input.pengambil,
     kasir: actor.nama || "Kasir",
     tanggal: tanggalCatat.toISOString(),
