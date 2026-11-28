@@ -23,6 +23,7 @@ import {
   FileText,
   TrendingUp,
   Download,
+  Upload,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { formatProductCode } from "@/lib/codification";
@@ -32,6 +33,7 @@ import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { HargaNaikModal } from "@/components/produk/HargaNaikModal";
+import { ImportProdukModal } from "@/components/produk/ImportProdukModal";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 interface SatuanInput {
@@ -81,6 +83,7 @@ function TabProduk() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM">("FORM");
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [downloadingPriceList, setDownloadingPriceList] = useState(false);
   const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
@@ -373,6 +376,15 @@ function TabProduk() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsImportOpen(true)}
+              className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              title="Import data produk dari file CSV"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Import</span>
+            </button>
             <div className="relative">
               <button
                 type="button"
@@ -1594,6 +1606,15 @@ function TabProduk() {
           fetchData();
         }}
         onError={(msg) => setError(msg)}
+      />
+
+      <ImportProdukModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onImported={() => {
+          setSuccess("Data produk berhasil diimport.");
+          fetchData();
+        }}
       />
 
       <ConfirmModal
