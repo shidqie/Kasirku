@@ -503,8 +503,8 @@ function TabProduk() {
           </button>
         </div>
 
-        {/* Category tabs horizontal scroll */}
-        <div className="mt-3 flex items-center gap-0 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-zinc-800 text-xs">
+        {/* Category pills horizontal scroll */}
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
           {[
             { value: "", label: "Semua", count: products.length },
             ...categories.map((c) => ({
@@ -520,17 +520,17 @@ function TabProduk() {
                 setSelectedKategori(cat.value);
                 setCurrentPage(1);
               }}
-              className={`pb-2.5 pr-5 whitespace-nowrap transition-colors cursor-pointer focus:outline-none border-b-2 shrink-0 ${
+              className={`shrink-0 px-3.5 h-8 rounded-full border whitespace-nowrap transition-all cursor-pointer focus:outline-none text-xs font-medium ${
                 selectedKategori === cat.value
-                  ? "border-slate-900 dark:border-white text-slate-900 dark:text-white font-semibold"
-                  : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+                  ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-zinc-900"
+                  : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-zinc-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {cat.label}
               {cat.count > 0 && (
-                <span className={`ml-1.5 text-[10px] font-semibold tabular-nums ${
+                <span className={`ml-1.5 text-[10px] tabular-nums ${
                   selectedKategori === cat.value
-                    ? "text-slate-900 dark:text-white"
+                    ? "text-white/70 dark:text-zinc-900/60"
                     : "text-slate-400 dark:text-zinc-500"
                 }`}>{cat.count}</span>
               )}
