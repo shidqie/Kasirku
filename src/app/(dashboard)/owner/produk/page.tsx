@@ -547,8 +547,21 @@ function TabProduk() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-6 pr-2 h-9 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+              className="w-full pl-6 pr-6 h-9 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
+                title="Hapus pencarian"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -1722,11 +1735,12 @@ function TabProduk() {
               );
 
               if (exactMatch) {
-                setFilterStok("SEMUA");
-                setSelectedKategori("");
-                setCurrentPage(1);
-                setSearchQuery(cleanCode);
-                setSuccess(`Produk ditemukan: ${exactMatch.nama} (${cleanCode})`);
+                setSearchQuery("");
+                setDetailProduct({
+                  product: exactMatch,
+                  idBarang: formatProductCode(exactMatch.kategori?.nama, 1),
+                });
+                setSuccess(`Produk ditemukan: ${exactMatch.nama}`);
               } else {
                 // Tidak terdaftar -> buka modal pilih produk untuk dipasangkan barcode ini
                 setUnregisteredBarcode(cleanCode);
@@ -1743,7 +1757,7 @@ function TabProduk() {
                 }
               }
             } catch {
-              setSearchQuery(cleanCode);
+              setError(`Gagal mencari barcode "${cleanCode}"`);
             }
           }
         }}
@@ -1827,13 +1841,9 @@ function TabProduk() {
                       return;
                     }
                     setSuccess(`Barcode ${unregisteredBarcode} berhasil dipasang ke "${p.nama}"`);
-                    const scanned = unregisteredBarcode;
                     setReplaceBarcodeTarget(null);
                     setUnregisteredBarcode(null);
-                    setFilterStok("SEMUA");
-                    setSelectedKategori("");
-                    setCurrentPage(1);
-                    setSearchQuery(scanned);
+                    setSearchQuery("");
                     fetchData();
                   } catch (err: any) {
                     setError(err.message || "Gagal menghubungi server");
@@ -1939,13 +1949,9 @@ function TabProduk() {
               return;
             }
             setSuccess(`Barcode "${replaceBarcodeTarget.nama}" berhasil diganti menjadi ${unregisteredBarcode}`);
-            const scanned = unregisteredBarcode;
             setReplaceBarcodeTarget(null);
             setUnregisteredBarcode(null);
-            setFilterStok("SEMUA");
-            setSelectedKategori("");
-            setCurrentPage(1);
-            setSearchQuery(scanned);
+            setSearchQuery("");
             fetchData();
           } catch (err: any) {
             setError(err.message || "Gagal menghubungi server");
