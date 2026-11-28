@@ -157,8 +157,14 @@ export function VariantGroupFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 dark:border-zinc-800">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl h-full bg-white dark:bg-zinc-900 shadow-xl flex flex-col border-l border-slate-100 dark:border-zinc-800 drawer-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-5 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
@@ -395,18 +401,18 @@ export function VariantGroupFormModal({
             </div>
           </div>
 
-          <div className="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2 shrink-0">
+          <div className="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2 shrink-0 bg-white dark:bg-zinc-900">
             <button
               type="button"
               onClick={onClose}
-              className="h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
+              className="flex-1 sm:flex-none h-10 sm:h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
+              className="flex-[2] sm:flex-none h-10 sm:h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
             >
               {submitting ? "Menyimpan..." : "Simpan Semua Varian"}
             </button>
@@ -543,8 +549,14 @@ export function SplitProductModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-zinc-800">
+    <div
+      className="fixed inset-0 z-[60] overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl h-full bg-white dark:bg-zinc-900 shadow-xl flex flex-col border-l border-slate-100 dark:border-zinc-800 drawer-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-5 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400">
@@ -718,18 +730,18 @@ export function SplitProductModal({
             </div>
           </div>
 
-          <div className="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2 shrink-0">
+          <div className="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2 shrink-0 bg-white dark:bg-zinc-900">
             <button
               type="button"
               onClick={onClose}
-              className="h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
+              className="flex-1 sm:flex-none h-10 sm:h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
+              className="flex-[2] sm:flex-none h-10 sm:h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
             >
               {submitting ? "Memecah..." : "Pecah Jadi Varian"}
             </button>
