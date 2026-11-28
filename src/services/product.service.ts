@@ -183,10 +183,21 @@ export async function getProducts(params?: {
     }
   }
 
-  return products.map((p) => ({
-    ...p,
-    hargaNaik: hargaNaikIds.has(p.id),
-  }));
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const nowMs = Date.now();
+
+  return products.map((p) => {
+    const createdMs = p.createdAt.getTime();
+    const updatedMs = p.updatedAt.getTime();
+    const isBaru = nowMs - createdMs <= sevenDaysMs;
+    const isDiperbarui = !isBaru && nowMs - updatedMs <= sevenDaysMs && updatedMs - createdMs > 60_000;
+    return {
+      ...p,
+      hargaNaik: hargaNaikIds.has(p.id),
+      isBaru,
+      isDiperbarui,
+    };
+  });
 }
 
 export async function getProductById(id: string) {

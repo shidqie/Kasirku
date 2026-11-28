@@ -54,6 +54,9 @@ interface ProductItem {
   stokMinimum: string | number;
   stokCache: string | number;
   aktif: boolean;
+  hargaNaik?: boolean;
+  isBaru?: boolean;
+  isDiperbarui?: boolean;
   kategori: { id: string; nama: string } | null;
   satuanProduk: {
     id: string;
@@ -119,7 +122,9 @@ function TabProduk() {
       setLoading(true);
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      if (selectedKategori) params.set("kategoriId", selectedKategori);
+      if (selectedKategori && !selectedKategori.startsWith("__")) {
+        params.set("kategoriId", selectedKategori);
+      }
 
       const [pRes, cRes] = await Promise.all([
         fetch(`/api/products?${params.toString()}`),
@@ -362,6 +367,20 @@ function TabProduk() {
     }
   };
 
+  const hargaNaikCount = products.filter((p) => p.hargaNaik).length;
+  const updatedOrNewCount = products.filter((p) => p.isBaru || p.isDiperbarui).length;
+
+  const filteredProducts = products.filter((p) => {
+    if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
+    if (selectedKategori === "__UPDATED__" && !p.isBaru && !p.isDiperbarui) return false;
+    const stok = Number(p.stokCache);
+    const min = Number(p.stokMinimum);
+    if (filterStok === "HABIS") return stok <= 0;
+    if (filterStok === "MENIPIS") return stok > 0 && stok <= min;
+    if (filterStok === "TANPA_BARCODE") return !p.barcode;
+    return true;
+  });
+
   return (
     <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Filter Fixed at Top */}
@@ -508,36 +527,54 @@ function TabProduk() {
         {/* Category pills horizontal scroll */}
         <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
           {[
-            { value: "", label: "Semua", count: products.length },
+            { value: "", label: "Semua", count: products.length, accent: "default" as const },
+            ...(hargaNaikCount > 0
+              ? [{ value: "__HARGA_NAIK__", label: "Harga Naik", count: hargaNaikCount, accent: "amber" as const }]
+              : []),
+            ...(updatedOrNewCount > 0
+              ? [{ value: "__UPDATED__", label: "Baru / Update", count: updatedOrNewCount, accent: "blue" as const }]
+              : []),
             ...categories.map((c) => ({
               value: c.id,
               label: c.nama,
               count: products.filter((p) => p.kategori?.id === c.id).length,
+              accent: "default" as const,
             })),
-          ].map((cat) => (
-            <button
-              key={cat.value}
-              type="button"
-              onClick={() => {
-                setSelectedKategori(cat.value);
-                setCurrentPage(1);
-              }}
-              className={`shrink-0 px-3.5 h-8 rounded-full border whitespace-nowrap transition-all cursor-pointer focus:outline-none text-xs font-medium ${
-                selectedKategori === cat.value
-                  ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-zinc-900"
-                  : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-zinc-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              {cat.label}
-              {cat.count > 0 && (
-                <span className={`ml-1.5 text-[10px] tabular-nums ${
-                  selectedKategori === cat.value
-                    ? "text-white/70 dark:text-zinc-900/60"
-                    : "text-slate-400 dark:text-zinc-500"
-                }`}>{cat.count}</span>
-              )}
-            </button>
-          ))}
+          ].map((cat) => {
+            const isSelected = selectedKategori === cat.value;
+            const pillStyle = isSelected
+              ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-zinc-900"
+              : cat.accent === "amber"
+              ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+              : cat.accent === "blue"
+              ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/50"
+              : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-zinc-500 hover:text-slate-900 dark:hover:text-white";
+            return (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => {
+                  setSelectedKategori(cat.value);
+                  setCurrentPage(1);
+                }}
+                className={`shrink-0 px-3.5 h-8 rounded-full border whitespace-nowrap transition-all cursor-pointer focus:outline-none text-xs font-medium inline-flex items-center gap-1.5 ${pillStyle}`}
+              >
+                {cat.accent === "amber" && <TrendingUp className="w-3.5 h-3.5 shrink-0" />}
+                <span>{cat.label}</span>
+                {cat.count > 0 && (
+                  <span className={`text-[10px] tabular-nums ${
+                    isSelected
+                      ? "text-white/70 dark:text-zinc-900/60"
+                      : cat.accent === "amber"
+                      ? "text-amber-600 dark:text-amber-400 font-semibold"
+                      : cat.accent === "blue"
+                      ? "text-blue-600 dark:text-blue-400 font-semibold"
+                      : "text-slate-400 dark:text-zinc-500"
+                  }`}>{cat.count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Filter stok tabs + count */}
@@ -568,25 +605,7 @@ function TabProduk() {
           </div>
           {!loading && (
             <span className="text-slate-400 dark:text-zinc-500 text-[11px] tabular-nums shrink-0 pl-4 pb-px">
-              {Math.min(currentPage * pageSize, (() => {
-                const filtered = products.filter((p) => {
-                  const stok = Number(p.stokCache);
-                  if (filterStok === "MENIPIS") return stok > 0 && stok <= Number(p.stokMinimum);
-                  if (filterStok === "HABIS") return stok <= 0;
-                  if (filterStok === "TANPA_BARCODE") return !p.barcode;
-                  return true;
-                });
-                return filtered.length;
-              })())} dari {(() => {
-                const filtered = products.filter((p) => {
-                  const stok = Number(p.stokCache);
-                  if (filterStok === "MENIPIS") return stok > 0 && stok <= Number(p.stokMinimum);
-                  if (filterStok === "HABIS") return stok <= 0;
-                  if (filterStok === "TANPA_BARCODE") return !p.barcode;
-                  return true;
-                });
-                return filtered.length;
-              })()} produk
+              {Math.min(currentPage * pageSize, filteredProducts.length)} dari {filteredProducts.length} produk
             </span>
           )}
         </div>
@@ -611,22 +630,14 @@ function TabProduk() {
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
               {loading ? (
                 <TableSkeletonRows rows={8} cols={6} />
-              ) : products.length === 0 ? (
+              ) : filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-400">
                     Tidak ada produk yang cocok.
                   </td>
                 </tr>
               ) : (
-                products
-                  .filter((p) => {
-                    const stok = Number(p.stokCache);
-                    const min = Number(p.stokMinimum);
-                    if (filterStok === "HABIS") return stok <= 0;
-                    if (filterStok === "MENIPIS") return stok > 0 && stok <= min;
-                    if (filterStok === "TANPA_BARCODE") return !p.barcode;
-                    return true;
-                  })
+                filteredProducts
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                   .map((p, idx) => {
                   const stok = Number(p.stokCache);
@@ -669,9 +680,36 @@ function TabProduk() {
 
                       {/* Nama Produk */}
                       <td className="py-3.5 px-4 min-w-[180px]">
-                        <span className="font-semibold text-slate-900 dark:text-zinc-100 text-sm leading-tight">
-                          {p.nama}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-900 dark:text-zinc-100 text-sm leading-tight">
+                            {p.nama}
+                          </span>
+                          {p.hargaNaik && (
+                            <span
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold whitespace-nowrap"
+                              title="Harga produk naik dalam 7 hari terakhir"
+                            >
+                              <TrendingUp className="w-2.5 h-2.5" />
+                              <span>Harga Naik</span>
+                            </span>
+                          )}
+                          {p.isBaru && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-bold whitespace-nowrap"
+                              title="Produk baru ditambahkan dalam 7 hari terakhir"
+                            >
+                              Baru
+                            </span>
+                          )}
+                          {!p.isBaru && p.isDiperbarui && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-bold whitespace-nowrap"
+                              title="Produk diperbarui dalam 7 hari terakhir"
+                            >
+                              Update
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Kategori */}
@@ -756,13 +794,13 @@ function TabProduk() {
         <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#121214]">
           <Pagination
             currentPage={currentPage}
-            totalItems={products.length}
+            totalItems={filteredProducts.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
           />
           <span className="text-xs text-slate-500 dark:text-zinc-400 tabular-nums pr-1">
-            Total <strong className="text-slate-800 dark:text-zinc-200">{products.length.toLocaleString("id-ID")}</strong> produk · {pageSize}/hal
+            Total <strong className="text-slate-800 dark:text-zinc-200">{filteredProducts.length.toLocaleString("id-ID")}</strong> produk · {pageSize}/hal
           </span>
         </div>
       )}
