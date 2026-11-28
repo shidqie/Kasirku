@@ -29,6 +29,7 @@ import {
   ChevronRight,
   Layers,
   Split,
+  Copy,
 } from "lucide-react";
 import { groupProductsForDisplay, formatPriceRange } from "@/lib/product-grouping";
 import { parseScan } from "@/lib/barcode";
@@ -117,6 +118,7 @@ function TabProduk() {
   const [replaceBarcodeTarget, setReplaceBarcodeTarget] = useState<ProductItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [scannerRowProductId, setScannerRowProductId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [detailProduct, setDetailProduct] = useState<{ product: ProductItem; idBarang: string } | null>(null);
@@ -368,6 +370,59 @@ function TabProduk() {
       setError(err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDuplicate = async (p: ProductItem) => {
+    if (duplicatingId) return;
+    setDuplicatingId(p.id);
+    setError("");
+    try {
+      const satuanListPayload =
+        p.satuanProduk && p.satuanProduk.length > 0
+          ? p.satuanProduk.map((s) => ({
+              namaSatuan: s.namaSatuan,
+              faktorKeDasar: s.faktorKeDasar,
+              hargaJual: s.hargaJual,
+              hargaBeli: s.hargaBeli,
+              isDefault: s.isDefault,
+            }))
+          : [
+              {
+                namaSatuan: p.satuanDasar || "pcs",
+                faktorKeDasar: 1,
+                hargaJual: 0,
+                hargaBeli: 0,
+                isDefault: true,
+              },
+            ];
+
+      const payload = {
+        nama: `${p.nama} (Salinan)`,
+        kategoriId: p.kategori?.id || null,
+        groupId: p.groupId || null,
+        variantName: p.variantName || null,
+        barcode: null,
+        satuanDasar: p.satuanDasar,
+        stokMinimum: p.stokMinimum,
+        isRefill: Boolean(p.isRefill),
+        satuanList: satuanListPayload,
+      };
+
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menduplikat produk");
+
+      setSuccess(`Produk "${p.nama}" berhasil diduplikat dengan ID baru`);
+      await fetchData();
+    } catch (err: any) {
+      setError(err.message || "Gagal menduplikat produk");
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -872,6 +927,15 @@ function TabProduk() {
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDuplicate(p)}
+                              disabled={duplicatingId === p.id}
+                              className="h-7 px-2.5 rounded-lg font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50"
+                              title="Duplikat produk dengan ID baru"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>{duplicatingId === p.id ? "Menyalin..." : "Duplikat"}</span>
                             </button>
                             <button
                               onClick={() => handleDelete(p)}
