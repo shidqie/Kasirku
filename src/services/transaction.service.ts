@@ -4,6 +4,7 @@ import { verifyOwnerPin } from "./pin.service";
 import { getSettings } from "./settings.service";
 import { Prisma, Pembulatan, MetodePembayaran } from "@prisma/client";
 import { generateUUID } from "@/lib/formatters";
+import { isRefillProduct } from "@/lib/refill";
 
 export interface CheckoutItemInput {
   produkId: string;
@@ -267,12 +268,11 @@ export async function checkout(
         },
       });
 
-      const isRefill = /\b(galon|gas|lpg|elpiji)\b/i.test(item.namaSnapshot);
       await tx.produk.update({
         where: { id: item.produkId },
         data: {
           stokCache: { increment: negativeQtyDasar },
-          ...(input.refillDikembalikan === "SUDAH" && isRefill
+          ...(input.refillDikembalikan === "SUDAH" && isRefillProduct(item.namaSnapshot)
             ? { stokKosong: { increment: item.qtyDasar } }
             : {}),
         },

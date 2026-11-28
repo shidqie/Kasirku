@@ -19,6 +19,7 @@ export const createProductSchema = z.object({
   barcode: z.string().nullable().optional(),
   satuanDasar: z.string().min(1, "Satuan dasar wajib diisi"), // misal: "kg", "pcs", "butir"
   stokMinimum: z.number().nonnegative("Stok minimum tidak boleh negatif").default(0),
+  stokKosong: z.number().nonnegative("Stok kosong tidak boleh negatif").optional(),
   satuanList: z.array(satuanProdukSchema).min(1, "Minimal harus ada satu satuan dan harga"),
 });
 

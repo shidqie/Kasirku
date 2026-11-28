@@ -8,6 +8,7 @@ export interface CreateProductInput {
   barcode?: string | null;
   satuanDasar: string;
   stokMinimum: number;
+  stokKosong?: number;
   satuanList: {
     namaSatuan: string;
     faktorKeDasar: number;
@@ -242,6 +243,7 @@ export async function createProduct(input: CreateProductInput, userId: string, i
         satuanDasar: input.satuanDasar,
         stokMinimum: new Prisma.Decimal(input.stokMinimum),
         stokCache: new Prisma.Decimal(0),
+        stokKosong: new Prisma.Decimal(input.stokKosong ?? 0),
         satuanProduk: {
           create: unitsToCreate,
         },

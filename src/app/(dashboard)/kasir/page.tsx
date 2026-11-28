@@ -35,6 +35,7 @@ import {
 import Link from "next/link";
 import QRCode from "qrcode";
 import { formatRupiah, formatDecimal, generateUUID } from "@/lib/formatters";
+import { isRefillProduct } from "@/lib/refill";
 import { KasirGridSkeleton } from "@/components/shared/Skeleton";
 import {
   convertStaticQrisToDynamic,
@@ -65,7 +66,7 @@ interface ProductItem {
   barcode: string | null;
   satuanDasar: string;
   stokCache: number;
-  stokKosong?: number;
+  stokKosong?: number | string;
   hargaNaik?: boolean;
   kategori?: { id: string; nama: string } | null;
   satuanProduk: SatuanItem[];
@@ -81,6 +82,7 @@ interface CartItem {
   qty: number;
   availableSatuan: SatuanItem[];
   stokCache: number;
+  stokKosong?: number | string;
   hargaNaik?: boolean;
   note?: string;
 }
@@ -792,7 +794,7 @@ export default function KasirPOSPage() {
     }
   };
 
-  const refillItems = cart.filter((it) => /\b(galon|gas|lpg|elpiji)\b/i.test(it.nama));
+  const refillItems = cart.filter((it) => isRefillProduct(it.nama));
 
   const openPaymentModal = () => {
     if (cart.length === 0) return;
@@ -1171,8 +1173,10 @@ export default function KasirPOSPage() {
                                   : "text-slate-400 dark:text-zinc-500"
                               }`}
                             >
-                              {(/\b(galon|gas|lpg|elpiji)\b/i.test(p.nama) || Number(p.stokKosong || 0) > 0)
-                                ? `${isHabis ? "Habis" : `Terisi ${formatDecimal(stok)}`} · Kosong ${formatDecimal(Number(p.stokKosong || 0))}`
+                              {isRefillProduct(p.nama)
+                                ? isHabis
+                                  ? `Habis · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`
+                                  : `Terisi ${formatDecimal(stok)} · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`
                                 : isHabis
                                 ? "Stok habis"
                                 : `Stok ${formatDecimal(stok)}`}

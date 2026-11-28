@@ -27,6 +27,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
+import { isRefillProduct } from "@/lib/refill";
 import { formatProductCode } from "@/lib/codification";
 import { downloadPriceListPdf, downloadPriceListCsv } from "@/lib/pdf-price-list";
 import { Pagination } from "@/components/shared/Pagination";
@@ -53,6 +54,7 @@ interface ProductItem {
   satuanDasar: string;
   stokMinimum: string | number;
   stokCache: string | number;
+  stokKosong?: string | number;
   aktif: boolean;
   hargaNaik?: boolean;
   isBaru?: boolean;
@@ -108,6 +110,7 @@ function TabProduk() {
   const [barcode, setBarcode] = useState("");
   const [satuanDasar, setSatuanDasar] = useState("kg");
   const [stokMinimum, setStokMinimum] = useState<number>(0);
+  const [stokKosong, setStokKosong] = useState<number>(0);
   const [satuanList, setSatuanList] = useState<SatuanInput[]>([
     { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 0, hargaBeli: 0, isDefault: true },
   ]);
@@ -169,6 +172,7 @@ function TabProduk() {
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
+    setStokKosong(Number(p.stokKosong || 0));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -218,6 +222,7 @@ function TabProduk() {
         barcode: barcode.trim() || null,
         satuanDasar: satuanDasar.trim(),
         stokMinimum: Number(stokMinimum) || 0,
+        ...(isRefillProduct(nama.trim()) ? { stokKosong: Number(stokKosong) || 0 } : {}),
         satuanList,
       };
 
@@ -250,6 +255,7 @@ function TabProduk() {
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
+    setStokKosong(Number(p.stokKosong || 0));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -740,9 +746,14 @@ function TabProduk() {
                           <span className={`text-sm font-semibold tabular-nums ${
                             isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"
                           }`}>
-                            {formatDecimal(stok)}
+                            {isRefillProduct(p.nama) ? `Terisi: ${formatDecimal(stok)}` : formatDecimal(stok)}
                           </span>
                         </div>
+                        {isRefillProduct(p.nama) && (
+                          <div className="text-[11px] text-slate-400 dark:text-zinc-500 tabular-nums mt-0.5">
+                            Kosong: <span className="font-semibold text-slate-600 dark:text-zinc-300">{formatDecimal(Number(p.stokKosong ?? 0))}</span>
+                          </div>
+                        )}
                         {konversiStokDisplay !== null && (
                           <div className="text-[10px] text-slate-400 font-normal mt-0.5">
                             ≈ {konversiStokDisplay} {satuanGrosir?.namaSatuan}
@@ -1059,11 +1070,32 @@ function TabProduk() {
                 {/* 3. Info List Properti Produk (Stok saat ini, Stok minimum, Satuan, Satuan dasar, Kategori, Status stok) */}
                 <div className="divide-y divide-slate-100">
                   <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Stok saat ini</span>
+                    <span className="text-slate-400 text-xs">
+                      {isRefillProduct(p.nama) ? "Stok terisi" : "Stok saat ini"}
+                    </span>
                     <span className="font-semibold text-slate-900 text-xs text-right">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
+
+                  {isRefillProduct(isDrawerEditing ? nama : p.nama) && (
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Stok kosong</span>
+                      {!isDrawerEditing ? (
+                        <span className="font-semibold text-slate-700 text-xs text-right">
+                          {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
+                        </span>
+                      ) : (
+                        <NumberInput
+                          min={0}
+                          emptyFallback={0}
+                          value={stokKosong}
+                          onChange={setStokKosong}
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                        />
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Stok minimum</span>
