@@ -6,6 +6,7 @@ import { PopupAlert } from "@/components/shared/ToastProvider";
 import { Pagination } from "@/components/shared/Pagination";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ClipboardCheck,
@@ -14,6 +15,7 @@ import {
   AlertCircle,
   CheckCircle,
   RefreshCw,
+  ScanBarcode,
 } from "lucide-react";
 import { formatRupiah, formatDecimal, formatDateTime } from "@/lib/formatters";
 
@@ -22,6 +24,7 @@ interface ProductItem {
   nama: string;
   satuanDasar: string;
   stokCache: number;
+  barcode: string | null;
 }
 
 function TabHitungFisik() {
@@ -36,6 +39,12 @@ function TabHitungFisik() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Barcode scanner state
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<{ product: ProductItem; suggested: number } | null>(null);
+  const [scanInputValue, setScanInputValue] = useState<number>(0);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -67,6 +76,24 @@ function TabHitungFisik() {
       ...prev,
       [produkId]: val,
     }));
+  };
+
+  const handleScanResult = (code: string) => {
+    setIsScannerOpen(false);
+    const found = products.find((p) => p.barcode === code);
+    if (!found) {
+      setScanError(`Barcode "${code}" tidak ditemukan dalam daftar produk.`);
+      return;
+    }
+    const currentDraft = draftItems[found.id] ?? Number(found.stokCache);
+    setScanResult({ product: found, suggested: currentDraft });
+    setScanInputValue(currentDraft);
+  };
+
+  const handleScanConfirm = () => {
+    if (!scanResult) return;
+    handleStokFisikChange(scanResult.product.id, scanInputValue);
+    setScanResult(null);
   };
 
   const handleSubmitOpname = async (e: React.FormEvent) => {
@@ -131,35 +158,47 @@ function TabHitungFisik() {
 
         <PopupAlert type="error" message={error} onClear={() => setError(null)} />
         <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
+        <PopupAlert type="error" message={scanError} onClear={() => setScanError(null)} />
 
         <div className="py-3 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">
             Formulir penghitungan fisik ({products.length} produk)
           </span>
 
-          <div className="relative w-full sm:w-56">
-            <input
-              type="text"
-              placeholder="Cari nama produk..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsScannerOpen(true)}
+              className="h-8 px-3 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+            >
+              <ScanBarcode className="w-3.5 h-3.5" />
+              <span>Scan Barcode</span>
+            </button>
+
+            <div className="relative w-full sm:w-56">
+              <input
+                type="text"
+                placeholder="Cari nama produk..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+                className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -277,6 +316,81 @@ function TabHitungFisik() {
           </button>
         </div>
       </form>
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanResult}
+      />
+
+      {/* Scan Result Mini-Modal */}
+      {scanResult && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
+                  <ScanBarcode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-sm font-bold text-slate-900 dark:text-zinc-100">Produk Ditemukan</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setScanResult(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Product info */}
+            <div className="p-4 space-y-4">
+              <div className="p-3 bg-slate-50 dark:bg-zinc-800 rounded-xl space-y-1.5">
+                <p className="text-sm font-bold text-slate-900 dark:text-zinc-100">{scanResult.product.nama}</p>
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-zinc-400">
+                  <span>Satuan: <strong className="text-slate-700 dark:text-zinc-300">{scanResult.product.satuanDasar}</strong></span>
+                  <span>Stok sistem: <strong className="text-slate-700 dark:text-zinc-300">{formatDecimal(scanResult.product.stokCache)}</strong></span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
+                  Stok Fisik Nyata
+                </label>
+                <NumberInput
+                  min={0}
+                  emptyFallback={0}
+                  value={scanInputValue}
+                  onChange={setScanInputValue}
+                  className="w-full px-4 h-11 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-center font-bold text-lg text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScanResult(null);
+                    setIsScannerOpen(true);
+                  }}
+                  className="flex-1 h-10 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Scan Lagi
+                </button>
+                <button
+                  type="button"
+                  onClick={handleScanConfirm}
+                  className="flex-1 h-10 bg-slate-900 hover:bg-slate-700 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
