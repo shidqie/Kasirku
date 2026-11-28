@@ -710,30 +710,28 @@ function TabProduk() {
             }}
           >
             <div
-              className="w-full max-w-md h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 select-text drawer-panel"
+              className="w-full max-w-md h-full bg-white text-slate-900 shadow-xl flex flex-col border-l border-slate-100 select-text drawer-panel"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header: ID Barang, Nama Barang, Tombol Tutup / Batal */}
-              <div className="flex items-start justify-between p-6 pb-5 border-b border-slate-100 shrink-0">
+              {/* Header: Minimalist */}
+              <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 shrink-0">
                 <div className="pr-3 flex-1 min-w-0">
-                  <span className="text-xs font-mono font-medium text-slate-400 block tracking-wide">
+                  <span className="text-[11px] font-mono text-slate-400 block tracking-wider">
                     {detailProduct.idBarang}
                   </span>
                   {!isDrawerEditing ? (
-                    <h3 className="text-xl font-bold text-slate-900 mt-1 leading-snug">
+                    <h3 className="text-lg font-bold text-slate-900 mt-0.5 leading-snug">
                       {p.nama}
                     </h3>
                   ) : (
-                    <div className="mt-1">
-                      <input
-                        type="text"
-                        value={nama}
-                        onChange={(e) => setNama(e.target.value)}
-                        placeholder="Nama Produk..."
-                        required
-                        className="w-full px-3 py-1.5 font-bold text-base text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1.5 focus:ring-[#F0090F]/20 focus:border-[#F0090F]"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      value={nama}
+                      onChange={(e) => setNama(e.target.value)}
+                      placeholder="Nama Produk..."
+                      required
+                      className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
+                    />
                   )}
                 </div>
                 <button
@@ -745,9 +743,10 @@ function TabProduk() {
                       setDetailProduct(null);
                     }
                   }}
-                  className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition-colors shrink-0 cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+                  title={isDrawerEditing ? "Batal" : "Tutup"}
                 >
-                  {isDrawerEditing ? "Batal" : "Tutup"}
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -757,51 +756,53 @@ function TabProduk() {
                   e.preventDefault();
                   if (isDrawerEditing) handleSaveFromDrawer();
                 }}
-                className="flex-1 overflow-y-auto p-6 space-y-6 text-sm"
+                className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-sm"
               >
                 {/* 1. Section: Harga Produk */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-slate-900">Harga Produk</h4>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Harga Produk
+                    </h4>
                     {isDrawerEditing && (
                       <button
                         type="button"
                         onClick={handleAddSatuanRow}
-                        className="text-xs font-bold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Tambah Satuan</span>
+                        <span>Tambah</span>
                       </button>
                     )}
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+                  <div className="border-t border-b border-slate-100">
                     {!isDrawerEditing ? (
                       <table className="w-full text-left text-xs">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                        <thead className="text-slate-400 border-b border-slate-100">
                           <tr>
-                            <th className="py-2.5 px-3 font-semibold">Satuan</th>
-                            <th className="py-2.5 px-3 font-semibold text-center">Isi</th>
-                            <th className="py-2.5 px-3 font-semibold text-right">Harga</th>
-                            <th className="py-2.5 px-3 font-semibold text-right">Per {p.satuanDasar}</th>
+                            <th className="py-2 font-medium">Satuan</th>
+                            <th className="py-2 font-medium text-center">Isi</th>
+                            <th className="py-2 font-medium text-right">Harga</th>
+                            <th className="py-2 font-medium text-right">Per {p.satuanDasar}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-600">
+                        <tbody className="divide-y divide-slate-100/80 text-slate-600">
                           {p.satuanProduk.map((s) => {
                             const faktor = Number(s.faktorKeDasar) || 1;
                             const hargaPerDasar = Math.round(s.hargaJual / faktor);
                             return (
-                              <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-2.5 px-3 font-medium text-slate-900 capitalize">
+                              <tr key={s.id}>
+                                <td className="py-2.5 font-medium text-slate-900 capitalize">
                                   {s.namaSatuan}
                                 </td>
-                                <td className="py-2.5 px-3 text-center text-slate-600 font-mono">
+                                <td className="py-2.5 text-center text-slate-500 font-mono">
                                   {formatDecimal(faktor)}
                                 </td>
-                                <td className="py-2.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap">
+                                <td className="py-2.5 text-right font-semibold text-slate-900 whitespace-nowrap">
                                   {formatRupiah(s.hargaJual)}
                                 </td>
-                                <td className="py-2.5 px-3 text-right text-slate-500 whitespace-nowrap">
+                                <td className="py-2.5 text-right text-slate-400 whitespace-nowrap">
                                   {formatRupiah(hargaPerDasar)}
                                 </td>
                               </tr>
@@ -811,18 +812,18 @@ function TabProduk() {
                       </table>
                     ) : (
                       <table className="w-full text-left text-xs">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                        <thead className="text-slate-400 border-b border-slate-100">
                           <tr>
-                            <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                            <th className="py-2 px-1 font-semibold text-center">Isi</th>
-                            <th className="py-2 px-2 font-semibold text-right">Harga</th>
-                            <th className="py-2 px-1 font-semibold text-center w-8"></th>
+                            <th className="py-2 font-medium">Satuan</th>
+                            <th className="py-2 px-1 font-medium text-center">Isi</th>
+                            <th className="py-2 font-medium text-right">Harga</th>
+                            <th className="py-2 w-7"></th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-600">
+                        <tbody className="divide-y divide-slate-100/80 text-slate-600">
                           {satuanList.map((s, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-2 px-2">
+                            <tr key={idx}>
+                              <td className="py-2 pr-2">
                                 <input
                                   type="text"
                                   required
@@ -834,7 +835,7 @@ function TabProduk() {
                                     setSatuanList(u);
                                   }}
                                   placeholder="Satuan"
-                                  className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                                  className="w-full py-1 bg-transparent border-b border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:border-slate-900"
                                 />
                               </td>
                               <td className="py-2 px-1 text-center">
@@ -848,12 +849,12 @@ function TabProduk() {
                                     u[idx].faktorKeDasar = val;
                                     setSatuanList(u);
                                   }}
-                                  className="w-14 text-center px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                                  className="w-12 text-center py-1 bg-transparent border-b border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-900"
                                 />
                               </td>
-                              <td className="py-2 px-2 text-right">
-                                <div className="relative inline-block w-28">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none select-none">
+                              <td className="py-2 pl-2 text-right">
+                                <div className="relative inline-block w-24">
+                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 pointer-events-none select-none">
                                     Rp
                                   </span>
                                   <input
@@ -868,16 +869,16 @@ function TabProduk() {
                                       u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
                                       setSatuanList(u);
                                     }}
-                                    className="w-full pl-6 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-right text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                                    className="w-full pl-5 py-1 bg-transparent border-b border-slate-200 text-xs font-semibold text-right text-slate-900 focus:outline-none focus:border-slate-900"
                                   />
                                 </div>
                               </td>
-                              <td className="py-2 px-1 text-center">
+                              <td className="py-2 text-right">
                                 {satuanList.length > 1 && (
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveSatuanRow(idx)}
-                                    className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                    className="p-1 text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
                                     title="Hapus baris satuan ini"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -893,17 +894,17 @@ function TabProduk() {
                 </div>
 
                 {/* 2. Info List Properti Produk */}
-                <div className="space-y-3.5 pt-1">
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Kategori</span>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Kategori</span>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs">
+                      <span className="font-medium text-slate-900 text-xs">
                         {p.kategori?.nama || "Umum"}
                       </span>
                     ) : (
-                      <div className="w-48">
+                      <div className="w-44">
                         <Dropdown
-                          variant="box"
+                          variant="underline"
                           ariaLabel="Pilih kategori produk"
                           value={kategoriId}
                           onChange={setKategoriId}
@@ -919,19 +920,19 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Satuan</span>
-                    <span className="font-semibold text-slate-900 text-xs capitalize">
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Satuan</span>
+                    <span className="font-medium text-slate-900 text-xs capitalize">
                       {!isDrawerEditing
                         ? defaultUnit?.namaSatuan || p.satuanDasar
                         : satuanList[0]?.namaSatuan || satuanDasar}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Satuan dasar</span>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Satuan dasar</span>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs capitalize">
+                      <span className="font-medium text-slate-900 text-xs capitalize">
                         {p.satuanDasar}
                       </span>
                     ) : (
@@ -942,15 +943,15 @@ function TabProduk() {
                         value={satuanDasar}
                         onChange={(e) => setSatuanDasar(e.target.value)}
                         placeholder="Satuan dasar"
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-28 text-right focus:outline-none focus:border-[#F0090F]"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900"
                       />
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Barcode</span>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Barcode</span>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs font-mono">
+                      <span className="font-medium text-slate-900 text-xs font-mono">
                         {p.barcode || "-"}
                       </span>
                     ) : (
@@ -959,8 +960,8 @@ function TabProduk() {
                           type="text"
                           value={barcode}
                           onChange={(e) => setBarcode(e.target.value)}
-                          placeholder="Barcode (opsional)"
-                          className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-[#F0090F]"
+                          placeholder="Opsional"
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-32 text-right focus:outline-none focus:border-slate-900"
                         />
                         <button
                           type="button"
@@ -968,7 +969,7 @@ function TabProduk() {
                             setScannerTarget("FORM");
                             setIsScannerOpen(true);
                           }}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
                           title="Scan kamera"
                         >
                           <Camera className="w-3.5 h-3.5" />
@@ -977,17 +978,17 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Stok saat ini</span>
-                    <span className="font-bold text-slate-900 text-xs">
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Stok saat ini</span>
+                    <span className="font-semibold text-slate-900 text-xs">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Stok minimum</span>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Stok minimum</span>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs">
+                      <span className="font-medium text-slate-900 text-xs">
                         {formatDecimal(min)}
                       </span>
                     ) : (
@@ -996,14 +997,14 @@ function TabProduk() {
                         emptyFallback={0}
                         value={stokMinimum}
                         onChange={setStokMinimum}
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-20 text-right focus:outline-none focus:border-[#F0090F]"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-16 text-right focus:outline-none focus:border-slate-900"
                       />
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-slate-500 text-xs font-medium">Status stok</span>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${statusColor}`}>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-slate-400 text-xs">Status stok</span>
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
                       {statusStok}
                     </span>
                   </div>
@@ -1042,64 +1043,65 @@ function TabProduk() {
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="w-full max-w-md h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 select-text drawer-panel"
+            className="w-full max-w-md h-full bg-white text-slate-900 shadow-xl flex flex-col border-l border-slate-100 select-text drawer-panel"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Minimalist */}
-            <div className="flex items-start justify-between p-6 pb-5 border-b border-slate-100 shrink-0">
+            <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 shrink-0">
               <div className="pr-3 flex-1 min-w-0">
-                <span className="text-xs font-mono font-medium text-slate-400 block tracking-wide">
+                <span className="text-[11px] font-mono text-slate-400 block tracking-wider">
                   {editingProductId ? "EDIT PRODUK" : "PRODUK BARU"}
                 </span>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    required
-                    value={nama}
-                    onChange={(e) => setNama(e.target.value)}
-                    placeholder="Nama Produk (Contoh: Beras Ramos)..."
-                    className="w-full px-3 py-1.5 font-bold text-base text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1.5 focus:ring-[#F0090F]/20 focus:border-[#F0090F]"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  placeholder="Nama Produk..."
+                  className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
+                />
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition-colors shrink-0 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+                title="Batal"
               >
-                Batal
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-sm">
               {/* 1. Section: Harga Produk */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">Harga Produk</h4>
+                <div className="flex items-center justify-between mb-2.5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Harga Produk
+                  </h4>
                   <button
                     type="button"
                     onClick={handleAddSatuanRow}
-                    className="text-xs font-bold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Tambah Satuan</span>
+                    <span>Tambah</span>
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+                <div className="border-t border-b border-slate-100">
                   <table className="w-full text-left text-xs">
-                    <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                    <thead className="text-slate-400 border-b border-slate-100">
                       <tr>
-                        <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                        <th className="py-2 px-1 font-semibold text-center">Isi</th>
-                        <th className="py-2 px-2 font-semibold text-right">Harga</th>
-                        <th className="py-2 px-1 font-semibold text-center w-8"></th>
+                        <th className="py-2 font-medium">Satuan</th>
+                        <th className="py-2 px-1 font-medium text-center">Isi</th>
+                        <th className="py-2 font-medium text-right">Harga</th>
+                        <th className="py-2 w-7"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-600">
+                    <tbody className="divide-y divide-slate-100/80 text-slate-600">
                       {satuanList.map((s, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-2 px-2">
+                        <tr key={idx}>
+                          <td className="py-2 pr-2">
                             <input
                               type="text"
                               required
@@ -1111,7 +1113,7 @@ function TabProduk() {
                                 setSatuanList(updated);
                               }}
                               placeholder="pcs, dus..."
-                              className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                              className="w-full py-1 bg-transparent border-b border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:border-slate-900"
                             />
                           </td>
                           <td className="py-2 px-1 text-center">
@@ -1125,12 +1127,12 @@ function TabProduk() {
                                 updated[idx].faktorKeDasar = val;
                                 setSatuanList(updated);
                               }}
-                              className="w-14 text-center px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                              className="w-12 text-center py-1 bg-transparent border-b border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-900"
                             />
                           </td>
-                          <td className="py-2 px-2 text-right">
-                            <div className="relative inline-block w-28">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none select-none">
+                          <td className="py-2 pl-2 text-right">
+                            <div className="relative inline-block w-24">
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 pointer-events-none select-none">
                                 Rp
                               </span>
                               <input
@@ -1145,16 +1147,16 @@ function TabProduk() {
                                   updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
                                   setSatuanList(updated);
                                 }}
-                                className="w-full pl-6 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-right text-slate-900 focus:outline-none focus:border-[#F0090F]"
+                                className="w-full pl-5 py-1 bg-transparent border-b border-slate-200 text-xs font-semibold text-right text-slate-900 focus:outline-none focus:border-slate-900"
                               />
                             </div>
                           </td>
-                          <td className="py-2 px-1 text-center">
+                          <td className="py-2 text-right">
                             {satuanList.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSatuanRow(idx)}
-                                className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                className="p-1 text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
                                 title="Hapus baris satuan ini"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1169,12 +1171,12 @@ function TabProduk() {
               </div>
 
               {/* 2. Info List Properti Produk */}
-              <div className="space-y-3.5 pt-1">
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 text-xs font-medium">Kategori</span>
-                  <div className="w-48">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Kategori</span>
+                  <div className="w-44">
                     <Dropdown
-                      variant="box"
+                      variant="underline"
                       ariaLabel="Pilih kategori produk"
                       value={kategoriId}
                       onChange={setKategoriId}
@@ -1189,15 +1191,15 @@ function TabProduk() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 text-xs font-medium">Satuan</span>
-                  <span className="font-semibold text-slate-900 text-xs capitalize">
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Satuan</span>
+                  <span className="font-medium text-slate-900 text-xs capitalize">
                     {satuanList[0]?.namaSatuan || satuanDasar}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 text-xs font-medium">Satuan dasar</span>
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Satuan dasar</span>
                   <input
                     type="text"
                     required
@@ -1205,19 +1207,19 @@ function TabProduk() {
                     value={satuanDasar}
                     onChange={(e) => setSatuanDasar(e.target.value)}
                     placeholder="Satuan dasar"
-                    className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-28 text-right focus:outline-none focus:border-[#F0090F]"
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900"
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 text-xs font-medium">Barcode</span>
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Barcode</span>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
-                      placeholder="Barcode (opsional)"
-                      className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-[#F0090F]"
+                      placeholder="Opsional"
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-32 text-right focus:outline-none focus:border-slate-900"
                     />
                     <button
                       type="button"
@@ -1225,7 +1227,7 @@ function TabProduk() {
                         setScannerTarget("FORM");
                         setIsScannerOpen(true);
                       }}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
                       title="Scan kamera"
                     >
                       <Camera className="w-3.5 h-3.5" />
@@ -1233,14 +1235,14 @@ function TabProduk() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 text-xs font-medium">Stok minimum</span>
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Stok minimum</span>
                   <NumberInput
                     min={0}
                     emptyFallback={0}
                     value={stokMinimum}
                     onChange={setStokMinimum}
-                    className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-20 text-right focus:outline-none focus:border-[#F0090F]"
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-16 text-right focus:outline-none focus:border-slate-900"
                   />
                 </div>
               </div>
