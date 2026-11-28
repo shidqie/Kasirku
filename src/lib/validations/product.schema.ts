@@ -11,6 +11,7 @@ export const satuanProdukSchema = z.object({
   hargaJual: z.number().int().nonnegative("Harga jual tidak boleh negatif"),
   hargaBeli: z.number().int().nonnegative("Harga beli tidak boleh negatif").optional(),
   isDefault: z.boolean().default(false),
+  isDefaultBeli: z.boolean().default(false),
 });
 
 export const createProductSchema = z.object({
@@ -25,6 +26,7 @@ export const createProductSchema = z.object({
   stokMinimum: z.number().nonnegative("Stok minimum tidak boleh negatif").default(0),
   stokKosong: z.number().nonnegative("Stok kosong tidak boleh negatif").optional(),
   isRefill: z.boolean().optional(),
+  aktif: z.boolean().default(true),
   satuanList: z.array(satuanProdukSchema).min(1, "Minimal harus ada satu satuan dan harga"),
 });
 

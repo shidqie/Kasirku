@@ -61,12 +61,14 @@ export interface CreateProductInput {
   stokMinimum: number;
   stokKosong?: number;
   isRefill?: boolean;
+  aktif?: boolean;
   satuanList: {
     namaSatuan: string;
     faktorKeDasar: number;
     hargaJual: number;
     hargaBeli?: number;
     isDefault?: boolean;
+    isDefaultBeli?: boolean;
   }[];
 }
 
@@ -90,6 +92,7 @@ export interface UpdateProductInput {
     hargaJual: number;
     hargaBeli?: number;
     isDefault?: boolean;
+    isDefaultBeli?: boolean;
   }[];
 }
 
@@ -317,14 +320,23 @@ export async function createProduct(
   const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
   const resolvedMerek = resolveProductBrand({ merek: input.merek, nama: input.nama });
 
-  // Pastikan setidaknya satu satuan adalah default
+  // Pastikan setidaknya satu satuan default penjualan & pembelian
   const hasDefault = input.satuanList.some((s) => s.isDefault);
+  const explicitBuyIdx = input.satuanList.findIndex((s) => s.isDefaultBeli);
+  const largestFactorIdx = input.satuanList.reduce(
+    (bestIdx, cur, idx, arr) =>
+      Number(cur.faktorKeDasar) > Number(arr[bestIdx].faktorKeDasar) ? idx : bestIdx,
+    0
+  );
+  const resolvedBuyIdx = explicitBuyIdx >= 0 ? explicitBuyIdx : largestFactorIdx;
+
   const unitsToCreate = input.satuanList.map((s, idx) => ({
     namaSatuan: s.namaSatuan,
     faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
     hargaJual: s.hargaJual,
     hargaBeli: canEditCost ? (s.hargaBeli ?? 0) : 0,
     isDefault: hasDefault ? !!s.isDefault : idx === 0,
+    isDefaultBeli: idx === resolvedBuyIdx,
   }));
 
   const product = await prisma.$transaction(async (tx) => {
@@ -343,6 +355,7 @@ export async function createProduct(
         stokCache: new Prisma.Decimal(0),
         stokKosong: new Prisma.Decimal(input.stokKosong ?? 0),
         isRefill: input.isRefill ?? isRefillProduct(input.nama),
+        aktif: input.aktif ?? true,
         satuanProduk: {
           create: unitsToCreate,
         },
@@ -471,6 +484,12 @@ export async function updateProduct(
       await tx.satuanProduk.deleteMany({ where: { produkId: id } });
 
       const hasDefault = input.satuanList.some((s) => s.isDefault);
+      const explicitBuyIdx = input.satuanList.findIndex((s) => s.isDefaultBeli);
+      const largestFactorIdx = input.satuanList.reduce(
+        (bestIdx, cur, idx, arr) =>
+          Number(cur.faktorKeDasar) > Number(arr[bestIdx].faktorKeDasar) ? idx : bestIdx,
+        0
+      );
       const defaultPrev =
         sebelum.satuanProduk.find((prev) => prev.isDefault) || sebelum.satuanProduk[0];
 
@@ -493,6 +512,12 @@ export async function updateProduct(
           hargaJual: s.hargaJual,
           hargaBeli: nextHargaBeli,
           isDefault: hasDefault ? !!s.isDefault : idx === 0,
+          isDefaultBeli:
+            explicitBuyIdx >= 0
+              ? idx === explicitBuyIdx
+              : matchedPrev
+              ? matchedPrev.isDefaultBeli
+              : idx === largestFactorIdx,
         };
       });
 
@@ -586,6 +611,7 @@ export async function duplicateProduct(
             hargaJual: s.hargaJual,
             hargaBeli: s.hargaBeli,
             isDefault: hasDefault ? s.isDefault : idx === 0,
+            isDefaultBeli: s.isDefaultBeli,
           }))
         : [
             {
@@ -594,6 +620,7 @@ export async function duplicateProduct(
               hargaJual: 0,
               hargaBeli: 0,
               isDefault: true,
+              isDefaultBeli: true,
             },
           ];
 
@@ -782,7 +809,16 @@ export async function bulkRaisePrices(
 }
 
 export async function deleteProduct(id: string, userId: string, ip?: string) {
-  // Soft delete: status aktif = false
+  const [txCount, masukCount, mutasiCount, opnameCount] = await Promise.all([
+    prisma.transaksiItem.count({ where: { produkId: id } }),
+    prisma.barangMasukItem.count({ where: { produkId: id } }),
+    prisma.stokMutasi.count({ where: { produkId: id } }),
+    prisma.stokOpnameItem.count({ where: { produkId: id } }),
+  ]);
+
+  const hasHistory = txCount > 0 || masukCount > 0 || mutasiCount > 0 || opnameCount > 0;
+
+  // Soft delete / arsip permanen agar laporan & transaksi lama tetap utuh
   const updated = await prisma.produk.update({
     where: { id },
     data: { aktif: false },
@@ -794,10 +830,11 @@ export async function deleteProduct(id: string, userId: string, ip?: string) {
     aksi: "NONAKTIFKAN_PRODUK",
     entitas: "Produk",
     entitasId: id,
+    sesudahJson: { aktif: false, hasHistory, txCount, masukCount, mutasiCount },
     ip,
   });
 
-  return updated;
+  return { ...updated, hasHistory };
 }
 
 // 3. User Story B3: Cek Harga (Read-only untuk Staff dan Owner)

@@ -93,7 +93,12 @@ export async function DELETE(
   try {
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const product = await deleteProduct(params.id, session.userId, ip);
-    return NextResponse.json({ message: "Produk berhasil dinonaktifkan", product });
+    return NextResponse.json({
+      message: product.hasHistory
+        ? "Produk diarsipkan (dinonaktifkan) karena sudah memiliki riwayat transaksi/stok"
+        : "Produk berhasil dinonaktifkan (diarsipkan)",
+      product,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Gagal menonaktifkan produk" },

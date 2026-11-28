@@ -241,6 +241,7 @@ model SatuanProduk {
   hargaJual     Int      @map("harga_jual")
   hargaBeli     Int      @map("harga_beli")
   isDefault     Boolean  @default(false) @map("is_default")
+  isDefaultBeli Boolean  @default(false) @map("is_default_beli")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

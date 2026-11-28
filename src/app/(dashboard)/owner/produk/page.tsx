@@ -67,6 +67,7 @@ interface SatuanInput {
   hargaJual: number;
   hargaBeli?: number;
   isDefault: boolean;
+  isDefaultBeli?: boolean;
 }
 
 interface ProductItem {
@@ -97,7 +98,18 @@ interface ProductItem {
     hargaJual: number;
     hargaBeli?: number;
     isDefault: boolean;
+    isDefaultBeli?: boolean;
   }[];
+}
+
+interface StockMutationItem {
+  id: string;
+  tipe: string;
+  qtyDasar: string | number;
+  refTipe?: string | null;
+  catatan?: string | null;
+  dibuatPada: string;
+  user?: { nama: string; username: string } | null;
 }
 
 interface PriceHistoryItem {
@@ -186,7 +198,7 @@ function TabProduk() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKategori, setSelectedKategori] = useState("");
-  const [filterStok, setFilterStok] = useState<"SEMUA" | "MENIPIS" | "HABIS" | "TANPA_BARCODE">("SEMUA");
+  const [filterStok, setFilterStok] = useState<"SEMUA" | "MENIPIS" | "HABIS" | "TANPA_BARCODE" | "ARSIP">("SEMUA");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -218,6 +230,9 @@ function TabProduk() {
   const [togglingHargaBeli, setTogglingHargaBeli] = useState(false);
   const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([]);
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
+  const [stockMutations, setStockMutations] = useState<StockMutationItem[]>([]);
+  const [loadingStockHistory, setLoadingStockHistory] = useState(false);
+  const [detailHistoryTab, setDetailHistoryTab] = useState<"PRICE" | "STOCK">("PRICE");
   const [newExtraBarcode, setNewExtraBarcode] = useState("");
   const [addingExtraBarcode, setAddingExtraBarcode] = useState(false);
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
@@ -248,6 +263,7 @@ function TabProduk() {
   const [stokMinimum, setStokMinimum] = useState<number>(0);
   const [stokKosong, setStokKosong] = useState<number>(0);
   const [isRefill, setIsRefill] = useState<boolean>(false);
+  const [aktif, setAktif] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<"flat" | "grouped">("grouped");
   const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
   const [isVariantGroupOpen, setIsVariantGroupOpen] = useState(false);
@@ -265,6 +281,7 @@ function TabProduk() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      params.set("includeInactive", "true");
       if (searchQuery) params.set("search", searchQuery);
       if (selectedKategori && !selectedKategori.startsWith("__")) {
         params.set("kategoriId", selectedKategori);
@@ -331,22 +348,32 @@ function TabProduk() {
   }, [searchParams, userAccess, handledNewBarcode]);
 
   useEffect(() => {
-    if (!detailProduct?.product?.id) {
+    const productId = detailProduct?.product?.id;
+    if (!productId) {
       setPriceHistory([]);
+      setStockMutations([]);
       return;
     }
     setLoadingPriceHistory(true);
-    fetch(`/api/products/${detailProduct.product.id}/price-history`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (Array.isArray(data?.history)) {
-          setPriceHistory(data.history);
-        } else {
-          setPriceHistory([]);
-        }
+    setLoadingStockHistory(true);
+    Promise.all([
+      fetch(`/api/products/${productId}/price-history`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/stock/mutations?productId=${encodeURIComponent(productId)}`).then((r) =>
+        r.ok ? r.json() : null
+      ),
+    ])
+      .then(([priceData, stockData]) => {
+        setPriceHistory(Array.isArray(priceData?.history) ? priceData.history : []);
+        setStockMutations(Array.isArray(stockData?.mutations) ? stockData.mutations : []);
       })
-      .catch(() => setPriceHistory([]))
-      .finally(() => setLoadingPriceHistory(false));
+      .catch(() => {
+        setPriceHistory([]);
+        setStockMutations([]);
+      })
+      .finally(() => {
+        setLoadingPriceHistory(false);
+        setLoadingStockHistory(false);
+      });
   }, [detailProduct?.product?.id, costMeta.showCost]);
 
   const handleToggleHargaBeli = async () => {
@@ -393,8 +420,9 @@ function TabProduk() {
     setBarcode("");
     setSatuanDasar("kg");
     setStokMinimum(5);
+    setAktif(true);
     setSatuanList([
-      { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 14000, hargaBeli: 12000, isDefault: true },
+      { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 14000, hargaBeli: 12000, isDefault: true, isDefaultBeli: true },
     ]);
     setError(null);
     setIsModalOpen(true);
@@ -412,14 +440,22 @@ function TabProduk() {
     setStokMinimum(Number(p.stokMinimum));
     setStokKosong(Number(p.stokKosong || 0));
     setIsRefill(p.isRefill ?? isRefillProduct(p.nama));
+    setAktif(p.aktif !== false);
+    const hasExplicitBuy = p.satuanProduk.some((s) => s.isDefaultBeli);
+    const largestIdx = p.satuanProduk.reduce(
+      (best, cur, i, arr) =>
+        Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+      0
+    );
     setSatuanList(
-      p.satuanProduk.map((s) => ({
+      p.satuanProduk.map((s, idx) => ({
         id: s.id,
         namaSatuan: s.namaSatuan,
         faktorKeDasar: Number(s.faktorKeDasar),
         hargaJual: s.hargaJual,
         hargaBeli: s.hargaBeli ?? 0,
         isDefault: s.isDefault,
+        isDefaultBeli: hasExplicitBuy ? Boolean(s.isDefaultBeli) : idx === largestIdx,
       }))
     );
     setError(null);
@@ -464,6 +500,7 @@ function TabProduk() {
         satuanDasar: satuanDasar.trim(),
         stokMinimum: Number(stokMinimum) || 0,
         isRefill,
+        aktif,
         ...(isRefill ? { stokKosong: Number(stokKosong) || 0 } : {}),
         satuanList: satuanList.map((s) => ({
           ...(s.id ? { id: s.id } : {}),
@@ -472,6 +509,7 @@ function TabProduk() {
           hargaJual: Number(s.hargaJual) || 0,
           ...(costMeta.showCost ? { hargaBeli: Number(s.hargaBeli) || 0 } : {}),
           isDefault: Boolean(s.isDefault),
+          isDefaultBeli: Boolean(s.isDefaultBeli),
         })),
       };
 
@@ -509,14 +547,22 @@ function TabProduk() {
     setStokMinimum(Number(p.stokMinimum));
     setStokKosong(Number(p.stokKosong || 0));
     setIsRefill(p.isRefill ?? isRefillProduct(p.nama));
+    setAktif(p.aktif !== false);
+    const hasExplicitBuy = p.satuanProduk.some((s) => s.isDefaultBeli);
+    const largestIdx = p.satuanProduk.reduce(
+      (best, cur, i, arr) =>
+        Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+      0
+    );
     setSatuanList(
-      p.satuanProduk.map((s) => ({
+      p.satuanProduk.map((s, idx) => ({
         id: s.id,
         namaSatuan: s.namaSatuan,
         faktorKeDasar: Number(s.faktorKeDasar),
         hargaJual: s.hargaJual,
         hargaBeli: s.hargaBeli ?? 0,
         isDefault: s.isDefault,
+        isDefaultBeli: hasExplicitBuy ? Boolean(s.isDefaultBeli) : idx === largestIdx,
       }))
     );
     setError(null);
@@ -537,6 +583,10 @@ function TabProduk() {
     const baseHargaBeli = baseRow ? Number(baseRow.hargaBeli) || 0 : 0;
 
     setSatuanDasar(tpl.satuanDasar);
+    const largestIdx = tpl.units.reduce(
+      (best, cur, i, arr) => (cur.faktorKeDasar > arr[best].faktorKeDasar ? i : best),
+      0
+    );
     setSatuanList(
       tpl.units.map((u, idx) => {
         const existing = satuanList.find(
@@ -556,6 +606,7 @@ function TabProduk() {
             ? Math.round(baseHargaBeli * u.faktorKeDasar)
             : 0,
           isDefault: idx === 0,
+          isDefaultBeli: idx === largestIdx,
         };
       })
     );
@@ -718,6 +769,14 @@ function TabProduk() {
     if (!newList.some((s) => s.isDefault)) {
       newList[0].isDefault = true;
     }
+    if (!newList.some((s) => s.isDefaultBeli)) {
+      const largestIdx = newList.reduce(
+        (best, cur, i, arr) =>
+          Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+        0
+      );
+      newList[largestIdx].isDefaultBeli = true;
+    }
     setSatuanList(newList);
   };
 
@@ -729,6 +788,29 @@ function TabProduk() {
       }))
     );
   };
+
+  const handleSetDefaultBeliSatuan = (index: number) => {
+    setSatuanList(
+      satuanList.map((s, i) => ({
+        ...s,
+        isDefaultBeli: i === index,
+      }))
+    );
+  };
+
+  const selectedSellIdx = Math.max(
+    0,
+    satuanList.findIndex((s) => s.isDefault)
+  );
+  const selectedBuyIdx = (() => {
+    const explicit = satuanList.findIndex((s) => s.isDefaultBeli);
+    if (explicit >= 0) return explicit;
+    return satuanList.reduce(
+      (best, cur, i, arr) =>
+        Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+      0
+    );
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -830,6 +912,7 @@ function TabProduk() {
         barcode: barcode.trim() || null,
         satuanDasar,
         stokMinimum: Number(stokMinimum),
+        aktif,
         satuanList: satuanList.map((s) => ({
           ...(s.id ? { id: s.id } : {}),
           namaSatuan: s.namaSatuan,
@@ -837,6 +920,7 @@ function TabProduk() {
           hargaJual: Number(s.hargaJual) || 0,
           ...(costMeta.showCost ? { hargaBeli: Number(s.hargaBeli) || 0 } : {}),
           isDefault: Boolean(s.isDefault),
+          isDefaultBeli: Boolean(s.isDefaultBeli),
         })),
       };
 
@@ -894,7 +978,9 @@ function TabProduk() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal menghapus produk");
 
-      setSuccess(`Produk "${deleteTarget.nama}" berhasil dihapus`);
+      setSuccess(
+        data.message || `Produk "${deleteTarget.nama}" diarsipkan (dinonaktifkan)`
+      );
       if (detailProduct?.product.id === deleteTarget.id) {
         setDetailProduct(null);
         setIsDrawerEditing(false);
@@ -909,9 +995,11 @@ function TabProduk() {
     }
   };
 
-  const hargaNaikCount = products.filter((p) => p.hargaNaik).length;
-  const penyesuaianHargaCount = products.filter((p) => p.penyesuaianHarga).length;
-  const updatedOrNewCount = products.filter((p) => p.isBaru || p.isDiperbarui).length;
+  const activeProducts = products.filter((p) => p.aktif !== false);
+  const archivedCount = products.filter((p) => p.aktif === false).length;
+  const hargaNaikCount = activeProducts.filter((p) => p.hargaNaik).length;
+  const penyesuaianHargaCount = activeProducts.filter((p) => p.penyesuaianHarga).length;
+  const updatedOrNewCount = activeProducts.filter((p) => p.isBaru || p.isDiperbarui).length;
 
   const canManageProduct = Boolean(userAccess && hasPermission(userAccess, "produk:manage"));
   const canEditPrice = Boolean(
@@ -924,13 +1012,18 @@ function TabProduk() {
 
   const merekOptions = Array.from(
     new Set(
-      products
+      activeProducts
         .map((p) => (p.merek || p.group?.brand)?.trim())
         .filter((v): v is string => Boolean(v))
     )
   ).sort((a, b) => a.localeCompare(b, "id"));
 
   const filteredProducts = products.filter((p) => {
+    if (filterStok === "ARSIP") {
+      if (p.aktif !== false) return false;
+    } else if (p.aktif === false) {
+      return false;
+    }
     if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
     if (selectedKategori === "__PENYESUAIAN_HARGA__" && !p.penyesuaianHarga) return false;
     if (selectedKategori === "__UPDATED__" && !p.isBaru && !p.isDiperbarui) return false;
@@ -966,7 +1059,7 @@ function TabProduk() {
               </h2>
               {!loading && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 tabular-nums">
-                  {products.length.toLocaleString("id-ID")} produk
+                  {activeProducts.length.toLocaleString("id-ID")} produk
                 </span>
               )}
             </div>
@@ -1186,7 +1279,7 @@ function TabProduk() {
         {/* Category pills horizontal scroll */}
         <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
           {[
-            { value: "", label: "Semua", count: products.length, accent: "default" as const },
+            { value: "", label: "Semua", count: activeProducts.length, accent: "default" as const },
             ...(hargaNaikCount > 0
               ? [{ value: "__HARGA_NAIK__", label: "Harga Naik", count: hargaNaikCount, accent: "amber" as const }]
               : []),
@@ -1199,7 +1292,7 @@ function TabProduk() {
             ...categories.map((c) => ({
               value: c.id,
               label: c.nama,
-              count: products.filter((p) => p.kategori?.id === c.id).length,
+              count: activeProducts.filter((p) => p.kategori?.id === c.id).length,
               accent: "default" as const,
             })),
           ].map((cat) => {
@@ -1251,6 +1344,9 @@ function TabProduk() {
               { id: "MENIPIS", label: "Stok menipis" },
               { id: "HABIS", label: "Stok habis" },
               { id: "TANPA_BARCODE", label: "Tanpa barcode" },
+              ...(archivedCount > 0
+                ? [{ id: "ARSIP", label: `Nonaktif (${archivedCount})` }]
+                : [{ id: "ARSIP", label: "Nonaktif" }]),
             ].map((f) => (
               <button
                 key={f.id}
@@ -1414,6 +1510,11 @@ function TabProduk() {
                             {!p.isBaru && p.isDiperbarui && (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 text-[10px] font-bold whitespace-nowrap">
                                 Update
+                              </span>
+                            )}
+                            {p.aktif === false && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-bold whitespace-nowrap">
+                                Nonaktif
                               </span>
                             )}
                           </div>
@@ -1828,10 +1929,34 @@ function TabProduk() {
 
                 {/* 2. Section: Harga Produk */}
                 <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      Harga Produk
-                    </h4>
+                  <div className="flex items-center justify-between mb-2.5 gap-2">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Harga Produk
+                      </h4>
+                      {canToggleCost && (
+                        <button
+                          type="button"
+                          disabled={togglingHargaBeli}
+                          onClick={handleToggleHargaBeli}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer disabled:opacity-50"
+                          title="Aktifkan atau nonaktifkan pencatatan harga beli secara global"
+                        >
+                          <span
+                            className={`w-7 h-4 rounded-full transition-colors relative inline-flex items-center ${
+                              costMeta.hargaBeliAktif ? "bg-emerald-500" : "bg-slate-200"
+                            }`}
+                          >
+                            <span
+                              className={`w-3 h-3 bg-white rounded-full shadow transition-transform ${
+                                costMeta.hargaBeliAktif ? "translate-x-3.5" : "translate-x-0.5"
+                              }`}
+                            />
+                          </span>
+                          <span>Harga beli {costMeta.hargaBeliAktif ? "Aktif" : "Nonaktif"}</span>
+                        </button>
+                      )}
+                    </div>
                     {isDrawerEditing && (
                       <button
                         type="button"
@@ -1852,7 +1977,7 @@ function TabProduk() {
                         <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                           <tr className="divide-x divide-slate-200">
                             <th className="py-2 px-3 font-semibold">Satuan</th>
-                            <th className="py-2 px-2 font-semibold text-center">Isi</th>
+                            <th className="py-2 px-2 font-semibold text-center">Konversi</th>
                             {costMeta.showCost && (
                               <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
                             )}
@@ -1863,17 +1988,36 @@ function TabProduk() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 text-slate-600">
-                          {p.satuanProduk.map((s) => {
+                          {p.satuanProduk.map((s, idx) => {
                             const faktor = Number(s.faktorKeDasar) || 1;
                             const hargaPerDasar = Math.round(s.hargaJual / faktor);
                             const margin = calculateMargin(s.hargaJual, s.hargaBeli);
+                            const hasExplicitBuy = p.satuanProduk.some((u) => u.isDefaultBeli);
+                            const largestIdx = p.satuanProduk.reduce(
+                              (best, cur, i, arr) =>
+                                Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+                              0
+                            );
+                            const isBeli = hasExplicitBuy ? Boolean(s.isDefaultBeli) : idx === largestIdx;
                             return (
                               <tr key={s.id} className="divide-x divide-slate-200">
-                                <td className="py-2 px-3 font-medium text-slate-900 capitalize">
-                                  {s.namaSatuan}
+                                <td className="py-2 px-3 font-medium text-slate-900">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="capitalize">{s.namaSatuan}</span>
+                                    {s.isDefault && (
+                                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold">
+                                        Jual
+                                      </span>
+                                    )}
+                                    {isBeli && (
+                                      <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold">
+                                        Beli
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
-                                <td className="py-2 px-2 text-center text-slate-600 font-mono">
-                                  {formatDecimal(faktor)}
+                                <td className="py-2 px-2 text-center text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                                  1 = {formatDecimal(faktor)} {p.satuanDasar}
                                 </td>
                                 {costMeta.showCost && (
                                   <td className="py-2 px-2.5 text-right text-slate-600 whitespace-nowrap tabular-nums">
@@ -1909,8 +2053,46 @@ function TabProduk() {
                   </div>
                 </div>
 
-                {/* 3. Info List Properti Produk (Stok saat ini, Stok minimum, Satuan, Satuan dasar, Kategori, Status stok) */}
+                {/* 3. Info List Properti Produk (Status, Merek, Stok, Satuan, Kategori) */}
                 <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Status produk</span>
+                    {isDrawerEditing ? (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={aktif}
+                        onClick={() => setAktif(!aktif)}
+                        className={`inline-flex items-center gap-2 cursor-pointer`}
+                      >
+                        <span className="text-xs font-medium text-slate-600">
+                          {aktif ? "Aktif" : "Nonaktif (Arsip)"}
+                        </span>
+                        <span
+                          className={`w-10 h-5.5 rounded-full transition-colors relative ${
+                            aktif ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-700"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
+                              aktif ? "translate-x-4.5" : "translate-x-0"
+                            }`}
+                          />
+                        </span>
+                      </button>
+                    ) : (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          p.aktif !== false
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {p.aktif !== false ? "Aktif" : "Nonaktif (Arsip)"}
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Mode Isi Ulang (Galon)</span>
                     {isDrawerEditing ? (
@@ -2053,6 +2235,70 @@ function TabProduk() {
                         placeholder="Satuan dasar"
                         className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
                       />
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Satuan pembelian</span>
+                    {!isDrawerEditing ? (
+                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                        {(() => {
+                          const buyU =
+                            p.satuanProduk.find((u) => u.isDefaultBeli) ||
+                            p.satuanProduk.reduce<typeof p.satuanProduk[0] | undefined>(
+                              (best, cur) =>
+                                !best || Number(cur.faktorKeDasar) > Number(best.faktorKeDasar)
+                                  ? cur
+                                  : best,
+                              undefined
+                            );
+                          return buyU
+                            ? `${buyU.namaSatuan} (${formatDecimal(Number(buyU.faktorKeDasar))} ${p.satuanDasar})`
+                            : p.satuanDasar;
+                        })()}
+                      </span>
+                    ) : (
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          searchable={false}
+                          ariaLabel="Pilih satuan pembelian"
+                          value={String(selectedBuyIdx)}
+                          onChange={(val) => handleSetDefaultBeliSatuan(Number(val))}
+                          align="right"
+                          className="!w-auto"
+                          options={satuanList.map((s, idx) => ({
+                            value: String(idx),
+                            label: `${s.namaSatuan || `Satuan ${idx + 1}`} (${formatDecimal(Number(s.faktorKeDasar) || 1)} ${satuanDasar || "pcs"})`,
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Satuan penjualan utama</span>
+                    {!isDrawerEditing ? (
+                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                        {(p.satuanProduk.find((u) => u.isDefault) || p.satuanProduk[0])?.namaSatuan ||
+                          p.satuanDasar}
+                      </span>
+                    ) : (
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          searchable={false}
+                          ariaLabel="Pilih satuan penjualan utama"
+                          value={String(selectedSellIdx)}
+                          onChange={(val) => handleSetDefaultSatuan(Number(val))}
+                          align="right"
+                          className="!w-auto"
+                          options={satuanList.map((s, idx) => ({
+                            value: String(idx),
+                            label: `${s.namaSatuan || `Satuan ${idx + 1}`}`,
+                          }))}
+                        />
+                      </div>
                     )}
                   </div>
 
@@ -2230,56 +2476,134 @@ function TabProduk() {
                   )}
                 </div>
 
-                {/* 2c. Riwayat Perubahan Harga */}
+                {/* 2c. Riwayat Perubahan Harga & Mutasi Stok */}
                 {!isDrawerEditing && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                         <History className="w-3.5 h-3.5" />
-                        <span>Riwayat Perubahan Harga ({priceHistory.length})</span>
+                        <span>Riwayat Produk</span>
                       </span>
+                      <div className="inline-flex items-center gap-2 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setDetailHistoryTab("PRICE")}
+                          className={`cursor-pointer ${
+                            detailHistoryTab === "PRICE"
+                              ? "text-slate-900 font-semibold"
+                              : "text-slate-400 hover:text-slate-700"
+                          }`}
+                        >
+                          Harga ({priceHistory.length})
+                        </button>
+                        <span className="text-slate-300">/</span>
+                        <button
+                          type="button"
+                          onClick={() => setDetailHistoryTab("STOCK")}
+                          className={`cursor-pointer ${
+                            detailHistoryTab === "STOCK"
+                              ? "text-slate-900 font-semibold"
+                              : "text-slate-400 hover:text-slate-700"
+                          }`}
+                        >
+                          Stok ({stockMutations.length})
+                        </button>
+                      </div>
                     </div>
-                    {loadingPriceHistory ? (
-                      <p className="text-xs text-slate-400">Memuat riwayat harga...</p>
-                    ) : priceHistory.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">Belum ada perubahan harga tercatat.</p>
+
+                    {detailHistoryTab === "PRICE" ? (
+                      loadingPriceHistory ? (
+                        <p className="text-xs text-slate-400">Memuat riwayat harga...</p>
+                      ) : priceHistory.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">Belum ada perubahan harga tercatat.</p>
+                      ) : (
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                          {priceHistory.map((h) => (
+                            <div
+                              key={h.id}
+                              className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 text-xs"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                      h.jenisPerubahan === "HARGA_BELI"
+                                        ? "bg-amber-50 text-amber-700"
+                                        : "bg-blue-50 text-blue-700"
+                                    }`}
+                                  >
+                                    {h.jenisPerubahan === "HARGA_BELI" ? "Harga Beli" : "Harga Jual"}
+                                  </span>
+                                  <span className="font-medium text-slate-700 dark:text-zinc-200 capitalize">
+                                    {h.namaSatuan}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                  {formatDateTime(h.dibuatPada)}
+                                  {h.namaPengguna ? ` · ${h.namaPengguna}` : ""}
+                                </div>
+                              </div>
+                              <div className="text-right whitespace-nowrap shrink-0 tabular-nums">
+                                <span className="text-slate-400 line-through text-[11px] mr-1.5">
+                                  {formatRupiah(h.hargaLama)}
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-zinc-100">
+                                  {formatRupiah(h.hargaBaru)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    ) : loadingStockHistory ? (
+                      <p className="text-xs text-slate-400">Memuat riwayat stok...</p>
+                    ) : stockMutations.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Belum ada mutasi stok tercatat.</p>
                     ) : (
                       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {priceHistory.map((h) => (
-                          <div
-                            key={h.id}
-                            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 text-xs"
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span
-                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                    h.jenisPerubahan === "HARGA_BELI"
-                                      ? "bg-amber-50 text-amber-700"
-                                      : "bg-blue-50 text-blue-700"
-                                  }`}
-                                >
-                                  {h.jenisPerubahan === "HARGA_BELI" ? "Harga Beli" : "Harga Jual"}
-                                </span>
-                                <span className="font-medium text-slate-700 dark:text-zinc-200 capitalize">
-                                  {h.namaSatuan}
-                                </span>
+                        {stockMutations.map((m) => {
+                          const qty = Number(m.qtyDasar);
+                          const isPositive = qty > 0;
+                          return (
+                            <div
+                              key={m.id}
+                              className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 text-xs"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                      m.tipe === "MASUK"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : m.tipe === "JUAL"
+                                        ? "bg-blue-50 text-blue-700"
+                                        : "bg-amber-50 text-amber-700"
+                                    }`}
+                                  >
+                                    {m.tipe}
+                                  </span>
+                                  {m.catatan && (
+                                    <span className="text-slate-600 dark:text-zinc-300 truncate max-w-[180px]">
+                                      {m.catatan}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                  {formatDateTime(m.dibuatPada)}
+                                  {m.user?.nama ? ` · ${m.user.nama}` : ""}
+                                </div>
                               </div>
-                              <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                {formatDateTime(h.dibuatPada)}
-                                {h.namaPengguna ? ` · ${h.namaPengguna}` : ""}
+                              <div
+                                className={`text-right whitespace-nowrap shrink-0 font-bold tabular-nums ${
+                                  isPositive ? "text-emerald-600" : "text-rose-600"
+                                }`}
+                              >
+                                {isPositive ? "+" : ""}
+                                {formatDecimal(qty)} {p.satuanDasar}
                               </div>
                             </div>
-                            <div className="text-right whitespace-nowrap shrink-0 tabular-nums">
-                              <span className="text-slate-400 line-through text-[11px] mr-1.5">
-                                {formatRupiah(h.hargaLama)}
-                              </span>
-                              <span className="font-bold text-slate-900 dark:text-zinc-100">
-                                {formatRupiah(h.hargaBaru)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -2594,10 +2918,34 @@ function TabProduk() {
 
                   {/* 2. Section: Harga Produk */}
                   <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        Harga Produk
-                      </h4>
+                    <div className="flex items-center justify-between mb-2.5 gap-2">
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                          Harga Produk
+                        </h4>
+                        {canToggleCost && (
+                          <button
+                            type="button"
+                            disabled={togglingHargaBeli}
+                            onClick={handleToggleHargaBeli}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer disabled:opacity-50"
+                            title="Aktifkan atau nonaktifkan pencatatan harga beli secara global"
+                          >
+                            <span
+                              className={`w-7 h-4 rounded-full transition-colors relative inline-flex items-center ${
+                                costMeta.hargaBeliAktif ? "bg-emerald-500" : "bg-slate-200"
+                              }`}
+                            >
+                              <span
+                                className={`w-3 h-3 bg-white rounded-full shadow transition-transform ${
+                                  costMeta.hargaBeliAktif ? "translate-x-3.5" : "translate-x-0.5"
+                                }`}
+                              />
+                            </span>
+                            <span>Harga beli {costMeta.hargaBeliAktif ? "Aktif" : "Nonaktif"}</span>
+                          </button>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={handleAddSatuanRow}
@@ -2659,12 +3007,69 @@ function TabProduk() {
                 </div>
 
                 {!isMultiVariant && (
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Satuan</span>
-                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                      {satuanList[0]?.namaSatuan || satuanDasar}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Satuan pembelian</span>
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          searchable={false}
+                          ariaLabel="Pilih satuan pembelian"
+                          value={String(selectedBuyIdx)}
+                          onChange={(val) => handleSetDefaultBeliSatuan(Number(val))}
+                          align="right"
+                          className="!w-auto"
+                          options={satuanList.map((s, idx) => ({
+                            value: String(idx),
+                            label: `${s.namaSatuan || `Satuan ${idx + 1}`} (${formatDecimal(Number(s.faktorKeDasar) || 1)} ${satuanDasar || "pcs"})`,
+                          }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Satuan penjualan utama</span>
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          searchable={false}
+                          ariaLabel="Pilih satuan penjualan utama"
+                          value={String(selectedSellIdx)}
+                          onChange={(val) => handleSetDefaultSatuan(Number(val))}
+                          align="right"
+                          className="!w-auto"
+                          options={satuanList.map((s, idx) => ({
+                            value: String(idx),
+                            label: `${s.namaSatuan || `Satuan ${idx + 1}`}`,
+                          }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Status produk</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={aktif}
+                        onClick={() => setAktif(!aktif)}
+                        className="inline-flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="text-xs font-medium text-slate-600">
+                          {aktif ? "Aktif" : "Nonaktif (Arsip)"}
+                        </span>
+                        <span
+                          className={`w-10 h-5.5 rounded-full transition-colors relative ${
+                            aktif ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-700"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
+                              aktif ? "translate-x-4.5" : "translate-x-0"
+                            }`}
+                          />
+                        </span>
+                      </button>
+                    </div>
+                  </>
                 )}
 
                 <div className="flex items-center justify-between py-2.5">
@@ -3033,7 +3438,7 @@ function TabProduk() {
       <HargaNaikModal
         isOpen={isHargaNaikOpen}
         onClose={() => setIsHargaNaikOpen(false)}
-        products={products}
+        products={activeProducts}
         categories={categories}
         showHargaBeli={costMeta.showCost}
         onSuccess={(msg) => {
@@ -3046,7 +3451,7 @@ function TabProduk() {
       <ImportProdukModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        existingProducts={products}
+        existingProducts={activeProducts}
         existingCategories={categories}
         onImported={(res) => {
           setSuccess(
@@ -3058,13 +3463,13 @@ function TabProduk() {
 
       <ConfirmModal
         isOpen={Boolean(deleteTarget)}
-        title={deleteTarget ? `Hapus Produk "${deleteTarget.nama}"?` : "Hapus Produk?"}
+        title={deleteTarget ? `Arsipkan Produk "${deleteTarget.nama}"?` : "Arsipkan Produk?"}
         description={
           deleteTarget
-            ? `Produk "${deleteTarget.nama}" akan dihapus secara permanen dari sistem.`
+            ? `Produk "${deleteTarget.nama}" akan dinonaktifkan (diarsipkan) dari daftar produk aktif. Riwayat transaksi, mutasi stok, dan laporan lama tetap utuh.`
             : ""
         }
-        confirmText="Ya, Hapus"
+        confirmText="Ya, Arsipkan"
         variant="danger"
         loading={deleting}
         onConfirm={confirmDelete}

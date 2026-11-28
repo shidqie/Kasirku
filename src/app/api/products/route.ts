@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search") || undefined;
   const kategoriId = searchParams.get("kategoriId") || undefined;
   const groupBy = searchParams.get("groupBy") || undefined;
+  const includeInactive = searchParams.get("includeInactive") === "true";
   const isCheckPrice = searchParams.get("checkPrice") === "true";
 
   const costCtx = await getCostAccessContext(session);
@@ -26,7 +27,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ results, meta: costCtx });
   }
 
-  const rawProducts = await getProducts({ search, kategoriId });
+  const rawProducts = await getProducts({
+    search,
+    kategoriId,
+    aktifOnly: !includeInactive,
+  });
   const products = sanitizeProductsCost(rawProducts, costCtx.showCost);
 
   if (groupBy === "group") {

@@ -20,8 +20,19 @@ interface ProductOption {
     namaSatuan: string;
     faktorKeDasar: number;
     hargaBeli: number;
+    isDefault?: boolean;
+    isDefaultBeli?: boolean;
   }[];
 }
+
+const pickPurchaseSatuan = (list: ProductOption["satuanProduk"]) =>
+  list.find((s) => s.isDefaultBeli) ||
+  list.reduce<ProductOption["satuanProduk"][number] | undefined>(
+    (best, cur) =>
+      !best || Number(cur.faktorKeDasar) > Number(best.faktorKeDasar) ? cur : best,
+    undefined
+  ) ||
+  list[0];
 
 interface ItemRow {
   produkId: string;
@@ -92,7 +103,7 @@ export default function BarangMasukPage() {
   }, [products, quickSearch]);
 
   const handleSelectQuickProduct = (p: ProductOption) => {
-    const s = p.satuanProduk[0] || {
+    const s = pickPurchaseSatuan(p.satuanProduk) || {
       namaSatuan: p.satuanDasar,
       faktorKeDasar: 1,
       hargaBeli: 0,
@@ -150,7 +161,7 @@ export default function BarangMasukPage() {
   const handleAddItemRow = () => {
     if (products.length === 0) return;
     const firstP = products[0];
-    const firstS = firstP.satuanProduk[0] || {
+    const firstS = pickPurchaseSatuan(firstP.satuanProduk) || {
       namaSatuan: firstP.satuanDasar,
       faktorKeDasar: 1,
       hargaBeli: 0,
@@ -172,7 +183,7 @@ export default function BarangMasukPage() {
   const handleProductChange = (index: number, newProductId: string) => {
     const p = products.find((x) => x.id === newProductId);
     if (!p) return;
-    const s = p.satuanProduk[0] || {
+    const s = pickPurchaseSatuan(p.satuanProduk) || {
       namaSatuan: p.satuanDasar,
       faktorKeDasar: 1,
       hargaBeli: 0,
@@ -335,7 +346,7 @@ export default function BarangMasukPage() {
               {isQuickDropdownOpen && quickFilteredProducts.length > 0 && (
                 <div className="absolute left-0 right-0 top-full mt-1.5 z-30 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
                   {quickFilteredProducts.map((p) => {
-                    const defaultSat = p.satuanProduk[0];
+                    const defaultSat = pickPurchaseSatuan(p.satuanProduk);
                     return (
                       <button
                         key={p.id}
