@@ -69,6 +69,7 @@ interface ProductItem {
   variantName?: string | null;
   group?: { id: string; nama: string; brand?: string | null } | null;
   barcode: string | null;
+  barcodes?: { id: string; code: string; source: string }[];
   satuanDasar: string;
   stokCache: number;
   stokKosong?: number | string;
@@ -386,6 +387,7 @@ export default function KasirPOSPage() {
       !searchQuery ||
       p.nama.toLowerCase().includes(q) ||
       (p.barcode && p.barcode.toLowerCase().includes(q)) ||
+      (p.barcodes && p.barcodes.some((b) => b.code.toLowerCase().includes(q))) ||
       (p.variantName && p.variantName.toLowerCase().includes(q)) ||
       (p.group?.nama && p.group.nama.toLowerCase().includes(q)) ||
       (p.group?.brand && p.group.brand.toLowerCase().includes(q));
@@ -537,8 +539,12 @@ export default function KasirPOSPage() {
     const clean = barcode.trim();
     if (!clean) return;
 
-    // Cari produk dengan barcode persis
-    const found = products.find((p) => p.barcode && p.barcode.trim() === clean);
+    // Cari produk di ProductBarcode (barcodes) lalu fallback ke Produk.barcode utama
+    const found = products.find(
+      (p) =>
+        (p.barcodes && p.barcodes.some((b) => b.code.trim() === clean)) ||
+        (p.barcode && p.barcode.trim() === clean)
+    );
 
     if (found) {
       const def = found.satuanProduk.find((s) => s.isDefault) || found.satuanProduk[0];
@@ -588,21 +594,36 @@ export default function KasirPOSPage() {
     if (!unregisteredBarcode) return;
     try {
       setIsAssigning(true);
-      const res = await fetch(`/api/products/${productToAssign.id}/barcode`, {
+      const res = await fetch(`/api/products/${productToAssign.id}/barcodes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode: unregisteredBarcode }),
+        body: JSON.stringify({ code: unregisteredBarcode, source: "manual" }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Gagal mendaftarkan barcode ke barang ini");
+        toast.error(data.error || "Gagal menghubungkan kode ke produk ini");
         return;
       }
 
-      // Update produk lokal
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productToAssign.id ? { ...p, barcode: unregisteredBarcode } : p))
-      );
+      // Update produk lokal & IndexedDB cache (mendukung mode offline)
+      setProducts((prev) => {
+        const next = prev.map((p) => {
+          if (p.id !== productToAssign.id) return p;
+          const prevCodes = p.barcodes || [];
+          const hasCode = prevCodes.some((b) => b.code === unregisteredBarcode);
+          return {
+            ...p,
+            barcode: p.barcode || unregisteredBarcode,
+            barcodes: hasCode
+              ? prevCodes
+              : [...prevCodes, { id: `local-${Date.now()}`, code: unregisteredBarcode, source: "manual" }],
+          };
+        });
+        import("@/lib/offline/offline-sync").then(({ cacheApiJson }) => {
+          cacheApiJson("/api/products", { products: next }).catch(() => {});
+        });
+        return next;
+      });
 
       // Otomatis masukkan barang ini ke keranjang belanja kasir!
       const def = productToAssign.satuanProduk.find((s) => s.isDefault) || productToAssign.satuanProduk[0];
@@ -2556,11 +2577,11 @@ export default function KasirPOSPage() {
                     <Barcode className="w-5 h-5" />
                   </span>
                   <h3 className="font-extrabold text-slate-900 dark:text-zinc-100 text-lg">
-                    Barcode Belum Terdaftar
+                    Kode Belum Terdaftar
                   </h3>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-zinc-400">
-                  Barcode <span className="font-mono font-bold text-slate-800 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">{unregisteredBarcode}</span> tidak ditemukan. Pilih produk toko di bawah untuk mendaftarkannya:
+                  Kode <span className="font-mono font-bold text-slate-800 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">{unregisteredBarcode}</span> belum terdaftar. Hubungkan ke produk mana?
                 </p>
               </div>
               <button
@@ -2637,7 +2658,7 @@ export default function KasirPOSPage() {
                           className="px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all"
                           style={{ background: "var(--primary)" }}
                         >
-                          Pilih
+                          Hubungkan
                         </span>
                       </div>
                     </button>
@@ -2655,7 +2676,14 @@ export default function KasirPOSPage() {
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+              <a
+                href={`/owner/produk?newBarcode=${encodeURIComponent(unregisteredBarcode)}`}
+                className="h-9 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Tambah produk baru</span>
+              </a>
               <button
                 type="button"
                 onClick={() => setUnregisteredBarcode(null)}

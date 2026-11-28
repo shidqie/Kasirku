@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, ShieldCheck, Store, Users, Activity } from "lucide-react";
+import { RefreshCw, ShieldCheck, Store, Users, Activity, AlertTriangle } from "lucide-react";
 import { formatDateTime } from "@/lib/formatters";
 import { getRoleLabel } from "@/lib/auth/permissions";
 import { PopupAlert } from "@/components/shared/ToastProvider";
@@ -13,7 +13,9 @@ export default function SuperAdminPage() {
   const [stores, setStores] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"stores" | "users" | "audit">("stores");
+  const [invalidBarcodes, setInvalidBarcodes] = useState<any[]>([]);
+  const [fixValues, setFixValues] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<"stores" | "users" | "audit" | "barcodes">("stores");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -22,12 +24,19 @@ export default function SuperAdminPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/overview");
+      const [res, bcRes] = await Promise.all([
+        fetch("/api/admin/overview"),
+        fetch("/api/admin/invalid-barcodes"),
+      ]);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal memuat data platform");
       setStores(data.stores || []);
       setUsers(data.users || []);
       setLogs(data.logs || []);
+      if (bcRes.ok) {
+        const bcData = await bcRes.json();
+        setInvalidBarcodes(bcData.items || []);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -119,6 +128,17 @@ export default function SuperAdminPage() {
           >
             <Activity className="w-3.5 h-3.5" />
             <span>Audit Aktivitas Platform</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("barcodes")}
+            className={`pb-3 border-b-2 inline-flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "barcodes"
+                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                : "border-transparent text-slate-500 hover:text-slate-800 font-medium"
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            <span>Barcode bermasalah ({invalidBarcodes.length})</span>
           </button>
         </div>
       </div>
@@ -235,6 +255,99 @@ export default function SuperAdminPage() {
                   <td className="py-3 pl-4">{l.entitas}</td>
                 </DataTableRow>
               ))}
+            </DataTableBody>
+          </DataTable>
+        )}
+
+        {activeTab === "barcodes" && (
+          <DataTable>
+            <DataTableHeader>
+              <tr>
+                <DataTableHead>Produk</DataTableHead>
+                <DataTableHead>Barcode Lama</DataTableHead>
+                <DataTableHead>Masalah</DataTableHead>
+                <DataTableHead>Perbaikan (8–14 digit)</DataTableHead>
+                <DataTableHead align="right">Aksi</DataTableHead>
+              </tr>
+            </DataTableHeader>
+            <DataTableBody>
+              {invalidBarcodes.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-slate-400">
+                    Semua barcode produk sudah sesuai pola angka 8–14 digit.
+                  </td>
+                </tr>
+              ) : (
+                invalidBarcodes.map((item) => (
+                  <DataTableRow key={item.id}>
+                    <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-zinc-100">
+                      {item.nama}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-[11px] text-rose-600 max-w-[200px] truncate">
+                      {item.barcode}
+                    </td>
+                    <td className="py-3 px-4 text-amber-600 font-medium">{item.alasan}</td>
+                    <td className="py-3 px-4">
+                      <input
+                        type="text"
+                        placeholder="Masukkan 8–14 digit"
+                        value={fixValues[item.id] ?? ""}
+                        onChange={(e) =>
+                          setFixValues((prev) => ({ ...prev, [item.id]: e.target.value }))
+                        }
+                        className="h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-xs w-44"
+                      />
+                    </td>
+                    <td className="py-3 pl-4 text-right whitespace-nowrap space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const r = await fetch("/api/admin/invalid-barcodes", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                productId: item.id,
+                                newBarcode: fixValues[item.id] || "",
+                              }),
+                            });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.error || "Gagal memperbaiki");
+                            setSuccess(d.message);
+                            fetchOverview();
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                        }}
+                        className="h-7 px-2.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs cursor-pointer"
+                      >
+                        Perbaiki
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const r = await fetch("/api/admin/invalid-barcodes", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ productId: item.id, action: "clear" }),
+                            });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.error || "Gagal menghapus");
+                            setSuccess(d.message);
+                            fetchOverview();
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                        }}
+                        className="h-7 px-2.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold text-xs cursor-pointer"
+                      >
+                        Kosongkan
+                      </button>
+                    </td>
+                  </DataTableRow>
+                ))
+              )}
             </DataTableBody>
           </DataTable>
         )}

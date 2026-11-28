@@ -35,6 +35,9 @@ export function describeMutation(url: string, method: string): string {
   if (url.startsWith("/api/products/bulk-price")) {
     return "Harga Naik Massal";
   }
+  if (url.startsWith("/api/products/") && url.includes("/barcode")) {
+    return "Hubungkan Barcode";
+  }
   if (url.startsWith("/api/products")) {
     return method === "POST" ? "Tambah Produk" : method === "DELETE" ? "Hapus Produk" : "Update Produk";
   }

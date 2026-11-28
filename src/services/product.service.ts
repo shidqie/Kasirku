@@ -134,6 +134,7 @@ export async function getProducts(params?: {
     where.OR = [
       { nama: { contains: q, mode: "insensitive" } },
       { barcode: { contains: q, mode: "insensitive" } },
+      { barcodes: { some: { code: { contains: q, mode: "insensitive" } } } },
       { variantName: { contains: q, mode: "insensitive" } },
       { group: { nama: { contains: q, mode: "insensitive" } } },
       { group: { brand: { contains: q, mode: "insensitive" } } },
@@ -145,6 +146,9 @@ export async function getProducts(params?: {
     orderBy: { nama: "asc" },
     include: {
       kategori: true,
+      barcodes: {
+        orderBy: { createdAt: "asc" },
+      },
       group: {
         include: { kategori: true },
       },
@@ -265,6 +269,13 @@ export async function createProduct(input: CreateProductInput, userId: string, i
         satuanProduk: {
           create: unitsToCreate,
         },
+        ...(input.barcode?.trim()
+          ? {
+              barcodes: {
+                create: { code: input.barcode.trim(), source: "manual" },
+              },
+            }
+          : {}),
       },
       include: {
         satuanProduk: true,
@@ -317,6 +328,8 @@ export async function updateProduct(
 
   const updated = await prisma.$transaction(async (tx) => {
     // 1. Update data pokok produk
+    const nextBarcode =
+      input.barcode !== undefined ? (input.barcode ? input.barcode.trim() : null) : undefined;
     await tx.produk.update({
       where: { id },
       data: {
@@ -324,7 +337,7 @@ export async function updateProduct(
         ...(input.kategoriId !== undefined ? { kategoriId: input.kategoriId } : {}),
         ...(input.groupId !== undefined ? { groupId: input.groupId || null } : {}),
         ...(input.variantName !== undefined ? { variantName: input.variantName ? input.variantName.trim() : null } : {}),
-        ...(input.barcode !== undefined ? { barcode: input.barcode ? input.barcode.trim() : null } : {}),
+        ...(nextBarcode !== undefined ? { barcode: nextBarcode } : {}),
         ...(input.satuanDasar ? { satuanDasar: input.satuanDasar } : {}),
         ...(input.stokMinimum !== undefined ? { stokMinimum: new Prisma.Decimal(input.stokMinimum) } : {}),
         ...(input.stokKosong !== undefined ? { stokKosong: new Prisma.Decimal(input.stokKosong) } : {}),
@@ -332,6 +345,14 @@ export async function updateProduct(
         ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
       },
     });
+
+    if (nextBarcode) {
+      await tx.productBarcode.upsert({
+        where: { code: nextBarcode },
+        update: { productId: id },
+        create: { productId: id, code: nextBarcode, source: "manual" },
+      });
+    }
 
     // 2. Update satuan & harga jika disertakan
     if (input.satuanList && input.satuanList.length > 0) {

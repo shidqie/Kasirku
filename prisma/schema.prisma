@@ -163,6 +163,7 @@ model Produk {
   kategori        Kategori?         @relation(fields: [kategoriId], references: [id])
   group           ProductGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   satuanProduk    SatuanProduk[]
+  barcodes        ProductBarcode[]
   stokMutasi      StokMutasi[]
   barangMasukItem BarangMasukItem[]
   opnameItem      StokOpnameItem[]
@@ -191,6 +192,20 @@ model SatuanProduk {
 
   @@unique([produkId, namaSatuan])
   @@map("satuan_produk")
+}
+
+// 4b. Banyak Kode / Barcode per Produk
+model ProductBarcode {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  code      String   @unique
+  source    String   @default("manual") // "ean" | "gtin" | "qr" | "manual"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Produk @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_barcode")
 }
 
 // 5. Stok Mutasi (Append-Only Ledger)

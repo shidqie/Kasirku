@@ -31,6 +31,7 @@ import {
   Split,
 } from "lucide-react";
 import { groupProductsForDisplay, formatPriceRange } from "@/lib/product-grouping";
+import { parseScan } from "@/lib/barcode";
 import { VariantGroupFormModal, SplitProductModal } from "@/components/produk/ProductVariantModals";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { isRefillProduct } from "@/lib/refill";
@@ -62,6 +63,7 @@ interface ProductItem {
   variantName?: string | null;
   group?: { id: string; nama: string; brand?: string | null; kategoriId?: string | null; kategori?: { id: string; nama: string } | null } | null;
   barcode: string | null;
+  barcodes?: { id: string; code: string; source: string }[];
   satuanDasar: string;
   stokMinimum: string | number;
   stokCache: string | number;
@@ -100,7 +102,9 @@ function TabProduk() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM">("FORM");
+  const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM" | "EXTRA_BARCODE">("FORM");
+  const [newExtraBarcode, setNewExtraBarcode] = useState("");
+  const [addingExtraBarcode, setAddingExtraBarcode] = useState(false);
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
@@ -1404,6 +1408,144 @@ function TabProduk() {
                   </div>
                 </div>
 
+                {/* 2b. Daftar Semua Kode / Barcode Produk */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Daftar Kode / Barcode ({p.barcodes?.length || (p.barcode ? 1 : 0)})
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {(p.barcodes && p.barcodes.length > 0
+                      ? p.barcodes
+                      : p.barcode
+                      ? [{ id: "main", code: p.barcode, source: "manual" }]
+                      : []
+                    ).map((b) => {
+                      const isPrimary = b.code === p.barcode;
+                      return (
+                        <div
+                          key={b.id}
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/40 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-zinc-100 truncate">
+                              {b.code}
+                            </span>
+                            {isPrimary && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 text-[10px] font-bold shrink-0">
+                                Utama
+                              </span>
+                            )}
+                          </div>
+                          {b.id !== "main" && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              {!isPrimary && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const res = await fetch(`/api/products/${p.id}/barcodes`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ barcodeId: b.id }),
+                                    });
+                                    const d = await res.json();
+                                    if (!res.ok) {
+                                      setError(d.error || "Gagal menjadikan utama");
+                                      return;
+                                    }
+                                    if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
+                                    setSuccess(d.message);
+                                    fetchData();
+                                  }}
+                                  className="px-2 py-0.5 rounded-lg text-[10px] font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer"
+                                >
+                                  Jadikan Utama
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const res = await fetch(`/api/products/${p.id}/barcodes?barcodeId=${encodeURIComponent(b.id)}`, {
+                                    method: "DELETE",
+                                  });
+                                  const d = await res.json();
+                                  if (!res.ok) {
+                                    setError(d.error || "Gagal menghapus kode");
+                                    return;
+                                  }
+                                  if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
+                                  setSuccess(d.message);
+                                  fetchData();
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                title="Hapus kode"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Tambah kode tambahan (ketik atau scan) */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <input
+                      type="text"
+                      value={newExtraBarcode}
+                      onChange={(e) => setNewExtraBarcode(e.target.value)}
+                      placeholder="Tambah kode / barcode lain..."
+                      className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono"
+                    />
+                    <button
+                      type="button"
+                      disabled={addingExtraBarcode || !newExtraBarcode.trim()}
+                      onClick={async () => {
+                        const parsed = parseScan(newExtraBarcode);
+                        const codeToAdd = parsed.type === "product" ? parsed.code : newExtraBarcode.trim();
+                        const srcToAdd = parsed.type === "product" ? parsed.source : "manual";
+                        setAddingExtraBarcode(true);
+                        try {
+                          const res = await fetch(`/api/products/${p.id}/barcodes`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ code: codeToAdd, source: srcToAdd }),
+                          });
+                          const d = await res.json();
+                          if (!res.ok) {
+                            setError(d.error || "Gagal menambahkan kode");
+                            return;
+                          }
+                          if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
+                          setNewExtraBarcode("");
+                          setSuccess(d.message);
+                          fetchData();
+                        } finally {
+                          setAddingExtraBarcode(false);
+                        }
+                      }}
+                      className="h-8 px-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                    >
+                      Tambah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScannerTarget("EXTRA_BARCODE");
+                        setIsScannerOpen(true);
+                      }}
+                      className="h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                      title="Scan kode tambahan"
+                    >
+                      <Barcode className="w-3.5 h-3.5" />
+                      <span>Scan</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* 3. Tombol Aksi (Detail/Read menampilkan Pecah Varian jika belum berkelompok; Edit menampilkan Batal + Simpan) */}
                 {!isDrawerEditing && !p.groupId && (
                   <div className="pt-2">
@@ -1719,6 +1861,27 @@ function TabProduk() {
               fetchData();
             } catch (err: any) {
               setError(err.message || "Gagal menghubungi server");
+            }
+          } else if (scannerTarget === "EXTRA_BARCODE" && detailProduct) {
+            setIsScannerOpen(false);
+            const parsed = parseScan(cleanCode);
+            if (parsed.type === "ignore") return;
+            try {
+              const res = await fetch(`/api/products/${detailProduct.product.id}/barcodes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: parsed.code, source: parsed.source }),
+              });
+              const d = await res.json();
+              if (!res.ok) {
+                setError(d.error || "Gagal menambahkan kode");
+                return;
+              }
+              if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
+              setSuccess(d.message);
+              fetchData();
+            } catch (err: any) {
+              setError(err?.message || "Gagal menambahkan kode");
             }
           } else if (scannerTarget === "FORM") {
             setBarcode(cleanCode);

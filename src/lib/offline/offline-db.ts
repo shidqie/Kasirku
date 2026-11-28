@@ -42,6 +42,7 @@ export function normalizeProductsCachePayload(data: unknown): unknown {
             hargaBeli: Number(s?.hargaBeli ?? 0),
           }))
         : [],
+      barcodes: Array.isArray(p?.barcodes) ? p.barcodes : [],
     })),
   };
 }
