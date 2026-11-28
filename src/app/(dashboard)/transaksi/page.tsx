@@ -13,9 +13,14 @@ import {
   CheckCircle,
   X,
   Lock,
+  FileText,
 } from "lucide-react";
 import { formatRupiah, formatDateTime } from "@/lib/formatters";
 import { StrukModal } from "@/components/kasir/StrukModal";
+import {
+  TransactionDetailDrawer,
+  formatHariTanggal,
+} from "@/components/kasir/TransactionDetailDrawer";
 import { Pagination } from "@/components/shared/Pagination";
 
 interface TransactionRow {
@@ -45,9 +50,10 @@ export default function RiwayatTransaksiPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Struk Modal
+  // Struk Modal & Detail Drawer
   const [selectedTrx, setSelectedTrx] = useState<TransactionRow | null>(null);
   const [isStrukOpen, setIsStrukOpen] = useState(false);
+  const [detailTrx, setDetailTrx] = useState<TransactionRow | null>(null);
   const [storeInfo, setStoreInfo] = useState<any>({ namaToko: "Toko Sembako Berkah" });
 
   // Void Modal
@@ -287,6 +293,13 @@ export default function RiwayatTransaksiPage() {
 
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => setDetailTrx(t)}
+                          className="h-10 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Detail</span>
+                        </button>
+                        <button
                           onClick={() => handleOpenStruk(t)}
                           className="flex-1 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                         >
@@ -312,20 +325,22 @@ export default function RiwayatTransaksiPage() {
           <table className="hidden md:table w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
-                <th className="py-3 pr-4">No. Transaksi</th>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">Kasir / Pelanggan</th>
-                <th className="py-3 px-4 text-right">Total</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 pl-4 text-center">Aksi</th>
+                <th className="py-3 pr-4 whitespace-nowrap">No Transaksi</th>
+                <th className="py-3 px-4 whitespace-nowrap">Hari/Tanggal</th>
+                <th className="py-3 px-4 whitespace-nowrap">Pelanggan</th>
+                <th className="py-3 px-4 whitespace-nowrap">Kasir</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Total</th>
+                <th className="py-3 px-4 whitespace-nowrap">Metode Pembayaran</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Status Pembayaran</th>
+                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
               {loading ? (
-                <TableSkeletonRows rows={6} cols={6} />
+                <TableSkeletonRows rows={6} cols={8} />
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">
+                  <td colSpan={8} className="text-center py-12 text-slate-400">
                     Tidak ada transaksi ditemukan.
                   </td>
                 </tr>
@@ -343,40 +358,42 @@ export default function RiwayatTransaksiPage() {
                           isBatal ? "bg-rose-50/30 dark:bg-rose-950/20" : ""
                         }`}
                       >
-                        <td className="py-3 px-3">
-                          <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 block">
+                        <td className="py-3.5 pr-4 whitespace-nowrap">
+                          <span className="font-mono font-semibold text-slate-900 dark:text-zinc-100">
                             {t.nomorStruk}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-slate-400 uppercase">
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                          {formatHariTanggal(t.dibuatPada)}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {t.member ? (
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {t.member.nama}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 dark:text-zinc-400">Umum</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-800 dark:text-zinc-200">
+                          {t.kasir?.nama || "Kasir"}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-zinc-100 whitespace-nowrap tabular-nums">
+                          {formatRupiah(t.total)}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            <span className="text-xs font-medium text-slate-700 dark:text-zinc-300 uppercase">
                               {bayar?.metode || "TUNAI"}
                             </span>
                             {t.buktiKey && (
-                              <span className="px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[10px] font-semibold">
+                              <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[10px] font-semibold">
                                 Bukti ✓
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                          {formatDateTime(t.dibuatPada)}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="font-medium text-slate-800 dark:text-zinc-200 block">
-                            {t.kasir?.nama || "Kasir"}
-                          </span>
-                          {t.member ? (
-                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
-                              {t.member.nama}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">Umum</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-zinc-100 whitespace-nowrap tabular-nums">
-                          {formatRupiah(t.total)}
-                        </td>
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           {isBatal ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
                               Batal
@@ -387,11 +404,19 @@ export default function RiwayatTransaksiPage() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center justify-center gap-1.5">
+                        <td className="py-3.5 pl-4 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setDetailTrx(t)}
+                              className="h-7 px-2.5 rounded-lg text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-semibold transition-colors inline-flex items-center gap-1 active:scale-95 cursor-pointer"
+                              title="Lihat Detail & Bukti Pembayaran"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Detail</span>
+                            </button>
                             <button
                               onClick={() => handleOpenStruk(t)}
-                              className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                              className="h-7 px-2.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-semibold transition-colors inline-flex items-center gap-1 active:scale-95 cursor-pointer"
                               title="Cetak Ulang Struk"
                             >
                               <Printer className="w-3.5 h-3.5" />
@@ -400,7 +425,7 @@ export default function RiwayatTransaksiPage() {
                             {!isBatal && (
                               <button
                                 onClick={() => handleOpenVoidModal(t)}
-                                className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                className="h-7 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold transition-colors inline-flex items-center gap-1 active:scale-95 cursor-pointer"
                                 title="Batalkan Transaksi (Void)"
                               >
                                 <Ban className="w-3.5 h-3.5" />
@@ -502,6 +527,26 @@ export default function RiwayatTransaksiPage() {
           </div>
         </div>
       )}
+
+      {/* DETAIL SLIDER DRAWER */}
+      <TransactionDetailDrawer
+        trx={detailTrx}
+        onClose={() => setDetailTrx(null)}
+        onPrintStruk={(trx) => {
+          setDetailTrx(null);
+          handleOpenStruk(trx);
+        }}
+        onVoid={(trx) => {
+          setDetailTrx(null);
+          handleOpenVoidModal(trx);
+        }}
+        onBuktiUploaded={(trxId, key) => {
+          setTransactions((prev) =>
+            prev.map((item) => (item.id === trxId ? { ...item, buktiKey: key } : item))
+          );
+          setDetailTrx((prev) => (prev && prev.id === trxId ? { ...prev, buktiKey: key } : prev));
+        }}
+      />
 
       {/* STRUK MODAL */}
       <StrukModal
