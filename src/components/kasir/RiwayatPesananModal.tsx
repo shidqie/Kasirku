@@ -199,7 +199,7 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 left-0 lg:left-60 z-30 flex flex-col bg-white dark:bg-zinc-900 border-l border-slate-200/80 dark:border-zinc-800 shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`fixed top-16 bottom-0 right-0 left-0 lg:left-60 z-30 flex flex-col bg-white dark:bg-zinc-900 border-l border-slate-200/80 dark:border-zinc-800 shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         visible ? "translate-x-0 opacity-100 pointer-events-auto" : "translate-x-full opacity-0 pointer-events-none"
       }`}
     >
