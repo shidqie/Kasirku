@@ -27,6 +27,7 @@ import {
   TrendingUp,
   PanelLeftClose,
   PanelLeftOpen,
+  Tag,
 } from "lucide-react";
 import { SessionPayload } from "@/lib/auth/session";
 import { hasAnyPermission, hasPermission } from "@/lib/auth/permissions";
@@ -125,6 +126,7 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
             { label: "Produk & Harga", href: "/owner/produk", icon: Package },
             { label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes },
             { label: "Kategori Produk", href: "/owner/kategori", icon: Layers },
+            { label: "Aturan Promo", href: "/owner/promo", icon: Tag },
           ],
         },
         {

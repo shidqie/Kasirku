@@ -36,6 +36,8 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { formatRupiah, formatDecimal, generateUUID } from "@/lib/formatters";
 import { isRefillProduct } from "@/lib/refill";
+import { Gift } from "lucide-react";
+import { evaluateCartPromos, formatPromoShortLabel, isPromoActiveNow, PromoRuleDTO } from "@/lib/promo";
 import { KasirGridSkeleton } from "@/components/shared/Skeleton";
 import {
   convertStaticQrisToDynamic,
@@ -283,6 +285,7 @@ export default function KasirPOSPage() {
   const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [promos, setPromos] = useState<PromoRuleDTO[]>([]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -290,18 +293,21 @@ export default function KasirPOSPage() {
 
   const loadInitialData = async () => {
     try {
-      const [pRes, cRes, sRes] = await Promise.all([
+      const [pRes, cRes, sRes, prRes] = await Promise.all([
         fetch("/api/products"),
         fetch("/api/categories"),
         fetch("/api/settings"),
+        fetch("/api/promos?activeOnly=true"),
       ]);
 
       const pData = await pRes.json();
       const cData = await cRes.json();
       const sData = await sRes.json();
+      const prData = await prRes.json().catch(() => ({}));
 
       if (pRes.ok) setProducts(pData.products || []);
       if (cRes.ok) setCategories(cData.categories || []);
+      if (prRes.ok) setPromos(prData.promos || []);
       if (sRes.ok) {
         const loadedSettings = sData.settings || {};
         setStoreInfo(loadedSettings);
@@ -644,9 +650,21 @@ export default function KasirPOSPage() {
     setIsClearCartConfirmOpen(false);
   };
 
+  const promoEval = evaluateCartPromos(
+    cart.map((it) => ({
+      produkId: it.produkId,
+      kategoriId: products.find((p) => p.id === it.produkId)?.kategori?.id ?? null,
+      satuanProdukId: it.satuanProdukId,
+      nama: it.nama,
+      hargaJual: it.hargaJual,
+      qty: it.qty,
+    })),
+    promos
+  );
+
   const subtotal = cart.reduce((sum, item) => sum + Math.round(item.qty * item.hargaJual), 0);
   const diskonNominal = Math.round((subtotal * diskonPersen) / 100);
-  const subtotalSetelahDiskon = Math.max(0, subtotal - diskonNominal);
+  const subtotalSetelahDiskon = Math.max(0, subtotal - diskonNominal - promoEval.totalPromoDiscount);
 
   const hitungPembulatan = (val: number, aturan: string) => {
     if (aturan === "BULAT_100") {
@@ -1157,6 +1175,22 @@ export default function KasirPOSPage() {
                         {p.nama}
                       </p>
 
+                      {(() => {
+                        const activePromo = promos.find(
+                          (pr) =>
+                            isPromoActiveNow(pr) &&
+                            (pr.produkId === p.id ||
+                              (!pr.produkId && p.kategori?.id && pr.kategoriId === p.kategori.id))
+                        );
+                        if (!activePromo) return null;
+                        return (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[9px] font-bold">
+                            <Gift className="w-2.5 h-2.5 shrink-0" />
+                            {formatPromoShortLabel(activePromo)}
+                          </span>
+                        );
+                      })()}
+
                       {/* Price */}
                       {(defaultSatuan?.hargaJual || 0) > 0 ? (
                         <p className="text-sm font-bold text-slate-900 dark:text-zinc-100 tracking-tight tabular-nums">
@@ -1486,6 +1520,12 @@ export default function KasirPOSPage() {
                             Harga Naik
                           </span>
                         )}
+                        {promoEval.itemPromos[`${item.produkId}:${item.satuanProdukId}`] && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[9px] font-bold">
+                            <Gift className="w-2.5 h-2.5" />
+                            {promoEval.itemPromos[`${item.produkId}:${item.satuanProdukId}`].badgeText}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
@@ -1539,6 +1579,20 @@ export default function KasirPOSPage() {
               <span>Subtotal</span>
               <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatRupiah(subtotal)}</span>
             </div>
+            {promoEval.totalPromoDiscount > 0 && (
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                <span>Diskon Promo</span>
+                <span className="font-semibold">-{formatRupiah(promoEval.totalPromoDiscount)}</span>
+              </div>
+            )}
+            {promoEval.bonusItems.length > 0 && (
+              <div className="flex items-start justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+                <span>Bonus Gratis</span>
+                <span className="font-semibold text-right">
+                  {promoEval.bonusItems.map((b) => `+${formatDecimal(b.qty)} ${b.nama}`).join(", ")}
+                </span>
+              </div>
+            )}
             {pembulatan !== 0 && (
               <div className="flex justify-between">
                 <span>Pembulatan</span>

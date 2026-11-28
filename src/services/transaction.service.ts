@@ -5,6 +5,7 @@ import { getSettings } from "./settings.service";
 import { Prisma, Pembulatan, MetodePembayaran } from "@prisma/client";
 import { generateUUID } from "@/lib/formatters";
 import { isRefillProduct } from "@/lib/refill";
+import { evaluateCartPromos } from "@/lib/promo";
 
 export interface CheckoutItemInput {
   produkId: string;
@@ -175,7 +176,31 @@ export async function checkout(
     });
   }
 
-  const subtotalSetelahDiskon = Math.max(0, subtotalKotor - diskon);
+  // Evaluasi aturan promo aktif di server
+  const activePromos = await prisma.promoRule.findMany({
+    where: { aktif: true },
+    include: {
+      bonusProduk: { select: { id: true, nama: true, satuanDasar: true } },
+    },
+  });
+
+  const promoEval = evaluateCartPromos(
+    preparedItems.map((it) => {
+      const prod = productMap.get(it.produkId);
+      return {
+        produkId: it.produkId,
+        kategoriId: prod?.kategoriId ?? null,
+        satuanProdukId: it.satuanSnapshot,
+        nama: it.namaSnapshot,
+        hargaJual: it.hargaJualSnapshot,
+        qty: Number(it.qty),
+      };
+    }),
+    activePromos
+  );
+
+  const totalDiskon = diskon + promoEval.totalPromoDiscount;
+  const subtotalSetelahDiskon = Math.max(0, subtotalKotor - totalDiskon);
   const pembulatan = hitungPembulatan(subtotalSetelahDiskon, settings.pembulatan);
   const totalAkhir = subtotalSetelahDiskon + pembulatan;
 
@@ -225,7 +250,7 @@ export async function checkout(
         kasirId: kasir.id,
         memberId: input.memberId || null,
         subtotal: subtotalKotor,
-        diskon,
+        diskon: totalDiskon,
         pembulatan,
         total: totalAkhir,
         status: "SELESAI",
@@ -277,6 +302,50 @@ export async function checkout(
             ? { stokKosong: { increment: item.qtyDasar } }
             : {}),
         },
+      });
+    }
+
+    // D2. Potong stok untuk item bonus promo (Beli X Gratis Y) & catat di struk
+    for (const bonus of promoEval.bonusItems) {
+      if (bonus.qty <= 0) continue;
+      const bonusProd =
+        productMap.get(bonus.produkId) ||
+        (await tx.produk.findUnique({ where: { id: bonus.produkId } }));
+      if (!bonusProd) continue;
+
+      const qtyBonusDec = new Prisma.Decimal(bonus.qty);
+      const negBonusDec = qtyBonusDec.negated();
+
+      await tx.transaksiItem.create({
+        data: {
+          transaksiId: trx.id,
+          produkId: bonusProd.id,
+          namaSnapshot: `${bonusProd.nama} (Gratis Promo)`,
+          satuanSnapshot: bonusProd.satuanDasar,
+          faktorKeDasarSnapshot: new Prisma.Decimal(1),
+          qty: qtyBonusDec,
+          qtyDasar: qtyBonusDec,
+          hargaJualSnapshot: 0,
+          hargaBeliSnapshot: 0,
+          subtotal: 0,
+        },
+      });
+
+      await tx.stokMutasi.create({
+        data: {
+          produkId: bonusProd.id,
+          tipe: "JUAL",
+          qtyDasar: negBonusDec,
+          refTipe: "TRANSAKSI",
+          refId: trx.id,
+          userId: kasir.id,
+          catatan: `Bonus Promo (${bonus.promoNama}) Struk ${nomorStruk}`,
+        },
+      });
+
+      await tx.produk.update({
+        where: { id: bonusProd.id },
+        data: { stokCache: { increment: negBonusDec } },
       });
     }
 

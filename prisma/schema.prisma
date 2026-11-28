@@ -116,11 +116,12 @@ model PengaturanToko {
 
 // 3. Kategori Produk
 model Kategori {
-  id        String    @id @default(cuid())
-  nama      String    @unique
+  id        String      @id @default(cuid())
+  nama      String      @unique
   produk    Produk[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  promo     PromoRule[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
 
   @@map("kategori")
 }
@@ -146,6 +147,8 @@ model Produk {
   barangMasukItem BarangMasukItem[]
   opnameItem      StokOpnameItem[]
   transaksiItem   TransaksiItem[]
+  promoTargets    PromoRule[]       @relation("PromoTargetProduk")
+  promoBonuses    PromoRule[]       @relation("PromoBonusProduk")
 
   @@index([nama])
   @@index([barcode])
@@ -404,5 +407,40 @@ model ActivityLog {
   @@index([dibuatPada])
   @@index([entitas, entitasId])
   @@map("activity_log")
+}
+
+// 12. Aturan Promo (Beli X Gratis Y, Diskon, Paket)
+enum TipePromo {
+  BELI_X_GRATIS_Y
+  DISKON_PERSEN
+  DISKON_NOMINAL
+  HARGA_PAKET
+}
+
+model PromoRule {
+  id               String    @id @default(cuid())
+  nama             String
+  tipe             TipePromo
+  produkId         String?   @map("produk_id")
+  kategoriId       String?   @map("kategori_id")
+  minQty           Int       @default(1) @map("min_qty")
+  bonusQty         Int       @default(0) @map("bonus_qty")
+  bonusProdukId    String?   @map("bonus_produk_id")
+  diskonPersen     Int       @default(0) @map("diskon_persen")
+  diskonNominal    Int       @default(0) @map("diskon_nominal")
+  hargaPaket       Int       @default(0) @map("harga_paket")
+  berlakuKelipatan Boolean   @default(true) @map("berlaku_kelipatan")
+  mulaiPada        DateTime? @map("mulai_pada")
+  berakhirPada     DateTime? @map("berakhir_pada")
+  aktif            Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  produk      Produk?   @relation("PromoTargetProduk", fields: [produkId], references: [id], onDelete: Cascade)
+  bonusProduk Produk?   @relation("PromoBonusProduk", fields: [bonusProdukId], references: [id], onDelete: SetNull)
+  kategori    Kategori? @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+
+  @@index([aktif])
+  @@map("promo_rule")
 }
 

@@ -22,6 +22,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/owner/produk": "Produk & Harga",
   "/owner/satuan": "Satuan & Konversi",
   "/owner/kategori": "Kategori Produk",
+  "/owner/promo": "Aturan Promo",
   "/owner/activity-log": "Log Kontrol",
   "/owner/pengaturan": "Pengaturan",
   "/owner/laporan": "Laporan",
