@@ -413,7 +413,7 @@ function TabProduk() {
   };
 
   const renderUnitTemplates = () => (
-    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mb-2.5">
+    <div className="grid grid-cols-3 gap-1.5 mb-2.5">
       {UNIT_TEMPLATES.map((tpl) => {
         const isActive =
           satuanDasar.trim().toLowerCase() === tpl.satuanDasar.toLowerCase() &&
@@ -428,10 +428,10 @@ function TabProduk() {
             key={tpl.id}
             type="button"
             onClick={() => applyUnitTemplate(tpl)}
-            className={`px-2 py-0.5 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+            className={`px-2 py-1 rounded-lg text-[11px] font-medium text-center truncate transition-colors cursor-pointer ${
               isActive
                 ? "bg-slate-900 text-white"
-                : "bg-slate-100/80 text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
+                : "bg-slate-100/70 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
             }`}
           >
             {tpl.label}
