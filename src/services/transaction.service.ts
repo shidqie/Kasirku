@@ -22,6 +22,7 @@ export interface CheckoutInput {
   metodePembayaran: MetodePembayaran;
   uangDiterima?: number;
   pinOwner?: string;
+  buktiKey?: string | null;
 }
 
 export function hitungPembulatan(subtotalSetelahDiskon: number, aturan: Pembulatan): number {
@@ -226,6 +227,7 @@ export async function checkout(
         pembulatan,
         total: totalAkhir,
         status: "SELESAI",
+        buktiKey: input.buktiKey || null,
       },
     });
 
@@ -500,4 +502,64 @@ export async function getTransactionById(id: string) {
       dibatalkanOleh: { select: { nama: true, username: true } },
     },
   });
+}
+
+export async function createQuickQrisTransaction(
+  input: { amount: number; buktiKey: string },
+  kasir: { id: string; role: string },
+  ip?: string
+) {
+  if (!input.buktiKey || !input.buktiKey.startsWith("bukti-transaksi/")) {
+    throw new Error("Bukti transfer wajib diupload");
+  }
+
+  const created = await prisma.$transaction(async (tx) => {
+    const nomorStruk = await generateReceiptNumber(tx);
+    const trx = await tx.transaksi.create({
+      data: {
+        nomorStruk,
+        idempotencyKey: `qq-${generateUUID()}`,
+        kasirId: kasir.id,
+        subtotal: input.amount,
+        diskon: 0,
+        pembulatan: 0,
+        total: input.amount,
+        status: "SELESAI",
+        buktiKey: input.buktiKey,
+        pembayaran: {
+          create: {
+            metode: "TRANSFER",
+            jumlah: input.amount,
+            uangDiterima: input.amount,
+            kembalian: 0,
+          },
+        },
+      },
+      include: {
+        items: true,
+        pembayaran: true,
+        kasir: { select: { nama: true, username: true } },
+      },
+    });
+
+    await tx.activityLog.create({
+      data: {
+        userId: kasir.id,
+        aksi: "QUICK_QRIS_DINAMIS",
+        entitas: "Transaksi",
+        entitasId: trx.id,
+        sesudahJson: {
+          nomorStruk: trx.nomorStruk,
+          total: trx.total,
+          metode: "TRANSFER",
+          buktiKey: trx.buktiKey,
+        },
+        ip,
+      },
+    });
+
+    return trx;
+  });
+
+  return created;
 }

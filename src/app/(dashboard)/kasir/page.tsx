@@ -257,8 +257,11 @@ export default function KasirPOSPage() {
   const [isQuickQrisOpen, setIsQuickQrisOpen] = useState(false);
   const [quickQrisAmount, setQuickQrisAmount] = useState<number>(0);
   const [quickQrisConfirmed, setQuickQrisConfirmed] = useState(false);
-  const [quickQrisSecondsLeft, setQuickQrisSecondsLeft] = useState<number>(30);
+  const [quickQrisSecondsLeft, setQuickQrisSecondsLeft] = useState<number>(60);
   const [quickQrisDataUrl, setQuickQrisDataUrl] = useState<string | null>(null);
+  const [quickQrisBuktiKey, setQuickQrisBuktiKey] = useState<string | null>(null);
+  const [quickQrisSaving, setQuickQrisSaving] = useState(false);
+  const [transferBuktiKey, setTransferBuktiKey] = useState<string | null>(null);
   const [uangDiterima, setUangDiterima] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -748,10 +751,7 @@ export default function KasirPOSPage() {
       setQuickQrisSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setIsQuickQrisOpen(false);
-          setQuickQrisConfirmed(false);
-          setQuickQrisAmount(0);
-          return 30;
+          return 0;
         }
         return prev - 1;
       });
@@ -759,6 +759,36 @@ export default function KasirPOSPage() {
 
     return () => clearInterval(timer);
   }, [isQuickQrisOpen, quickQrisConfirmed]);
+
+  const handleSaveQuickQris = async () => {
+    if (!quickQrisBuktiKey || quickQrisAmount <= 0) return;
+    setQuickQrisSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/transactions/quick-qris", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: quickQrisAmount,
+          buktiKey: quickQrisBuktiKey,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan transaksi Quick QRIS");
+
+      setCompletedTrx(data.transaksi);
+      setIsQuickQrisOpen(false);
+      setQuickQrisConfirmed(false);
+      setQuickQrisAmount(0);
+      setQuickQrisBuktiKey(null);
+      setQuickQrisSecondsLeft(60);
+      setIsStrukOpen(true);
+    } catch (err: any) {
+      setError(err?.message || "Gagal menyimpan transaksi Quick QRIS");
+    } finally {
+      setQuickQrisSaving(false);
+    }
+  };
 
   const openPaymentModal = () => {
     if (cart.length === 0) return;
@@ -787,6 +817,7 @@ export default function KasirPOSPage() {
         metodePembayaran: metodeBayar,
         uangDiterima: metodeBayar === "TUNAI" ? uangDiterima : grandTotal,
         pinOwner: pin || cachedPinOwner,
+        buktiKey: metodeBayar === "TRANSFER" ? transferBuktiKey : null,
       };
 
       const res = await fetch("/api/transactions", {
@@ -844,6 +875,7 @@ export default function KasirPOSPage() {
       setIsMobileCartOpen(false);
       setIsStrukOpen(true);
       setCart([]);
+      setTransferBuktiKey(null);
       setDiskonPersen(0);
       setUangDiterima(0);
       setSelectedMember(null);
@@ -1857,6 +1889,18 @@ export default function KasirPOSPage() {
                     </>
                   );
                 })()}
+
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1.5">
+                  <p className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300">
+                    Bukti Transfer / QRIS <span className="text-rose-500">*Wajib</span>
+                  </p>
+                  <BuktiTransaksiUploader
+                    source="kasir"
+                    initialKey={transferBuktiKey}
+                    onUploaded={({ key }) => setTransferBuktiKey(key)}
+                    compact
+                  />
+                </div>
               </div>
             )}
 
@@ -1965,7 +2009,12 @@ export default function KasirPOSPage() {
               </button>
               <button
                 type="button"
-                disabled={submitting || isUangKurang || (metodeBayar === "KASBON" && !selectedMember)}
+                disabled={
+                  submitting ||
+                  isUangKurang ||
+                  (metodeBayar === "KASBON" && !selectedMember) ||
+                  (metodeBayar === "TRANSFER" && !transferBuktiKey)
+                }
                 onClick={() => handleCheckout()}
                 className="flex-1 h-12 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-90 disabled:opacity-40 transition-all"
                 style={{ background: "var(--primary)" }}
@@ -2047,25 +2096,33 @@ export default function KasirPOSPage() {
                   )}
                 </div>
 
-                {/* Timer 30s */}
+                {/* Timer 1 Menit (60s) */}
                 <div className="max-w-xs mx-auto space-y-1.5">
                   <div className="flex items-center justify-center">
                     <span
                       className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold tabular-nums ${
-                        quickQrisSecondsLeft <= 10
+                        quickQrisSecondsLeft === 0
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          : quickQrisSecondsLeft <= 10
                           ? "bg-rose-50 text-rose-600 dark:bg-rose-900/40 dark:text-rose-300 animate-pulse"
                           : "bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
                       }`}
                     >
-                      Berlaku {quickQrisSecondsLeft} detik
+                      {quickQrisSecondsLeft === 0
+                        ? "Waktu selesai · Silakan upload bukti transfer"
+                        : `Berlaku ${quickQrisSecondsLeft} detik`}
                     </span>
                   </div>
                   <div className="w-full h-1 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
                     <div
                       className={`h-full transition-all duration-1000 ease-linear ${
-                        quickQrisSecondsLeft <= 10 ? "bg-rose-500" : "bg-amber-500"
+                        quickQrisSecondsLeft === 0
+                          ? "bg-emerald-500"
+                          : quickQrisSecondsLeft <= 10
+                          ? "bg-rose-500"
+                          : "bg-amber-500"
                       }`}
-                      style={{ width: `${(quickQrisSecondsLeft / 30) * 100}%` }}
+                      style={{ width: `${(quickQrisSecondsLeft / 60) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -2074,8 +2131,27 @@ export default function KasirPOSPage() {
                   Tunjukkan ke konsumen untuk langsung scan (nominal otomatis terisi).
                 </p>
 
-                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 text-left">
-                  <BuktiTransaksiUploader source="quick-qris" compact />
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 text-left space-y-2.5">
+                  <p className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300">
+                    Bukti Transfer / QRIS <span className="text-rose-500">*Wajib</span>
+                  </p>
+                  <BuktiTransaksiUploader
+                    source="quick-qris"
+                    initialKey={quickQrisBuktiKey}
+                    onUploaded={({ key }) => setQuickQrisBuktiKey(key)}
+                    compact
+                  />
+                  <button
+                    type="button"
+                    disabled={!quickQrisBuktiKey || quickQrisSaving}
+                    onClick={handleSaveQuickQris}
+                    className="w-full h-11 rounded-2xl text-white font-bold text-xs shadow-sm hover:opacity-95 disabled:opacity-40 transition-all cursor-pointer"
+                    style={{ backgroundColor: "var(--primary, #F0090F)" }}
+                  >
+                    {quickQrisSaving
+                      ? "Menyimpan ke Riwayat..."
+                      : "Selesai & Simpan ke Riwayat"}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -2083,7 +2159,8 @@ export default function KasirPOSPage() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (quickQrisAmount > 0) {
-                    setQuickQrisSecondsLeft(30);
+                    setQuickQrisSecondsLeft(60);
+                    setQuickQrisBuktiKey(null);
                     setQuickQrisConfirmed(true);
                   }
                 }}

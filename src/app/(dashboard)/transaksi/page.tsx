@@ -34,6 +34,7 @@ interface TransactionRow {
   member: { nama: string; telepon: string | null } | null;
   pembayaran: { metode: string; jumlah: number; uangDiterima?: number; kembalian?: number }[];
   items: any[];
+  buktiKey?: string | null;
 }
 
 export default function RiwayatTransaksiPage() {
@@ -266,8 +267,13 @@ export default function RiwayatTransaksiPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                            {formatDateTime(t.dibuatPada)} · {bayar?.metode || "TUNAI"}
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span>{formatDateTime(t.dibuatPada)} · {bayar?.metode || "TUNAI"}</span>
+                            {t.buktiKey && (
+                              <span className="px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[10px] font-semibold">
+                                Bukti ✓
+                              </span>
+                            )}
                           </p>
                           <p className="text-[11px] text-slate-600 dark:text-zinc-300 mt-0.5">
                             Kasir: <strong>{t.kasir?.nama || "Kasir"}</strong> ·{" "}
@@ -341,9 +347,16 @@ export default function RiwayatTransaksiPage() {
                           <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 block">
                             {t.nomorStruk}
                           </span>
-                          <span className="text-[10px] text-slate-400 uppercase">
-                            {bayar?.metode || "TUNAI"}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-slate-400 uppercase">
+                              {bayar?.metode || "TUNAI"}
+                            </span>
+                            {t.buktiKey && (
+                              <span className="px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[10px] font-semibold">
+                                Bukti ✓
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                           {formatDateTime(t.dibuatPada)}

@@ -17,6 +17,12 @@ export const checkoutSchema = z.object({
   metodePembayaran: z.enum(["TUNAI", "TRANSFER", "KASBON"]),
   uangDiterima: z.number().int().optional(),
   pinOwner: z.string().optional(), // Wajib jika diskon > batasDiskonStaff untuk kasir staff
+  buktiKey: z.string().nullable().optional(),
+});
+
+export const quickQrisSchema = z.object({
+  amount: z.number().int().positive("Nominal harus lebih dari 0"),
+  buktiKey: z.string().min(1, "Bukti transfer wajib diupload"),
 });
 
 export const voidTransactionSchema = z.object({
