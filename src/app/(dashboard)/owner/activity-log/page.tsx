@@ -256,7 +256,38 @@ function ReadableValue({ fieldKey, value }: { fieldKey: string; value: unknown }
     );
   }
 
-  return <span>{formatPrimitiveValue(fieldKey, value)}</span>;
+  if (typeof value === "string") {
+    const jsonMarkerIdx = value.indexOf(" || JSON:");
+    if (jsonMarkerIdx !== -1) {
+      const summary = value.slice(0, jsonMarkerIdx).trim();
+      const rawJson = value.slice(jsonMarkerIdx + " || JSON:".length).trim();
+      try {
+        const parsed = JSON.parse(rawJson) as Record<string, unknown>;
+        const items = Array.isArray(parsed.items) ? parsed.items : null;
+        return (
+          <div className="space-y-1.5 break-words">
+            <p className="text-slate-700 dark:text-zinc-200">{summary}</p>
+            {items && items.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {items.map((it: any, idx: number) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-[11px] font-medium text-slate-700 dark:text-zinc-300"
+                  >
+                    {it.nama} ({it.qty} {it.satuan} · {formatRupiah(Number(it.subtotal || 0))})
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      } catch {
+        return <span className="break-words">{summary || value}</span>;
+      }
+    }
+  }
+
+  return <span className="break-words [overflow-wrap:anywhere]">{formatPrimitiveValue(fieldKey, value)}</span>;
 }
 
 function LogDetailsView({
@@ -269,13 +300,13 @@ function LogDetailsView({
   if (sebelum && sesudah) {
     const allKeys = Array.from(new Set([...Object.keys(sebelum), ...Object.keys(sesudah)]));
     return (
-      <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left text-xs">
+      <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-x-auto">
+        <table className="w-full table-fixed text-left text-xs">
           <thead className="bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
             <tr>
-              <th className="py-2.5 px-3 font-medium">Data</th>
-              <th className="py-2.5 px-3 font-medium text-rose-600 dark:text-rose-400">Sebelum</th>
-              <th className="py-2.5 px-3 font-medium text-emerald-600 dark:text-emerald-400">Sesudah</th>
+              <th className="py-2.5 px-3 font-medium w-[28%]">Data</th>
+              <th className="py-2.5 px-3 font-medium text-rose-600 dark:text-rose-400 w-[36%]">Sebelum</th>
+              <th className="py-2.5 px-3 font-medium text-emerald-600 dark:text-emerald-400 w-[36%]">Sesudah</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -288,13 +319,13 @@ function LogDetailsView({
                   key={key}
                   className={changed ? "bg-amber-50/40 dark:bg-amber-950/15" : ""}
                 >
-                  <td className="py-2.5 px-3 font-medium text-slate-600 dark:text-zinc-400 align-top whitespace-nowrap">
+                  <td className="py-2.5 px-3 font-medium text-slate-600 dark:text-zinc-400 align-top break-words">
                     {formatFieldLabel(key)}
                   </td>
-                  <td className="py-2.5 px-3 text-slate-700 dark:text-zinc-300 align-top">
+                  <td className="py-2.5 px-3 text-slate-700 dark:text-zinc-300 align-top break-words [overflow-wrap:anywhere]">
                     <ReadableValue fieldKey={key} value={prevVal} />
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-zinc-100 align-top">
+                  <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-zinc-100 align-top break-words [overflow-wrap:anywhere]">
                     <ReadableValue fieldKey={key} value={nextVal} />
                   </td>
                 </tr>
@@ -556,7 +587,7 @@ export default function ActivityLogPage() {
       {/* Modal Rincian Perubahan */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
               <div>
                 <p className="text-[11px] font-medium text-slate-400">
