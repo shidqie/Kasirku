@@ -57,6 +57,7 @@ interface ProductItem {
   stokKosong?: string | number;
   aktif: boolean;
   hargaNaik?: boolean;
+  penyesuaianHarga?: boolean;
   isBaru?: boolean;
   isDiperbarui?: boolean;
   kategori: { id: string; nama: string } | null;
@@ -374,10 +375,12 @@ function TabProduk() {
   };
 
   const hargaNaikCount = products.filter((p) => p.hargaNaik).length;
+  const penyesuaianHargaCount = products.filter((p) => p.penyesuaianHarga).length;
   const updatedOrNewCount = products.filter((p) => p.isBaru || p.isDiperbarui).length;
 
   const filteredProducts = products.filter((p) => {
     if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
+    if (selectedKategori === "__PENYESUAIAN_HARGA__" && !p.penyesuaianHarga) return false;
     if (selectedKategori === "__UPDATED__" && !p.isBaru && !p.isDiperbarui) return false;
     const stok = Number(p.stokCache);
     const min = Number(p.stokMinimum);
@@ -537,6 +540,9 @@ function TabProduk() {
             ...(hargaNaikCount > 0
               ? [{ value: "__HARGA_NAIK__", label: "Harga Naik", count: hargaNaikCount, accent: "amber" as const }]
               : []),
+            ...(penyesuaianHargaCount > 0
+              ? [{ value: "__PENYESUAIAN_HARGA__", label: "Penyesuaian Harga", count: penyesuaianHargaCount, accent: "violet" as const }]
+              : []),
             ...(updatedOrNewCount > 0
               ? [{ value: "__UPDATED__", label: "Baru / Update", count: updatedOrNewCount, accent: "blue" as const }]
               : []),
@@ -552,6 +558,8 @@ function TabProduk() {
               ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-zinc-900"
               : cat.accent === "amber"
               ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+              : cat.accent === "violet"
+              ? "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800/60 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-950/50"
               : cat.accent === "blue"
               ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/50"
               : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-zinc-500 hover:text-slate-900 dark:hover:text-white";
@@ -573,6 +581,8 @@ function TabProduk() {
                       ? "text-white/70 dark:text-zinc-900/60"
                       : cat.accent === "amber"
                       ? "text-amber-600 dark:text-amber-400 font-semibold"
+                      : cat.accent === "violet"
+                      ? "text-violet-600 dark:text-violet-400 font-semibold"
                       : cat.accent === "blue"
                       ? "text-blue-600 dark:text-blue-400 font-semibold"
                       : "text-slate-400 dark:text-zinc-500"
@@ -697,6 +707,14 @@ function TabProduk() {
                             >
                               <TrendingUp className="w-2.5 h-2.5" />
                               <span>Harga Naik</span>
+                            </span>
+                          )}
+                          {p.penyesuaianHarga && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 text-[10px] font-bold whitespace-nowrap"
+                              title="Penyesuaian / koreksi harga dalam 7 hari terakhir"
+                            >
+                              Penyesuaian Harga
                             </span>
                           )}
                           {p.isBaru && (

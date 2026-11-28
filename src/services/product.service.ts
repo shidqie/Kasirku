@@ -159,6 +159,7 @@ export async function getProducts(params?: {
   });
 
   const hargaNaikIds = new Set<string>();
+  const penyesuaianHargaIds = new Set<string>();
   for (const log of recentPriceLogs) {
     const sesudah = log.sesudahJson as Record<string, any> | null;
     if (log.aksi === "HARGA_NAIK") {
@@ -177,11 +178,11 @@ export async function getProducts(params?: {
       const afterList: Array<{ satuan?: string; jual?: number }> = Array.isArray(sesudah?.satuanList)
         ? sesudah.satuanList
         : [];
-      const raised = afterList.some((a, i) => {
+      const priceAdjusted = afterList.some((a, i) => {
         const prev = beforeList.find((b) => b.satuan === a.satuan) || beforeList[i];
-        return typeof a.jual === "number" && typeof prev?.jual === "number" && a.jual > prev.jual;
+        return typeof a.jual === "number" && typeof prev?.jual === "number" && a.jual !== prev.jual;
       });
-      if (raised) hargaNaikIds.add(log.entitasId);
+      if (priceAdjusted) penyesuaianHargaIds.add(log.entitasId);
     }
   }
 
@@ -196,6 +197,7 @@ export async function getProducts(params?: {
     return {
       ...p,
       hargaNaik: hargaNaikIds.has(p.id),
+      penyesuaianHarga: penyesuaianHargaIds.has(p.id),
       isBaru,
       isDiperbarui,
     };
