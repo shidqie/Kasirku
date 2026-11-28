@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "./activity-log.service";
 import { Prisma } from "@prisma/client";
+import { isRefillProduct } from "@/lib/refill";
 
 export interface CreateProductInput {
   nama: string;
@@ -9,6 +10,7 @@ export interface CreateProductInput {
   satuanDasar: string;
   stokMinimum: number;
   stokKosong?: number;
+  isRefill?: boolean;
   satuanList: {
     namaSatuan: string;
     faktorKeDasar: number;
@@ -25,6 +27,7 @@ export interface UpdateProductInput {
   satuanDasar?: string;
   stokMinimum?: number;
   stokKosong?: number;
+  isRefill?: boolean;
   aktif?: boolean;
   satuanList?: {
     id?: string;
@@ -246,6 +249,7 @@ export async function createProduct(input: CreateProductInput, userId: string, i
         stokMinimum: new Prisma.Decimal(input.stokMinimum),
         stokCache: new Prisma.Decimal(0),
         stokKosong: new Prisma.Decimal(input.stokKosong ?? 0),
+        isRefill: input.isRefill ?? isRefillProduct(input.nama),
         satuanProduk: {
           create: unitsToCreate,
         },
@@ -310,6 +314,7 @@ export async function updateProduct(
         ...(input.satuanDasar ? { satuanDasar: input.satuanDasar } : {}),
         ...(input.stokMinimum !== undefined ? { stokMinimum: new Prisma.Decimal(input.stokMinimum) } : {}),
         ...(input.stokKosong !== undefined ? { stokKosong: new Prisma.Decimal(input.stokKosong) } : {}),
+        ...(input.isRefill !== undefined ? { isRefill: input.isRefill } : {}),
         ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
       },
     });

@@ -272,7 +272,8 @@ export async function checkout(
         where: { id: item.produkId },
         data: {
           stokCache: { increment: negativeQtyDasar },
-          ...(input.refillDikembalikan === "SUDAH" && isRefillProduct(item.namaSnapshot)
+          ...(input.refillDikembalikan === "SUDAH" &&
+          (productMap.get(item.produkId)?.isRefill || isRefillProduct(item.namaSnapshot))
             ? { stokKosong: { increment: item.qtyDasar } }
             : {}),
         },

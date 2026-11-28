@@ -67,6 +67,7 @@ interface ProductItem {
   satuanDasar: string;
   stokCache: number;
   stokKosong?: number | string;
+  isRefill?: boolean;
   hargaNaik?: boolean;
   kategori?: { id: string; nama: string } | null;
   satuanProduk: SatuanItem[];
@@ -83,6 +84,7 @@ interface CartItem {
   availableSatuan: SatuanItem[];
   stokCache: number;
   stokKosong?: number | string;
+  isRefill?: boolean;
   hargaNaik?: boolean;
   note?: string;
 }
@@ -433,6 +435,7 @@ export default function KasirPOSPage() {
           qty: 1,
           availableSatuan: p.satuanProduk,
           stokCache: stokTersedia,
+          isRefill: p.isRefill,
           hargaNaik: p.hargaNaik,
         },
       ]);
@@ -479,6 +482,7 @@ export default function KasirPOSPage() {
           qty: configQty,
           availableSatuan: configProduct.satuanProduk,
           stokCache: stokTersedia,
+          isRefill: configProduct.isRefill,
           hargaNaik: configProduct.hargaNaik,
           note: configNote,
         },
@@ -553,6 +557,7 @@ export default function KasirPOSPage() {
             qty: 1,
             availableSatuan: found.satuanProduk,
             stokCache: stokTersedia,
+            isRefill: found.isRefill,
           },
         ]);
       }
@@ -609,6 +614,7 @@ export default function KasirPOSPage() {
             qty: 1,
             availableSatuan: productToAssign.satuanProduk,
             stokCache: productToAssign.stokCache,
+            isRefill: productToAssign.isRefill,
           },
         ]);
       }
@@ -794,7 +800,7 @@ export default function KasirPOSPage() {
     }
   };
 
-  const refillItems = cart.filter((it) => isRefillProduct(it.nama));
+  const refillItems = cart.filter((it) => it.isRefill ?? isRefillProduct(it.nama));
 
   const openPaymentModal = () => {
     if (cart.length === 0) return;
@@ -1173,7 +1179,7 @@ export default function KasirPOSPage() {
                                   : "text-slate-400 dark:text-zinc-500"
                               }`}
                             >
-                              {isRefillProduct(p.nama)
+                              {(p.isRefill ?? isRefillProduct(p.nama))
                                 ? isHabis
                                   ? `Habis · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`
                                   : `Terisi ${formatDecimal(stok)} · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`

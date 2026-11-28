@@ -55,6 +55,7 @@ interface ProductItem {
   stokMinimum: string | number;
   stokCache: string | number;
   stokKosong?: string | number;
+  isRefill?: boolean;
   aktif: boolean;
   hargaNaik?: boolean;
   penyesuaianHarga?: boolean;
@@ -112,6 +113,7 @@ function TabProduk() {
   const [satuanDasar, setSatuanDasar] = useState("kg");
   const [stokMinimum, setStokMinimum] = useState<number>(0);
   const [stokKosong, setStokKosong] = useState<number>(0);
+  const [isRefill, setIsRefill] = useState<boolean>(false);
   const [satuanList, setSatuanList] = useState<SatuanInput[]>([
     { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 0, hargaBeli: 0, isDefault: true },
   ]);
@@ -174,6 +176,7 @@ function TabProduk() {
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
     setStokKosong(Number(p.stokKosong || 0));
+    setIsRefill(p.isRefill ?? isRefillProduct(p.nama));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -223,7 +226,8 @@ function TabProduk() {
         barcode: barcode.trim() || null,
         satuanDasar: satuanDasar.trim(),
         stokMinimum: Number(stokMinimum) || 0,
-        ...(isRefillProduct(nama.trim()) ? { stokKosong: Number(stokKosong) || 0 } : {}),
+        isRefill,
+        ...(isRefill ? { stokKosong: Number(stokKosong) || 0 } : {}),
         satuanList,
       };
 
@@ -257,6 +261,7 @@ function TabProduk() {
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
     setStokKosong(Number(p.stokKosong || 0));
+    setIsRefill(p.isRefill ?? isRefillProduct(p.nama));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -764,10 +769,10 @@ function TabProduk() {
                           <span className={`text-sm font-semibold tabular-nums ${
                             isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"
                           }`}>
-                            {isRefillProduct(p.nama) ? `Terisi: ${formatDecimal(stok)}` : formatDecimal(stok)}
+                            {(p.isRefill ?? isRefillProduct(p.nama)) ? `Terisi: ${formatDecimal(stok)}` : formatDecimal(stok)}
                           </span>
                         </div>
-                        {isRefillProduct(p.nama) && (
+                        {(p.isRefill ?? isRefillProduct(p.nama)) && (
                           <div className="text-[11px] text-slate-400 dark:text-zinc-500 tabular-nums mt-0.5">
                             Kosong: <span className="font-semibold text-slate-600 dark:text-zinc-300">{formatDecimal(Number(p.stokKosong ?? 0))}</span>
                           </div>
@@ -1086,21 +1091,52 @@ function TabProduk() {
                 </div>
 
                 {/* 3. Info List Properti Produk (Stok saat ini, Stok minimum, Satuan, Satuan dasar, Kategori, Status stok) */}
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Mode Isi Ulang (Galon)</span>
+                    {isDrawerEditing ? (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isRefill}
+                        onClick={() => setIsRefill(!isRefill)}
+                        className={`w-10 h-5.5 rounded-full transition-colors relative cursor-pointer ${
+                          isRefill ? "bg-blue-500" : "bg-slate-200 dark:bg-zinc-700"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
+                            isRefill ? "translate-x-4.5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    ) : (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          (p.isRefill ?? isRefillProduct(p.nama))
+                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                            : "bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400"
+                        }`}
+                      >
+                        {(p.isRefill ?? isRefillProduct(p.nama)) ? "Aktif" : "Nonaktif"}
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">
-                      {isRefillProduct(p.nama) ? "Stok terisi" : "Stok saat ini"}
+                      {(isDrawerEditing ? isRefill : (p.isRefill ?? isRefillProduct(p.nama))) ? "Stok terisi" : "Stok saat ini"}
                     </span>
-                    <span className="font-semibold text-slate-900 text-xs text-right">
+                    <span className="font-semibold text-slate-900 dark:text-zinc-100 text-xs text-right">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
 
-                  {isRefillProduct(isDrawerEditing ? nama : p.nama) && (
+                  {(isDrawerEditing ? isRefill : (p.isRefill ?? isRefillProduct(p.nama))) && (
                     <div className="flex items-center justify-between py-2.5">
                       <span className="text-slate-400 text-xs">Stok kosong</span>
                       {!isDrawerEditing ? (
-                        <span className="font-semibold text-slate-700 text-xs text-right">
+                        <span className="font-semibold text-slate-700 dark:text-zinc-300 text-xs text-right">
                           {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
                         </span>
                       ) : (
@@ -1109,7 +1145,7 @@ function TabProduk() {
                           emptyFallback={0}
                           value={stokKosong}
                           onChange={setStokKosong}
-                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 w-20 text-right focus:outline-none focus:border-slate-900 dark:focus:border-zinc-300"
                         />
                       )}
                     </div>
