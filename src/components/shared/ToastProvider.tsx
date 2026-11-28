@@ -62,12 +62,35 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <motion.div
               key={t.id}
               layout
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.6}
+              onDragEnd={(_e, info) => {
+                if (Math.abs(info.offset.x) > 70 || Math.abs(info.velocity.x) > 350) {
+                  removeToast(t.id);
+                }
+              }}
+              onTouchStart={(e) => {
+                const y = e.touches[0]?.clientY;
+                if (y !== undefined) {
+                  (e.currentTarget as any).dataset.touchStartY = String(y);
+                }
+              }}
+              onTouchEnd={(e) => {
+                const startY = Number((e.currentTarget as any).dataset.touchStartY);
+                const endY = e.changedTouches[0]?.clientY;
+                if (Number.isFinite(startY) && endY !== undefined && startY - endY > 36) {
+                  removeToast(t.id);
+                }
+              }}
+              whileDrag={{ opacity: 0.85, scale: 0.98 }}
               initial={{ opacity: 0, y: -12, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              exit={{ opacity: 0, x: 80, scale: 0.94 }}
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               role="status"
-              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl border shadow-lg backdrop-blur-sm ${
+              style={{ touchAction: "pan-y" }}
+              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl border shadow-lg backdrop-blur-sm cursor-grab active:cursor-grabbing select-none ${
                 isSuccess
                   ? "bg-white/95 dark:bg-zinc-900/95 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
                   : isError
