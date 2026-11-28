@@ -781,33 +781,33 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="border-t border-b border-slate-100">
+                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                     {!isDrawerEditing ? (
-                      <table className="w-full text-left text-xs">
-                        <thead className="text-slate-400 border-b border-slate-100">
-                          <tr>
-                            <th className="py-2 font-medium">Satuan</th>
-                            <th className="py-2 font-medium text-center">Isi</th>
-                            <th className="py-2 font-medium text-right">Harga</th>
-                            <th className="py-2 font-medium text-right">Per {p.satuanDasar}</th>
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                          <tr className="divide-x divide-slate-200">
+                            <th className="py-2 px-3 font-semibold">Satuan</th>
+                            <th className="py-2 px-2.5 font-semibold text-center">Isi</th>
+                            <th className="py-2 px-3 font-semibold text-right">Harga</th>
+                            <th className="py-2 px-3 font-semibold text-right">Per {p.satuanDasar}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/80 text-slate-600">
+                        <tbody className="divide-y divide-slate-200 text-slate-600">
                           {p.satuanProduk.map((s) => {
                             const faktor = Number(s.faktorKeDasar) || 1;
                             const hargaPerDasar = Math.round(s.hargaJual / faktor);
                             return (
-                              <tr key={s.id}>
-                                <td className="py-2.5 font-medium text-slate-900 capitalize">
+                              <tr key={s.id} className="divide-x divide-slate-200">
+                                <td className="py-2 px-3 font-medium text-slate-900 capitalize">
                                   {s.namaSatuan}
                                 </td>
-                                <td className="py-2.5 text-center text-slate-500 font-mono">
+                                <td className="py-2 px-2.5 text-center text-slate-600 font-mono">
                                   {formatDecimal(faktor)}
                                 </td>
-                                <td className="py-2.5 text-right font-semibold text-slate-900 whitespace-nowrap">
+                                <td className="py-2 px-3 text-right font-semibold text-slate-900 whitespace-nowrap">
                                   {formatRupiah(s.hargaJual)}
                                 </td>
-                                <td className="py-2.5 text-right text-slate-400 whitespace-nowrap">
+                                <td className="py-2 px-3 text-right text-slate-500 whitespace-nowrap">
                                   {formatRupiah(hargaPerDasar)}
                                 </td>
                               </tr>
@@ -816,19 +816,19 @@ function TabProduk() {
                         </tbody>
                       </table>
                     ) : (
-                      <table className="w-full text-left text-xs">
-                        <thead className="text-slate-400 border-b border-slate-100">
-                          <tr>
-                            <th className="py-2 font-medium">Satuan</th>
-                            <th className="py-2 px-1 font-medium text-center">Isi</th>
-                            <th className="py-2 font-medium text-right">Harga</th>
-                            <th className="py-2 w-7"></th>
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                          <tr className="divide-x divide-slate-200">
+                            <th className="py-2 px-2.5 font-semibold">Satuan</th>
+                            <th className="py-2 px-2 font-semibold text-center w-16">Isi</th>
+                            <th className="py-2 px-2.5 font-semibold text-right">Harga</th>
+                            <th className="py-2 px-1 w-8"></th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/80 text-slate-600">
+                        <tbody className="divide-y divide-slate-200 text-slate-600">
                           {satuanList.map((s, idx) => (
-                            <tr key={idx}>
-                              <td className="py-2 pr-2">
+                            <tr key={idx} className="divide-x divide-slate-200">
+                              <td className="p-0">
                                 <input
                                   type="text"
                                   required
@@ -840,10 +840,10 @@ function TabProduk() {
                                     setSatuanList(u);
                                   }}
                                   placeholder="Satuan"
-                                  className="w-full py-1 bg-transparent border-b border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:border-slate-900"
+                                  className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
                                 />
                               </td>
-                              <td className="py-2 px-1 text-center">
+                              <td className="p-0">
                                 <NumberInput
                                   min={0.001}
                                   emptyFallback={1}
@@ -854,12 +854,12 @@ function TabProduk() {
                                     u[idx].faktorKeDasar = val;
                                     setSatuanList(u);
                                   }}
-                                  className="w-12 text-center py-1 bg-transparent border-b border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-900"
+                                  className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
                                 />
                               </td>
-                              <td className="py-2 pl-2 text-right">
-                                <div className="relative inline-block w-24">
-                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 pointer-events-none select-none">
+                              <td className="p-0">
+                                <div className="relative flex items-center h-9 px-2.5">
+                                  <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
                                     Rp
                                   </span>
                                   <input
@@ -874,16 +874,16 @@ function TabProduk() {
                                       u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
                                       setSatuanList(u);
                                     }}
-                                    className="w-full pl-5 py-1 bg-transparent border-b border-slate-200 text-xs font-semibold text-right text-slate-900 focus:outline-none focus:border-slate-900"
+                                    className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
                                   />
                                 </div>
                               </td>
-                              <td className="py-2 text-right">
+                              <td className="p-0 text-center">
                                 {satuanList.length > 1 && (
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveSatuanRow(idx)}
-                                    className="p-1 text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
+                                    className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
                                     title="Hapus baris satuan ini"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -1093,20 +1093,20 @@ function TabProduk() {
                   </button>
                 </div>
 
-                <div className="border-t border-b border-slate-100">
-                  <table className="w-full text-left text-xs">
-                    <thead className="text-slate-400 border-b border-slate-100">
-                      <tr>
-                        <th className="py-2 font-medium">Satuan</th>
-                        <th className="py-2 px-1 font-medium text-center">Isi</th>
-                        <th className="py-2 font-medium text-right">Harga</th>
-                        <th className="py-2 w-7"></th>
+                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                      <tr className="divide-x divide-slate-200">
+                        <th className="py-2 px-2.5 font-semibold">Satuan</th>
+                        <th className="py-2 px-2 font-semibold text-center w-16">Isi</th>
+                        <th className="py-2 px-2.5 font-semibold text-right">Harga</th>
+                        <th className="py-2 px-1 w-8"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100/80 text-slate-600">
+                    <tbody className="divide-y divide-slate-200 text-slate-600">
                       {satuanList.map((s, idx) => (
-                        <tr key={idx}>
-                          <td className="py-2 pr-2">
+                        <tr key={idx} className="divide-x divide-slate-200">
+                          <td className="p-0">
                             <input
                               type="text"
                               required
@@ -1118,10 +1118,10 @@ function TabProduk() {
                                 setSatuanList(updated);
                               }}
                               placeholder="pcs, dus..."
-                              className="w-full py-1 bg-transparent border-b border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:border-slate-900"
+                              className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
                             />
                           </td>
-                          <td className="py-2 px-1 text-center">
+                          <td className="p-0">
                             <NumberInput
                               min={0.001}
                               emptyFallback={1}
@@ -1132,12 +1132,12 @@ function TabProduk() {
                                 updated[idx].faktorKeDasar = val;
                                 setSatuanList(updated);
                               }}
-                              className="w-12 text-center py-1 bg-transparent border-b border-slate-200 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-900"
+                              className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
                             />
                           </td>
-                          <td className="py-2 pl-2 text-right">
-                            <div className="relative inline-block w-24">
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 pointer-events-none select-none">
+                          <td className="p-0">
+                            <div className="relative flex items-center h-9 px-2.5">
+                              <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
                                 Rp
                               </span>
                               <input
@@ -1152,16 +1152,16 @@ function TabProduk() {
                                   updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
                                   setSatuanList(updated);
                                 }}
-                                className="w-full pl-5 py-1 bg-transparent border-b border-slate-200 text-xs font-semibold text-right text-slate-900 focus:outline-none focus:border-slate-900"
+                                className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
                               />
                             </div>
                           </td>
-                          <td className="py-2 text-right">
+                          <td className="p-0 text-center">
                             {satuanList.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSatuanRow(idx)}
-                                className="p-1 text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
+                                className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
                                 title="Hapus baris satuan ini"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
