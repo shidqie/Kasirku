@@ -165,6 +165,7 @@ export default function MemberDetailPage() {
   const [isEditBonOpen, setIsEditBonOpen] = useState(false);
   const [editMutasiId, setEditMutasiId] = useState<string>("");
   const [editTanggal, setEditTanggal] = useState<string>("");
+  const [editJam, setEditJam] = useState<string>("");
   const [editPengambil, setEditPengambil] = useState<string>("");
   const [editCatatan, setEditCatatan] = useState<string>("");
   const [editItems, setEditItems] = useState<ManualItemRow[]>([
@@ -181,6 +182,7 @@ export default function MemberDetailPage() {
   // Modal Tambah Kasbon Manual
   const [isManualKasbonOpen, setIsManualKasbonOpen] = useState(false);
   const [manualTanggal, setManualTanggal] = useState<string>("");
+  const [manualJam, setManualJam] = useState<string>("");
   const [manualPengambil, setManualPengambil] = useState<string>("");
   const [isPengambilDropdownOpen, setIsPengambilDropdownOpen] = useState(false);
   const pengambilDropdownRef = useRef<HTMLDivElement>(null);
@@ -726,8 +728,11 @@ export default function MemberDetailPage() {
 
   // Helper Form Tambah Kasbon Manual
   const handleOpenManualKasbon = () => {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     setManualTanggal(today);
+    setManualJam(currentTime);
     setManualPengambil(member.nama);
     setManualCatatan("");
     setManualItems([{ nama: "", qty: 1, satuan: "pcs", harga: 0, subtotal: 0 }]);
@@ -905,13 +910,14 @@ export default function MemberDetailPage() {
       if (manualTanggal) {
         const now = new Date();
         const [yr, mo, dy] = manualTanggal.split("-").map(Number);
+        const [hr, mn] = (manualJam || "").split(":").map(Number);
         const combined = new Date(
           yr,
           (mo || 1) - 1,
           dy || 1,
-          now.getHours(),
-          now.getMinutes(),
-          now.getSeconds()
+          Number.isFinite(hr) ? hr : now.getHours(),
+          Number.isFinite(mn) ? mn : now.getMinutes(),
+          0
         );
         tanggalIso = combined.toISOString();
       }
@@ -975,6 +981,7 @@ export default function MemberDetailPage() {
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     setEditTanggal(`${year}-${month}-${day}`);
+    setEditJam(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
     setEditPengambil(bonToEdit.pengambil || member?.nama || "");
     setEditCatatan(bonToEdit.keterangan || "");
     setEditItems(
@@ -1043,12 +1050,26 @@ export default function MemberDetailPage() {
     setSuccess(null);
 
     try {
+      let editTanggalIso: string | undefined = undefined;
+      if (editTanggal) {
+        const [yr, mo, dy] = editTanggal.split("-").map(Number);
+        const [hr, mn] = (editJam || "00:00").split(":").map(Number);
+        editTanggalIso = new Date(
+          yr,
+          (mo || 1) - 1,
+          dy || 1,
+          Number.isFinite(hr) ? hr : 0,
+          Number.isFinite(mn) ? mn : 0,
+          0
+        ).toISOString();
+      }
+
       const res = await fetch(`/api/members/${memberId}/manual-kasbon`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mutasiId: editMutasiId,
-          tanggal: editTanggal ? new Date(editTanggal).toISOString() : undefined,
+          tanggal: editTanggalIso,
           pengambil: editPengambil.trim(),
           catatan: editCatatan.trim() || undefined,
           items: editItems.map((it) => ({
@@ -2615,7 +2636,7 @@ export default function MemberDetailPage() {
             <form onSubmit={handleSubmitManualKasbon} className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {/* Info Transaksi */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="text-[11px] font-medium text-slate-500 block mb-1">
                       Tanggal <span className="text-rose-500">*</span>
@@ -2625,6 +2646,19 @@ export default function MemberDetailPage() {
                       required
                       value={manualTanggal}
                       onChange={(e) => setManualTanggal(e.target.value)}
+                      className="ctl-sm font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Jam <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={manualJam}
+                      onChange={(e) => setManualJam(e.target.value)}
                       className="ctl-sm font-medium"
                     />
                   </div>
@@ -3435,7 +3469,7 @@ export default function MemberDetailPage() {
             <form onSubmit={handleSubmitEditBon} className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {/* Info Transaksi */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[11px] font-medium text-slate-500 block mb-1">
                       Tanggal Transaksi <span className="text-rose-500">*</span>
@@ -3445,6 +3479,19 @@ export default function MemberDetailPage() {
                       required
                       value={editTanggal}
                       onChange={(e) => setEditTanggal(e.target.value)}
+                      className="ctl-sm font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                      Jam <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={editJam}
+                      onChange={(e) => setEditJam(e.target.value)}
                       className="ctl-sm font-medium"
                     />
                   </div>
