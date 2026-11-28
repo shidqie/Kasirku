@@ -18,6 +18,7 @@ export const checkoutSchema = z.object({
   uangDiterima: z.number().int().optional(),
   pinOwner: z.string().optional(), // Wajib jika diskon > batasDiskonStaff untuk kasir staff
   buktiKey: z.string().nullable().optional(),
+  refillDikembalikan: z.enum(["SUDAH", "BELUM"]).nullable().optional(),
 });
 
 export const quickQrisSchema = z.object({

@@ -23,6 +23,7 @@ export interface CheckoutInput {
   uangDiterima?: number;
   pinOwner?: string;
   buktiKey?: string | null;
+  refillDikembalikan?: "SUDAH" | "BELUM" | null;
 }
 
 export function hitungPembulatan(subtotalSetelahDiskon: number, aturan: Pembulatan): number {
@@ -316,6 +317,7 @@ export async function checkout(
       nomorStruk: resultTransaksi?.nomorStruk,
       total: totalAkhir,
       metode: input.metodePembayaran,
+      ...(input.refillDikembalikan ? { refillDikembalikan: input.refillDikembalikan } : {}),
       ...(priceDiscrepancies.length > 0 ? { priceDiscrepancies } : {}),
     },
     ip,

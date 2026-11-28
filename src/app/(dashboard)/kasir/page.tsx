@@ -262,6 +262,7 @@ export default function KasirPOSPage() {
   const [quickQrisBuktiKey, setQuickQrisBuktiKey] = useState<string | null>(null);
   const [quickQrisSaving, setQuickQrisSaving] = useState(false);
   const [transferBuktiKey, setTransferBuktiKey] = useState<string | null>(null);
+  const [refillStatus, setRefillStatus] = useState<"PENDING" | "SUDAH" | "BELUM">("PENDING");
   const [uangDiterima, setUangDiterima] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -790,15 +791,22 @@ export default function KasirPOSPage() {
     }
   };
 
+  const refillItems = cart.filter((it) => /\b(galon|gas|lpg|elpiji)\b/i.test(it.nama));
+
   const openPaymentModal = () => {
     if (cart.length === 0) return;
     setUangDiterima(grandTotal);
+    setRefillStatus("PENDING");
     setError(null);
     setIsPayModalOpen(true);
   };
 
   const handleCheckout = async (pin?: string) => {
     if (cart.length === 0) return;
+    if (refillItems.length > 0 && refillStatus === "PENDING") {
+      setError("Harap konfirmasi apakah tabung gas / galon kosong sudah dikembalikan.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -818,6 +826,7 @@ export default function KasirPOSPage() {
         uangDiterima: metodeBayar === "TUNAI" ? uangDiterima : grandTotal,
         pinOwner: pin || cachedPinOwner,
         buktiKey: metodeBayar === "TRANSFER" ? transferBuktiKey : null,
+        refillDikembalikan: refillItems.length > 0 ? refillStatus : null,
       };
 
       const res = await fetch("/api/transactions", {
@@ -876,6 +885,7 @@ export default function KasirPOSPage() {
       setIsStrukOpen(true);
       setCart([]);
       setTransferBuktiKey(null);
+      setRefillStatus("PENDING");
       setDiskonPersen(0);
       setUangDiterima(0);
       setSelectedMember(null);
@@ -1996,6 +2006,54 @@ export default function KasirPOSPage() {
               </div>
             )}
 
+            {refillItems.length > 0 && (
+              <div className="p-3.5 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                      Konfirmasi Tabung Gas / Galon Kosong *Wajib
+                    </p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+                      Apakah tabung gas / galon kosong untuk{" "}
+                      <span className="font-semibold">
+                        {refillItems.map((it) => `${it.nama} (${formatDecimal(it.qty)} ${it.namaSatuan})`).join(", ")}
+                      </span>{" "}
+                      sudah dikembalikan?
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRefillStatus("SUDAH")}
+                    className={`h-9 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      refillStatus === "SUDAH"
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                        : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:border-emerald-400"
+                    }`}
+                  >
+                    ✓ Sudah Dikembalikan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRefillStatus("BELUM")}
+                    className={`h-9 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      refillStatus === "BELUM"
+                        ? "bg-amber-600 border-amber-600 text-white shadow-sm"
+                        : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 hover:border-amber-400"
+                    }`}
+                  >
+                    Belum Dikembalikan
+                  </button>
+                </div>
+                {refillStatus === "BELUM" && (
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                    Pastikan dicatat / pelanggan mengembalikan tabung atau galon kosong.
+                  </p>
+                )}
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -2013,7 +2071,8 @@ export default function KasirPOSPage() {
                   submitting ||
                   isUangKurang ||
                   (metodeBayar === "KASBON" && !selectedMember) ||
-                  (metodeBayar === "TRANSFER" && !transferBuktiKey)
+                  (metodeBayar === "TRANSFER" && !transferBuktiKey) ||
+                  (refillItems.length > 0 && refillStatus === "PENDING")
                 }
                 onClick={() => handleCheckout()}
                 className="flex-1 h-12 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-90 disabled:opacity-40 transition-all"
