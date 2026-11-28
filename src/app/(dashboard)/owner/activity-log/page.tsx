@@ -24,6 +24,81 @@ interface ActivityLogItem {
   } | null;
 }
 
+type LogKategori = "semua" | "login" | "produk" | "transaksi" | "stok" | "member" | "pengaturan";
+
+const KATEGORI_TABS: { id: LogKategori; label: string }[] = [
+  { id: "semua", label: "Semua" },
+  { id: "login", label: "Login" },
+  { id: "produk", label: "Produk" },
+  { id: "transaksi", label: "Transaksi" },
+  { id: "stok", label: "Stok & Opname" },
+  { id: "member", label: "Member & Kasbon" },
+  { id: "pengaturan", label: "Pengaturan" },
+];
+
+const LOGIN_AKSI_SET = new Set([
+  "LOGIN_BERHASIL",
+  "LOGIN_GAGAL_PASSWORD",
+  "LOGOUT",
+  "VERIFIKASI_PIN_BERHASIL",
+  "VERIFIKASI_PIN_GAGAL",
+  "RESET_PASSWORD_DENGAN_PIN_OWNER",
+]);
+
+const STOK_AKSI_SET = new Set([
+  "PENYESUAIAN_STOK_MANUAL",
+  "REKONSILIASI_STOK_SELISIH",
+]);
+
+function getLogCategoryMeta(aksi: string, entitas: string): { label: string; className: string } {
+  if (LOGIN_AKSI_SET.has(aksi)) {
+    if (aksi.includes("GAGAL")) {
+      return {
+        label: "Login",
+        className: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
+      };
+    }
+    return {
+      label: "Login",
+      className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
+    };
+  }
+  if (entitas === "BarangMasuk" || entitas === "StokOpname" || STOK_AKSI_SET.has(aksi)) {
+    return {
+      label: "Stok",
+      className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60",
+    };
+  }
+  if (entitas === "Produk" || entitas === "Kategori") {
+    return {
+      label: "Produk",
+      className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60",
+    };
+  }
+  if (entitas === "Transaksi") {
+    if (aksi === "VOID_TRANSAKSI") {
+      return {
+        label: "Transaksi",
+        className: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
+      };
+    }
+    return {
+      label: "Transaksi",
+      className: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60",
+    };
+  }
+  if (entitas === "Member" || entitas === "KasbonPembayaran" || entitas === "KasbonMutasi") {
+    return {
+      label: "Member",
+      className: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60",
+    };
+  }
+  return {
+    label: "Pengaturan",
+    className: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
+  };
+}
+
 export default function ActivityLogPage() {
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -31,6 +106,7 @@ export default function ActivityLogPage() {
   const [selectedLog, setSelectedLog] = useState<ActivityLogItem | null>(null);
 
   // Filters & Pagination
+  const [kategori, setKategori] = useState<LogKategori>("semua");
   const [filterEntitas, setFilterEntitas] = useState("");
   const [filterAksi, setFilterAksi] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,6 +116,7 @@ export default function ActivityLogPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (kategori !== "semua") params.set("kategori", kategori);
       if (filterEntitas) params.set("entitas", filterEntitas);
       if (filterAksi) params.set("aksi", filterAksi);
       params.set("limit", String(pageSize));
@@ -60,7 +137,7 @@ export default function ActivityLogPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [filterEntitas, filterAksi, currentPage]);
+  }, [kategori, filterEntitas, filterAksi, currentPage]);
 
   return (
     <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
@@ -84,6 +161,30 @@ export default function ActivityLogPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
           </button>
+        </div>
+
+        {/* Tab Kategori Minimalis */}
+        <div className="flex items-center gap-5 border-b border-slate-200 dark:border-zinc-800 overflow-x-auto no-scrollbar pt-3 text-xs">
+          {KATEGORI_TABS.map((tab) => {
+            const active = kategori === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setKategori(tab.id);
+                  setCurrentPage(1);
+                }}
+                className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                  active
+                    ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
+                    : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Filter Bar Minimalis */}
@@ -138,43 +239,53 @@ export default function ActivityLogPage() {
                   </td>
                 </tr>
               ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                    <td className="py-3.5 pr-4 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                      {formatDateTime(log.dibuatPada)}
-                    </td>
-                    <td className="py-3.5 px-4 font-sans whitespace-nowrap">
-                      {log.user ? (
-                        <div>
-                          <p className="font-semibold text-slate-900 dark:text-zinc-100">{log.user.nama}</p>
-                          <p className="text-[11px] text-slate-400 font-sans">@{log.user.username} ({log.role})</p>
+                logs.map((log) => {
+                  const catMeta = getLogCategoryMeta(log.aksi, log.entitas);
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
+                      <td className="py-3.5 pr-4 text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                        {formatDateTime(log.dibuatPada)}
+                      </td>
+                      <td className="py-3.5 px-4 font-sans whitespace-nowrap">
+                        {log.user ? (
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-zinc-100">{log.user.nama}</p>
+                            <p className="text-[11px] text-slate-400 font-sans">@{log.user.username} ({log.role})</p>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">Sistem / Tamu</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${catMeta.className}`}>
+                            {catMeta.label}
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-zinc-200">
+                            {log.aksi}
+                          </span>
                         </div>
-                      ) : (
-                        <span className="text-slate-400">Sistem / Tamu</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap font-semibold text-slate-800 dark:text-zinc-200">
-                      {log.aksi}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-zinc-300 whitespace-nowrap">
-                      {log.entitas}
-                      {log.entitasId && <span className="text-slate-400"> #{log.entitasId.slice(-6)}</span>}
-                    </td>
-                    <td className="py-3.5 pl-4 text-center">
-                      {log.sebelumJson || log.sesudahJson ? (
-                        <button
-                          onClick={() => setSelectedLog(log)}
-                          className="h-7 px-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Lihat JSON</span>
-                        </button>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-zinc-300 whitespace-nowrap">
+                        {log.entitas}
+                        {log.entitasId && <span className="text-slate-400"> #{log.entitasId.slice(-6)}</span>}
+                      </td>
+                      <td className="py-3.5 pl-4 text-center">
+                        {log.sebelumJson || log.sesudahJson ? (
+                          <button
+                            onClick={() => setSelectedLog(log)}
+                            className="h-7 px-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Lihat JSON</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

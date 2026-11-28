@@ -43,17 +43,88 @@ export async function logActivity(params: LogActivityParams) {
   }
 }
 
+export type ActivityLogKategori =
+  | "semua"
+  | "login"
+  | "produk"
+  | "transaksi"
+  | "stok"
+  | "member"
+  | "pengaturan";
+
+const LOGIN_AKSI = [
+  "LOGIN_BERHASIL",
+  "LOGIN_GAGAL_PASSWORD",
+  "LOGOUT",
+  "VERIFIKASI_PIN_BERHASIL",
+  "VERIFIKASI_PIN_GAGAL",
+  "RESET_PASSWORD_DENGAN_PIN_OWNER",
+];
+
+const STOK_AKSI_ON_PRODUK = [
+  "PENYESUAIAN_STOK_MANUAL",
+  "REKONSILIASI_STOK_SELISIH",
+];
+
+function buildKategoriWhere(kategori?: string): Prisma.ActivityLogWhereInput | undefined {
+  switch (kategori) {
+    case "login":
+      return { aksi: { in: LOGIN_AKSI } };
+    case "produk":
+      return {
+        entitas: { in: ["Produk", "Kategori"] },
+        aksi: { notIn: STOK_AKSI_ON_PRODUK },
+      };
+    case "transaksi":
+      return { entitas: "Transaksi" };
+    case "stok":
+      return {
+        OR: [
+          { entitas: { in: ["BarangMasuk", "StokOpname"] } },
+          { aksi: { in: STOK_AKSI_ON_PRODUK } },
+        ],
+      };
+    case "member":
+      return {
+        entitas: { in: ["Member", "KasbonPembayaran", "KasbonMutasi"] },
+      };
+    case "pengaturan":
+      return {
+        OR: [
+          { entitas: "PengaturanToko" },
+          { entitas: "User", aksi: { notIn: LOGIN_AKSI } },
+        ],
+      };
+    default:
+      return undefined;
+  }
+}
+
 export async function getActivityLogs(params?: {
   limit?: number;
   offset?: number;
+  kategori?: string;
   entitas?: string;
   aksi?: string;
   userId?: string;
 }) {
-  const where: Prisma.ActivityLogWhereInput = {};
-  if (params?.entitas) where.entitas = params.entitas;
-  if (params?.aksi) where.aksi = params.aksi;
-  if (params?.userId) where.userId = params.userId;
+  const andConditions: Prisma.ActivityLogWhereInput[] = [];
+
+  const kategoriWhere = buildKategoriWhere(params?.kategori);
+  if (kategoriWhere) andConditions.push(kategoriWhere);
+
+  if (params?.entitas) {
+    andConditions.push({ entitas: { contains: params.entitas, mode: "insensitive" } });
+  }
+  if (params?.aksi) {
+    andConditions.push({ aksi: { contains: params.aksi, mode: "insensitive" } });
+  }
+  if (params?.userId) {
+    andConditions.push({ userId: params.userId });
+  }
+
+  const where: Prisma.ActivityLogWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
 
   const [items, total] = await Promise.all([
     prisma.activityLog.findMany({

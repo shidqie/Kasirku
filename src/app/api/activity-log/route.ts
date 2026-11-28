@@ -11,11 +11,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "50", 10);
   const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const kategori = searchParams.get("kategori") || undefined;
   const entitas = searchParams.get("entitas") || undefined;
   const aksi = searchParams.get("aksi") || undefined;
   const userId = searchParams.get("userId") || undefined;
 
-  const result = await getActivityLogs({ limit, offset, entitas, aksi, userId });
+  const result = await getActivityLogs({ limit, offset, kategori, entitas, aksi, userId });
   return NextResponse.json(result);
 }
 
