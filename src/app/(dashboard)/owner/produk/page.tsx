@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Download,
   Upload,
+  MoreHorizontal,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { formatProductCode } from "@/lib/codification";
@@ -375,26 +376,16 @@ function TabProduk() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setIsImportOpen(true)}
-              className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-              title="Import data produk dari file CSV"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Import</span>
-            </button>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <div className="relative">
               <button
                 type="button"
-                disabled={downloadingPriceList || products.length === 0}
                 onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
-                className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 disabled:opacity-50 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-                title="Download daftar harga produk (PDF / CSV)"
+                className="h-10 w-10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 active:scale-95 rounded-xl transition-all flex items-center justify-center cursor-pointer"
+                title="Menu lainnya (Import, Download Harga, Harga Naik)"
+                aria-label="Menu lainnya"
               >
-                <Download className="w-4 h-4" />
-                <span>{downloadingPriceList ? "Menyiapkan..." : "Download Harga"}</span>
+                <MoreHorizontal className="w-4 h-4" />
               </button>
 
               {isDownloadMenuOpen && (
@@ -403,9 +394,21 @@ function TabProduk() {
                     className="fixed inset-0 z-30"
                     onClick={() => setIsDownloadMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
                     <button
                       type="button"
+                      onClick={() => {
+                        setIsDownloadMenuOpen(false);
+                        setIsImportOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Import Data (.csv)</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={downloadingPriceList || products.length === 0}
                       onClick={async () => {
                         setIsDownloadMenuOpen(false);
                         setDownloadingPriceList(true);
@@ -415,34 +418,39 @@ function TabProduk() {
                           setDownloadingPriceList(false);
                         }
                       }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-2.5 cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5 text-rose-500" />
-                      <span>Download PDF (.pdf)</span>
+                      <span>{downloadingPriceList ? "Menyiapkan PDF..." : "Download Harga (PDF)"}</span>
                     </button>
                     <button
                       type="button"
+                      disabled={products.length === 0}
                       onClick={() => {
                         setIsDownloadMenuOpen(false);
                         downloadPriceListCsv(products);
                       }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-2.5 cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Download Excel (.csv)</span>
+                    </button>
+                    <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDownloadMenuOpen(false);
+                        setIsHargaNaikOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-50/70 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>Harga Naik</span>
                     </button>
                   </div>
                 </>
               )}
             </div>
-            <button
-              onClick={() => setIsHargaNaikOpen(true)}
-              className="h-10 px-3.5 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-              title="Naikkan harga jual produk dengan cepat"
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>Harga Naik</span>
-            </button>
             <button
               onClick={() => {
                 setScannerTarget("SEARCH");
