@@ -413,8 +413,7 @@ function TabProduk() {
   };
 
   const renderUnitTemplates = () => (
-    <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
-      <span className="text-[11px] text-slate-400 mr-0.5">Template:</span>
+    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mb-2.5">
       {UNIT_TEMPLATES.map((tpl) => {
         const isActive =
           satuanDasar.trim().toLowerCase() === tpl.satuanDasar.toLowerCase() &&
@@ -429,10 +428,10 @@ function TabProduk() {
             key={tpl.id}
             type="button"
             onClick={() => applyUnitTemplate(tpl)}
-            className={`px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 rounded-md text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               isActive
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100/80 text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
             }`}
           >
             {tpl.label}
@@ -1880,14 +1879,14 @@ function TabProduk() {
                     {editingProductId ? "EDIT PRODUK" : "PRODUK BARU"}
                   </span>
                   {!editingProductId && (
-                    <div className="inline-flex items-center rounded-full bg-slate-100 p-0.5 text-[11px] font-medium">
+                    <div className="inline-flex items-center gap-3 text-[11px] font-semibold">
                       <button
                         type="button"
                         onClick={() => setIsMultiVariant(false)}
-                        className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+                        className={`pb-0.5 transition-colors cursor-pointer ${
                           !isMultiVariant
-                            ? "bg-white text-slate-900 shadow-xs"
-                            : "text-slate-500 hover:text-slate-800"
+                            ? "text-slate-900 border-b border-slate-900"
+                            : "text-slate-400 hover:text-slate-700"
                         }`}
                       >
                         1 Produk
@@ -1895,10 +1894,10 @@ function TabProduk() {
                       <button
                         type="button"
                         onClick={() => setIsMultiVariant(true)}
-                        className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+                        className={`pb-0.5 transition-colors cursor-pointer ${
                           isMultiVariant
-                            ? "bg-white text-slate-900 shadow-xs"
-                            : "text-slate-500 hover:text-slate-800"
+                            ? "text-slate-900 border-b border-slate-900"
+                            : "text-slate-400 hover:text-slate-700"
                         }`}
                       >
                         Multi Varian
@@ -1911,7 +1910,7 @@ function TabProduk() {
                   required
                   value={nama}
                   onChange={(e) => setNama(e.target.value)}
-                  placeholder={isMultiVariant ? "Nama Induk / Merek (mis. Cimory)..." : "Nama Produk..."}
+                  placeholder={isMultiVariant ? "Nama Produk / Merek..." : "Nama Produk..."}
                   className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
                 />
               </div>
@@ -1949,18 +1948,17 @@ function TabProduk() {
 
                   <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50/70">
                         <tr className="divide-x divide-slate-200">
                           <th className="py-2 px-2.5 font-semibold">Nama</th>
                           <th className="py-2 px-2.5 font-semibold w-32">Barcode</th>
                           <th className="py-2 px-2.5 font-semibold text-right w-24">Harga</th>
                           <th className="py-2 px-2.5 font-semibold text-right w-16">Stok</th>
-                          {variantRows.length > 1 && <th className="py-2 px-1 w-7"></th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-700">
                         {variantRows.map((row, idx) => (
-                          <tr key={idx} className="divide-x divide-slate-200">
+                          <tr key={idx} className="group divide-x divide-slate-200">
                             <td className="p-0">
                               <input
                                 type="text"
@@ -1972,7 +1970,7 @@ function TabProduk() {
                                   );
                                 }}
                                 placeholder="Nama produk..."
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/40"
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30"
                               />
                             </td>
                             <td className="p-0 relative">
@@ -1998,7 +1996,7 @@ function TabProduk() {
                                     }
                                   }}
                                   placeholder="scan barcode"
-                                  className="w-full h-full pl-2.5 pr-6 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
+                                  className="w-full h-full px-2.5 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500/80 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
                                 />
                                 <button
                                   type="button"
@@ -2007,7 +2005,7 @@ function TabProduk() {
                                     setScannerTarget("VARIANT_ROW");
                                     setIsScannerOpen(true);
                                   }}
-                                  className="absolute right-1 p-1 text-slate-300 hover:text-slate-600 cursor-pointer"
+                                  className="absolute right-1 p-1 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
                                   title="Scan kamera"
                                 >
                                   <Camera className="w-3 h-3" />
@@ -2027,10 +2025,10 @@ function TabProduk() {
                                     prev.map((r, i) => (i === idx ? { ...r, hargaJual: num } : r))
                                   );
                                 }}
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
                               />
                             </td>
-                            <td className="p-0">
+                            <td className="p-0 relative">
                               <NumberInput
                                 min={0}
                                 emptyFallback={0}
@@ -2040,23 +2038,21 @@ function TabProduk() {
                                     prev.map((r, i) => (i === idx ? { ...r, stokAwal: val } : r))
                                   )
                                 }
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/30 tabular-nums"
                               />
-                            </td>
-                            {variantRows.length > 1 && (
-                              <td className="p-0 text-center">
+                              {variantRows.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() =>
                                     setVariantRows((prev) => prev.filter((_, i) => i !== idx))
                                   }
-                                  className="w-full h-9 flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
+                                  className="absolute left-0.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                   title="Hapus baris"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <X className="w-3 h-3" />
                                 </button>
-                              </td>
-                            )}
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
