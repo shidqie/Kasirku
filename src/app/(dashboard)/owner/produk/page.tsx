@@ -772,8 +772,13 @@ function TabProduk() {
                           </span>
                         </div>
                         {(p.isRefill ?? isRefillProduct(p.nama)) && (
-                          <div className="text-[11px] text-slate-400 dark:text-zinc-500 tabular-nums mt-0.5">
-                            Kosong: <span className="font-semibold text-slate-600 dark:text-zinc-300">{formatDecimal(Number(p.stokKosong ?? 0))}</span>
+                          <div className="text-[11px] text-slate-400 dark:text-zinc-500 tabular-nums mt-0.5 space-y-0.5">
+                            <div>
+                              Kosong: <span className="font-semibold text-slate-600 dark:text-zinc-300">{formatDecimal(Number(p.stokKosong ?? 0))}</span>
+                            </div>
+                            <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                              Total: {formatDecimal(stok + Number(p.stokKosong ?? 0))} Stok
+                            </div>
                           </div>
                         )}
                         {konversiStokDisplay !== null && (
@@ -1132,22 +1137,30 @@ function TabProduk() {
                   </div>
 
                   {(isDrawerEditing ? isRefill : (p.isRefill ?? isRefillProduct(p.nama))) && (
-                    <div className="flex items-center justify-between py-2.5">
-                      <span className="text-slate-400 text-xs">Stok kosong</span>
-                      {!isDrawerEditing ? (
-                        <span className="font-semibold text-slate-700 dark:text-zinc-300 text-xs text-right">
-                          {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
+                    <>
+                      <div className="flex items-center justify-between py-2.5">
+                        <span className="text-slate-400 text-xs">Stok kosong</span>
+                        {!isDrawerEditing ? (
+                          <span className="font-semibold text-slate-700 dark:text-zinc-300 text-xs text-right">
+                            {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
+                          </span>
+                        ) : (
+                          <NumberInput
+                            min={0}
+                            emptyFallback={0}
+                            value={stokKosong}
+                            onChange={setStokKosong}
+                            className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 w-20 text-right focus:outline-none focus:border-slate-900 dark:focus:border-zinc-300"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between py-2.5">
+                        <span className="text-slate-400 text-xs">Total stok (Terisi + Kosong)</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400 text-xs text-right tabular-nums">
+                          {formatDecimal(stok + (isDrawerEditing ? Number(stokKosong) || 0 : Number(p.stokKosong ?? 0)))} {p.satuanDasar}
                         </span>
-                      ) : (
-                        <NumberInput
-                          min={0}
-                          emptyFallback={0}
-                          value={stokKosong}
-                          onChange={setStokKosong}
-                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 w-20 text-right focus:outline-none focus:border-slate-900 dark:focus:border-zinc-300"
-                        />
-                      )}
-                    </div>
+                      </div>
+                    </>
                   )}
 
                   <div className="flex items-center justify-between py-2.5">

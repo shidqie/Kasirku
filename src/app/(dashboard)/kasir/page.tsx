@@ -1215,8 +1215,8 @@ export default function KasirPOSPage() {
                             >
                               {(p.isRefill ?? isRefillProduct(p.nama))
                                 ? isHabis
-                                  ? `Habis · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`
-                                  : `Terisi ${formatDecimal(stok)} · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))}`
+                                  ? `Habis · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))} · Total ${formatDecimal(Number(p.stokKosong ?? 0))}`
+                                  : `Terisi ${formatDecimal(stok)} · Kosong ${formatDecimal(Number(p.stokKosong ?? 0))} · Total ${formatDecimal(stok + Number(p.stokKosong ?? 0))}`
                                 : isHabis
                                 ? "Stok habis"
                                 : `Stok ${formatDecimal(stok)}`}
