@@ -112,7 +112,7 @@ function TabProduk() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchData = async () => {
     try {
@@ -368,9 +368,16 @@ function TabProduk() {
       <div className="shrink-0">
         <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Daftar Produk &amp; Harga
-            </h2>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+                Daftar Produk &amp; Harga
+              </h2>
+              {!loading && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 tabular-nums">
+                  {products.length.toLocaleString("id-ID")} produk
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
               Kelola produk sembako, multi-satuan, harga jual/beli, dan stok minimum.
             </p>
@@ -702,7 +709,7 @@ function TabProduk() {
       </div>
 
       {products.length > 0 && (
-        <div className="shrink-0">
+        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#121214]">
           <Pagination
             currentPage={currentPage}
             totalItems={products.length}
@@ -710,6 +717,9 @@ function TabProduk() {
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
           />
+          <span className="text-xs text-slate-500 dark:text-zinc-400 tabular-nums pr-1">
+            Total <strong className="text-slate-800 dark:text-zinc-200">{products.length.toLocaleString("id-ID")}</strong> produk · {pageSize}/hal
+          </span>
         </div>
       )}
 
