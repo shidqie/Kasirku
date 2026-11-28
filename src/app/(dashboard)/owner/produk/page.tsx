@@ -334,6 +334,10 @@ function TabProduk() {
       if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan produk");
 
       setSuccess(`Produk "${deleteTarget.nama}" berhasil dinonaktifkan`);
+      if (detailProduct?.product.id === deleteTarget.id) {
+        setDetailProduct(null);
+        setIsDrawerEditing(false);
+      }
       setDeleteTarget(null);
       fetchData();
     } catch (err: any) {
@@ -628,7 +632,7 @@ function TabProduk() {
         </div>
       )}
 
-      {/* Modal / Slide-over Detail Produk (Tampilan Bersih, Elegan & Minimalis - Sesuai Tema Light Sistem) */}
+      {/* Drawer Detail / Edit / Hapus Produk (UI seragam dengan Tambah Produk) */}
       {detailProduct && (() => {
         const p = detailProduct.product;
         const stok = Number(p.stokCache);
@@ -642,9 +646,6 @@ function TabProduk() {
           ? "text-amber-600 bg-amber-50 border border-amber-200"
           : "text-emerald-600 bg-emerald-50 border border-emerald-200";
 
-        // Satuan dasar produk
-        const defaultUnit = p.satuanProduk.find((s) => s.isDefault) || p.satuanProduk[0];
-
         return (
           <div
             className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end drawer-backdrop"
@@ -654,192 +655,83 @@ function TabProduk() {
             }}
           >
             <div
-              className="w-full max-w-md h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 select-text drawer-panel"
+              className="w-full max-w-xl h-full bg-white text-slate-900 shadow-2xl flex flex-col border-l border-slate-200 select-text drawer-panel"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header: ID Barang, Nama Barang, Tombol Tutup / Batal */}
-              <div className="flex items-start justify-between p-6 pb-5 border-b border-slate-100 shrink-0">
-                <div className="pr-3 flex-1 min-w-0">
-                  <span className="text-xs font-mono font-medium text-slate-400 block tracking-wide">
-                    {detailProduct.idBarang}
-                  </span>
-                  {!isDrawerEditing ? (
-                    <h3 className="text-xl font-bold text-slate-900 mt-1 leading-snug">
-                      {p.nama}
+              {/* Header Seragam */}
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-slate-900">
+                      {isDrawerEditing ? "Edit Produk" : "Detail Produk"}
                     </h3>
-                  ) : (
-                    <div className="mt-1">
-                      <input
-                        type="text"
-                        value={nama}
-                        onChange={(e) => setNama(e.target.value)}
-                        placeholder="Nama Produk..."
-                        required
-                        className="w-full px-3 py-1.5 font-bold text-base text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1.5 focus:ring-[#F0090F]/20 focus:border-[#F0090F]"
-                      />
-                    </div>
-                  )}
+                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                      {detailProduct.idBarang}
+                    </span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}>
+                      {statusStok}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {isDrawerEditing
+                      ? "Perbarui data barang dan pengaturan satuan harga"
+                      : `Stok saat ini: ${formatDecimal(stok)} ${p.satuanDasar} • Stok min: ${formatDecimal(min)}`}
+                  </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
-                    if (isDrawerEditing) {
-                      setIsDrawerEditing(false);
-                    } else {
-                      setDetailProduct(null);
-                    }
+                    setDetailProduct(null);
+                    setIsDrawerEditing(false);
                   }}
-                  className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition-colors shrink-0"
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                  title="Tutup"
                 >
-                  {isDrawerEditing ? "Batal" : "Tutup"}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Body: Harga Produk di atas, lalu Info Properti & Tombol Edit */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
-                {/* 1. Section: Harga Produk */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-slate-900">
-                      Harga Produk
-                    </h4>
-                    {isDrawerEditing && (
-                      <button
-                        type="button"
-                        onClick={handleAddSatuanRow}
-                        className="text-xs font-bold text-[#F0090F] hover:underline flex items-center gap-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Tambah Satuan</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+              {/* Body Seragam (Read & Edit) */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (isDrawerEditing) handleSaveFromDrawer();
+                }}
+                className="flex-1 overflow-y-auto p-5 space-y-5"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Nama Produk */}
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                      Nama Produk *
+                    </label>
                     {!isDrawerEditing ? (
-                      <table className="w-full text-left text-xs">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                          <tr>
-                            <th className="py-2.5 px-3 font-semibold">Satuan</th>
-                            <th className="py-2.5 px-3 font-semibold text-center">Isi</th>
-                            <th className="py-2.5 px-3 font-semibold text-right">Harga</th>
-                            <th className="py-2.5 px-3 font-semibold text-right">Per {p.satuanDasar}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-600">
-                          {p.satuanProduk.map((s) => {
-                            const faktor = Number(s.faktorKeDasar) || 1;
-                            const hargaPerDasar = Math.round(s.hargaJual / faktor);
-                            return (
-                              <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-2.5 px-3 font-medium text-slate-900 capitalize">
-                                  {s.namaSatuan}
-                                </td>
-                                <td className="py-2.5 px-3 text-center text-slate-600 font-mono">
-                                  {formatDecimal(faktor)}
-                                </td>
-                                <td className="py-2.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap">
-                                  {formatRupiah(s.hargaJual)}
-                                </td>
-                                <td className="py-2.5 px-3 text-right text-slate-500 whitespace-nowrap">
-                                  {formatRupiah(hargaPerDasar)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      <div className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold flex items-center">
+                        {p.nama}
+                      </div>
                     ) : (
-                      <table className="w-full text-left text-xs">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                          <tr>
-                            <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                            <th className="py-2 px-1 font-semibold text-center">Isi</th>
-                            <th className="py-2 px-2 font-semibold text-right">Harga</th>
-                            <th className="py-2 px-1 font-semibold text-center w-8"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-600">
-                          {satuanList.map((s, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-2 px-2">
-                                <input
-                                  type="text"
-                                  required
-                                  value={s.namaSatuan}
-                                  onChange={(e) => {
-                                    const u = [...satuanList];
-                                    u[idx].namaSatuan = e.target.value;
-                                    setSatuanList(u);
-                                  }}
-                                  placeholder="Satuan"
-                                  className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-[#F0090F]"
-                                />
-                              </td>
-                              <td className="py-2 px-1 text-center">
-                                <NumberInput
-                                  min={0.001}
-                                  emptyFallback={1}
-                                  required
-                                  value={s.faktorKeDasar}
-                                  onChange={(val) => {
-                                    const u = [...satuanList];
-                                    u[idx].faktorKeDasar = val;
-                                    setSatuanList(u);
-                                  }}
-                                  className="w-14 text-center px-1.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-[#F0090F]"
-                                />
-                              </td>
-                              <td className="py-2 px-2 text-right">
-                                <div className="relative inline-block w-28">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none select-none">
-                                    Rp
-                                  </span>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    required
-                                    placeholder="0"
-                                    value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
-                                    onChange={(e) => {
-                                      const digits = e.target.value.replace(/\D/g, "");
-                                      const u = [...satuanList];
-                                      u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
-                                      setSatuanList(u);
-                                    }}
-                                    className="w-full pl-6 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-right text-slate-900 focus:outline-none focus:border-[#F0090F]"
-                                  />
-                                </div>
-                              </td>
-                              <td className="py-2 px-1 text-center">
-                                {satuanList.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveSatuanRow(idx)}
-                                    className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
-                                    title="Hapus baris satuan ini"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <input
+                        type="text"
+                        required
+                        value={nama}
+                        onChange={(e) => setNama(e.target.value)}
+                        placeholder="Contoh: Beras Ramos Setra"
+                        className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
                     )}
                   </div>
-                </div>
 
-                {/* 2. Info List Properti Produk */}
-                <div className="space-y-3.5 pt-1">
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Kategori</span>
+                  {/* Kategori */}
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                      Kategori
+                    </label>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs">
+                      <div className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm flex items-center">
                         {p.kategori?.nama || "Umum"}
-                      </span>
+                      </div>
                     ) : (
-                      <div className="w-48">
+                      <div className="mt-1.5">
                         <Dropdown
                           variant="box"
                           ariaLabel="Pilih kategori produk"
@@ -847,7 +739,6 @@ function TabProduk() {
                           onChange={setKategoriId}
                           placeholder="-- Pilih Kategori --"
                           searchPlaceholder="Cari kategori..."
-                          align="right"
                           options={[
                             { value: "", label: "-- Pilih Kategori --" },
                             ...categories.map((c) => ({ value: c.id, label: c.nama })),
@@ -857,112 +748,373 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Satuan</span>
-                    <span className="font-semibold text-slate-900 text-xs capitalize">
-                      {!isDrawerEditing
-                        ? (defaultUnit?.namaSatuan || p.satuanDasar)
-                        : (satuanList[0]?.namaSatuan || satuanDasar)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Satuan dasar</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs capitalize">
-                        {p.satuanDasar}
-                      </span>
-                    ) : (
-                      <input
-                        type="text"
-                        required
-                        value={satuanDasar}
-                        onChange={(e) => setSatuanDasar(e.target.value)}
-                        placeholder="Satuan dasar"
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-28 text-right focus:outline-none focus:border-[#F0090F]"
-                      />
-                    )}
-                  </div>
-
-                  {isDrawerEditing && (
-                    <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                      <span className="text-slate-500 text-xs font-medium">Barcode</span>
-                      <input
-                        type="text"
-                        value={barcode}
-                        onChange={(e) => setBarcode(e.target.value)}
-                        placeholder="Barcode (opsional)"
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-[#F0090F]"
-                      />
+                  {/* Barcode Produk */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                        Barcode Produk
+                      </label>
+                      {isDrawerEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScannerTarget("FORM");
+                            setIsScannerOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 hover:bg-primary-100 text-[11px] font-bold transition-colors"
+                          title="Scan kemasan fisik dengan kamera"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Scan Kamera</span>
+                        </button>
+                      )}
                     </div>
-                  )}
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Stok saat ini</span>
-                    <span className="font-bold text-slate-900 text-xs">
-                      {formatDecimal(stok)} {p.satuanDasar}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 text-xs font-medium">Stok minimum</span>
                     {!isDrawerEditing ? (
-                      <span className="font-semibold text-slate-900 text-xs">
-                        {formatDecimal(min)}
-                      </span>
+                      <div className="w-full mt-1.5 px-3.5 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono flex items-center justify-between">
+                        <span>{p.barcode || "-"}</span>
+                        <Barcode className="w-4 h-4 text-slate-400" />
+                      </div>
                     ) : (
-                      <NumberInput
-                        min={0}
-                        emptyFallback={0}
-                        value={stokMinimum}
-                        onChange={setStokMinimum}
-                        className="text-xs font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 w-20 text-right focus:outline-none focus:border-[#F0090F]"
-                      />
+                      <div className="relative mt-1.5">
+                        <input
+                          type="text"
+                          value={barcode}
+                          onChange={(e) => setBarcode(e.target.value)}
+                          placeholder="Scan atau ketik barcode produk (EAN-13 / 899...)"
+                          className="w-full pl-3.5 pr-10 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScannerTarget("FORM");
+                            setIsScannerOpen(true);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary-600 transition-colors"
+                          title="Buka scanner kamera"
+                        >
+                          <Barcode className="w-5 h-5" />
+                        </button>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-slate-500 text-xs font-medium">Status stok</span>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${statusColor}`}>
-                      {statusStok}
-                    </span>
+                  {/* Satuan Dasar & Stok Min */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                          Satuan Dasar *
+                        </label>
+                        {isDrawerEditing && (
+                          <span className="text-[10px] text-slate-400">Pilih / ketik</span>
+                        )}
+                      </div>
+                      {!isDrawerEditing ? (
+                        <div className="w-full mt-1.5 px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm capitalize flex items-center">
+                          {p.satuanDasar}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="relative mt-1.5">
+                            <input
+                              type="text"
+                              required
+                              list="preset-satuan-dasar"
+                              value={satuanDasar}
+                              onChange={(e) => setSatuanDasar(e.target.value)}
+                              placeholder="pcs / kg / bungkus..."
+                              className="w-full px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {[
+                              { label: "pcs", title: "Eceran umum" },
+                              { label: "kg", title: "Beras/Gula/Tepung" },
+                              { label: "bungkus", title: "Mie/Rokok" },
+                              { label: "sachet", title: "Kopi/Minuman" },
+                              { label: "butir", title: "Telur" },
+                              { label: "botol", title: "Minyak/Kecap" },
+                              { label: "renceng", title: "Grosir sachet" },
+                              { label: "dus", title: "Grosir kardus" },
+                              { label: "pak", title: "Grosir pak" },
+                              { label: "karung", title: "Grosir karung" },
+                            ].map((chip) => (
+                              <button
+                                key={chip.label}
+                                type="button"
+                                onClick={() => setSatuanDasar(chip.label)}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                                  satuanDasar === chip.label
+                                    ? "bg-blue-600 text-white font-bold"
+                                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                }`}
+                                title={chip.title}
+                              >
+                                {chip.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans">
+                        Stok Min
+                      </label>
+                      {!isDrawerEditing ? (
+                        <div className="w-full mt-1.5 px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm flex items-center">
+                          {formatDecimal(min)}
+                        </div>
+                      ) : (
+                        <NumberInput
+                          min={0}
+                          emptyFallback={0}
+                          value={stokMinimum}
+                          onChange={setStokMinimum}
+                          className="w-full mt-1.5 px-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* 3. Tombol Aksi */}
+                {/* Multi-Satuan dan Harga Produk (Seragam dengan Tambah Produk) */}
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-800">
+                        Multi-Satuan dan Harga Produk
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        {isDrawerEditing
+                          ? `Atur beberapa satuan & harga konversi ke satuan dasar (${satuanDasar}).`
+                          : `Daftar satuan & harga konversi ke satuan dasar (${p.satuanDasar}).`}
+                      </p>
+                    </div>
+                    {isDrawerEditing && (
+                      <button
+                        type="button"
+                        onClick={handleAddSatuanRow}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Satuan</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {!isDrawerEditing ? (
+                      p.satuanProduk.map((s) => (
+                        <div
+                          key={s.id}
+                          className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center"
+                        >
+                          <div className="col-span-12 sm:col-span-3">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Nama Satuan
+                            </span>
+                            <div className="w-full px-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-semibold flex items-center capitalize">
+                              {s.namaSatuan}
+                            </div>
+                          </div>
+                          <div className="col-span-6 sm:col-span-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Isi ({p.satuanDasar})
+                            </span>
+                            <div className="w-full px-2 h-9 bg-white border border-slate-200 rounded-lg text-xs font-sans flex items-center">
+                              {formatDecimal(Number(s.faktorKeDasar) || 1)}
+                            </div>
+                          </div>
+                          <div className="col-span-6 sm:col-span-3">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Harga Beli (Rp)
+                            </span>
+                            <div className="w-full px-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 flex items-center justify-end">
+                              {formatRupiah(s.hargaBeli)}
+                            </div>
+                          </div>
+                          <div className="col-span-8 sm:col-span-3">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Harga Jual (Rp)
+                            </span>
+                            <div className="w-full px-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-bold text-blue-600 flex items-center justify-end">
+                              {formatRupiah(s.hargaJual)}
+                            </div>
+                          </div>
+                          <div className="col-span-4 sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
+                            {s.isDefault && (
+                              <span className="p-1.5 rounded-lg text-xs bg-blue-600 text-white font-bold">
+                                Def
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      satuanList.map((s, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center"
+                        >
+                          <div className="col-span-12 sm:col-span-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Nama Satuan
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              list="preset-multi-satuan"
+                              value={s.namaSatuan}
+                              onChange={(e) => {
+                                const updated = [...satuanList];
+                                updated[idx].namaSatuan = e.target.value;
+                                setSatuanList(updated);
+                              }}
+                              placeholder="pcs, dus, renceng..."
+                              className="w-full px-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
+                            />
+                          </div>
+
+                          <div className="col-span-6 sm:col-span-2">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Isi ({satuanDasar})
+                            </label>
+                            <NumberInput
+                              min={0.001}
+                              emptyFallback={1}
+                              required
+                              value={s.faktorKeDasar}
+                              onChange={(val) => {
+                                const updated = [...satuanList];
+                                updated[idx].faktorKeDasar = val;
+                                setSatuanList(updated);
+                              }}
+                              className="w-full px-2 h-9 bg-white border border-slate-200 rounded-lg text-xs font-sans"
+                            />
+                          </div>
+
+                          <div className="col-span-6 sm:col-span-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Harga Beli (Rp)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 pointer-events-none select-none">
+                                Rp
+                              </span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                required
+                                placeholder="0"
+                                value={s.hargaBeli ? s.hargaBeli.toLocaleString("id-ID") : ""}
+                                onChange={(e) => {
+                                  const digits = e.target.value.replace(/\D/g, "");
+                                  const updated = [...satuanList];
+                                  updated[idx].hargaBeli = digits ? parseInt(digits, 10) : 0;
+                                  setSatuanList(updated);
+                                }}
+                                className="w-full pl-8 pr-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right text-slate-800 focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="col-span-8 sm:col-span-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase font-sans block mb-1">
+                              Harga Jual (Rp)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 pointer-events-none select-none">
+                                Rp
+                              </span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                required
+                                placeholder="0"
+                                value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                                onChange={(e) => {
+                                  const digits = e.target.value.replace(/\D/g, "");
+                                  const updated = [...satuanList];
+                                  updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                                  setSatuanList(updated);
+                                }}
+                                className="w-full pl-8 pr-2.5 h-9 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right text-blue-600 focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="col-span-4 sm:col-span-1 flex items-center justify-end gap-1.5 pt-3 sm:pt-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefaultSatuan(idx)}
+                              className={`p-1.5 rounded-lg text-xs transition-colors ${
+                                s.isDefault
+                                  ? "bg-blue-600 text-white font-bold"
+                                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-200"
+                              }`}
+                              title="Jadikan satuan default kasir"
+                            >
+                              Def
+                            </button>
+                            {satuanList.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSatuanRow(idx)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                                title="Hapus baris satuan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Tombol Aksi Seragam (Read: Hapus + Edit, Update: Batal + Simpan Perubahan) */}
                 {!isDrawerEditing ? (
-                  <div className="pt-3">
+                  <div className="flex gap-2 pt-3 shrink-0">
                     <button
+                      type="button"
+                      onClick={() => handleDelete(p)}
+                      className="w-1/2 h-11 bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Hapus</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEditInDrawer(p)}
-                      className="w-full h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
-                      style={{ background: "var(--primary)" }}
+                      className="w-1/2 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-sm shadow-md flex items-center justify-center gap-2 transition-all"
                     >
                       <Pencil className="w-4 h-4" />
-                      <span>Ubah Data Produk Ini</span>
+                      <span>Edit Produk</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="pt-3 flex items-center gap-2.5">
+                  <div className="flex gap-2 pt-3 shrink-0">
                     <button
                       type="button"
                       onClick={() => setIsDrawerEditing(false)}
-                      className="flex-1 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center justify-center active:scale-95"
+                      className="w-1/2 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm"
                     >
                       Batal
                     </button>
                     <button
-                      type="button"
+                      type="submit"
                       disabled={savingInDrawer}
-                      onClick={handleSaveFromDrawer}
-                      className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-                      style={{ background: "var(--primary)" }}
+                      className="w-1/2 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md flex items-center justify-center gap-2"
                     >
                       <Save className="w-4 h-4" />
                       <span>{savingInDrawer ? "Menyimpan..." : "Simpan Perubahan"}</span>
                     </button>
                   </div>
                 )}
-              </div>
+              </form>
             </div>
           </div>
         );
