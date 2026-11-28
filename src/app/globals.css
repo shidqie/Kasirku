@@ -43,7 +43,8 @@ html, body, *, ::before, ::after {
   --ctl-placeholder: #94A3B8;
   --ctl-radius: 14px;
   --ctl-radius-sm: 10px;
-  --ctl-ring: rgba(240, 9, 15, 0.18);
+  --ctl-ring: rgba(59, 130, 246, 0.18);
+  --ctl-focus: #3B82F6;
 
   --sh-shell: 0 40px 80px -20px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.06);
   --sh-card: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 24px rgba(0, 0, 0, 0.04);
@@ -166,9 +167,16 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 select:not(.border-b):focus,
 textarea:focus {
   outline: none !important;
-  border-color: var(--primary, #F0090F) !important;
-  box-shadow: 0 0 0 4px rgba(240, 9, 15, 0.16) !important;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary, #F0090F) 22%, transparent) !important;
+  border-color: var(--ctl-focus, #3B82F6) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ctl-focus, #3B82F6) 22%, transparent) !important;
+}
+
+/* Border-bottom underline inputs juga biru saat fokus */
+input.border-b:focus {
+  outline: none !important;
+  border-color: var(--ctl-focus, #3B82F6) !important;
+  box-shadow: none !important;
 }
 
 @layer components {
