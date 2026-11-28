@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Printer, Share2, X, Download } from "lucide-react";
 import { formatRupiah, formatDecimal, formatMetodeBayar } from "@/lib/formatters";
 import { generateReceiptPDF } from "@/lib/pdf-receipt";
+import { BuktiTransaksiUploader } from "@/components/shared/BuktiTransaksiUploader";
 
 interface StrukModalProps {
   isOpen: boolean;
@@ -447,8 +448,16 @@ export function StrukModal({ isOpen, onClose, transaksi, storeInfo }: StrukModal
           )}
         </div>
 
-        {/* Buttons (PDF Download / Print / Share / Tutup) */}
+        {/* Buttons (Upload Bukti / PDF Download / Print / Share / Tutup) */}
         <div className="p-3.5 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-2 print:hidden shrink-0">
+          {transaksi?.id && !String(transaksi.id).startsWith("offline-") && (
+            <BuktiTransaksiUploader
+              transaksiId={transaksi.id}
+              source="kasir"
+              initialKey={transaksi.buktiKey ?? null}
+              compact
+            />
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleDownloadPDF}

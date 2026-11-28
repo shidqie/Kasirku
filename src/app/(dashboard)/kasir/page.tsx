@@ -42,6 +42,7 @@ import {
   isValidQrisPayload,
 } from "@/lib/qris";
 import { StrukModal } from "@/components/kasir/StrukModal";
+import { BuktiTransaksiUploader } from "@/components/shared/BuktiTransaksiUploader";
 import { PinModal } from "@/components/shared/PinModal";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { RiwayatPesananModal } from "@/components/kasir/RiwayatPesananModal";
@@ -2072,6 +2073,10 @@ export default function KasirPOSPage() {
                 <p className="text-[11px] text-slate-400 dark:text-zinc-500">
                   Tunjukkan ke konsumen untuk langsung scan (nominal otomatis terisi).
                 </p>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 text-left">
+                  <BuktiTransaksiUploader source="quick-qris" compact />
+                </div>
               </div>
             ) : (
               <form

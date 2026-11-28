@@ -328,6 +328,7 @@ model Transaksi {
   alasanBatal      String?         @map("alasan_batal")
   dibatalkanOlehId String?         @map("dibatalkan_oleh_id")
   dibatalkanPada   DateTime?       @map("dibatalkan_pada")
+  buktiKey         String?         @map("bukti_key")
   dibuatPada       DateTime        @default(now()) @map("dibuat_pada")
 
   kasir          User            @relation("TransaksiKasir", fields: [kasirId], references: [id])

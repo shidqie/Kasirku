@@ -17,9 +17,15 @@
     "backup": "tsx scripts/backup.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1179.0",
+    "@aws-sdk/s3-presigned-post": "^3.1179.0",
+    "@aws-sdk/s3-request-presigner": "^3.1179.0",
+    "@neon/config": "^1.14.8",
+    "@neon/env": "^2.1.11",
     "@prisma/client": "^5.22.0",
     "barcode-detector": "^3.2.5",
     "bcryptjs": "^2.4.3",
+    "files-sdk": "^3.2.1",
     "html5-qrcode": "^2.3.8",
     "jose": "^5.9.6",
     "jspdf": "^4.2.1",
