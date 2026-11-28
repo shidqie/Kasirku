@@ -761,9 +761,40 @@ function TabProduk() {
                   e.preventDefault();
                   if (isDrawerEditing) handleSaveFromDrawer();
                 }}
-                className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-sm"
+                className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm"
               >
-                {/* 1. Section: Harga Produk */}
+                {/* 1. Barcode */}
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-400 text-xs">Barcode</span>
+                  {!isDrawerEditing ? (
+                    <span className="font-medium text-slate-900 text-xs font-mono text-right">
+                      {p.barcode || "-"}
+                    </span>
+                  ) : (
+                    <div className="flex items-center justify-end gap-2">
+                      <input
+                        type="text"
+                        value={barcode}
+                        onChange={(e) => setBarcode(e.target.value)}
+                        placeholder="Opsional"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannerTarget("FORM");
+                          setIsScannerOpen(true);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
+                        title="Scan kamera"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Section: Harga Produk */}
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -911,31 +942,29 @@ function TabProduk() {
                   </div>
                 </div>
 
-                {/* 2. Info List Properti Produk */}
+                {/* 3. Info List Properti Produk (Stok saat ini, Stok minimum, Satuan, Satuan dasar, Kategori, Status stok) */}
                 <div className="divide-y divide-slate-100">
                   <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Kategori</span>
+                    <span className="text-slate-400 text-xs">Stok saat ini</span>
+                    <span className="font-semibold text-slate-900 text-xs text-right">
+                      {formatDecimal(stok)} {p.satuanDasar}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Stok minimum</span>
                     {!isDrawerEditing ? (
                       <span className="font-medium text-slate-900 text-xs text-right">
-                        {p.kategori?.nama || "Umum"}
+                        {formatDecimal(min)}
                       </span>
                     ) : (
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          ariaLabel="Pilih kategori produk"
-                          value={kategoriId}
-                          onChange={setKategoriId}
-                          placeholder="-- Pilih Kategori --"
-                          searchPlaceholder="Cari kategori..."
-                          align="right"
-                          className="!w-auto"
-                          options={[
-                            { value: "", label: "-- Pilih Kategori --" },
-                            ...categories.map((c) => ({ value: c.id, label: c.nama })),
-                          ]}
-                        />
-                      </div>
+                      <NumberInput
+                        min={0}
+                        emptyFallback={0}
+                        value={stokMinimum}
+                        onChange={setStokMinimum}
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                      />
                     )}
                   </div>
 
@@ -968,56 +997,28 @@ function TabProduk() {
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Barcode</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs font-mono text-right">
-                        {p.barcode || "-"}
-                      </span>
-                    ) : (
-                      <div className="flex items-center justify-end gap-2">
-                        <input
-                          type="text"
-                          value={barcode}
-                          onChange={(e) => setBarcode(e.target.value)}
-                          placeholder="Opsional"
-                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setScannerTarget("FORM");
-                            setIsScannerOpen(true);
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
-                          title="Scan kamera"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Stok saat ini</span>
-                    <span className="font-semibold text-slate-900 text-xs text-right">
-                      {formatDecimal(stok)} {p.satuanDasar}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Stok minimum</span>
+                    <span className="text-slate-400 text-xs">Kategori</span>
                     {!isDrawerEditing ? (
                       <span className="font-medium text-slate-900 text-xs text-right">
-                        {formatDecimal(min)}
+                        {p.kategori?.nama || "Umum"}
                       </span>
                     ) : (
-                      <NumberInput
-                        min={0}
-                        emptyFallback={0}
-                        value={stokMinimum}
-                        onChange={setStokMinimum}
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
-                      />
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          ariaLabel="Pilih kategori produk"
+                          value={kategoriId}
+                          onChange={setKategoriId}
+                          placeholder="-- Pilih Kategori --"
+                          searchPlaceholder="Cari kategori..."
+                          align="right"
+                          className="!w-auto"
+                          options={[
+                            { value: "", label: "-- Pilih Kategori --" },
+                            ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                          ]}
+                        />
+                      </div>
                     )}
                   </div>
 
@@ -1090,8 +1091,33 @@ function TabProduk() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-sm">
-              {/* 1. Section: Harga Produk */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm">
+              {/* 1. Barcode */}
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-400 text-xs">Barcode</span>
+                <div className="flex items-center justify-end gap-2">
+                  <input
+                    type="text"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder="Opsional"
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScannerTarget("FORM");
+                      setIsScannerOpen(true);
+                    }}
+                    className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
+                    title="Scan kamera"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Section: Harga Produk */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -1202,26 +1228,17 @@ function TabProduk() {
                 </div>
               </div>
 
-              {/* 2. Info List Properti Produk */}
+              {/* 3. Info List Properti Produk (Stok minimum, Satuan, Satuan dasar, Kategori) */}
               <div className="divide-y divide-slate-100">
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Kategori</span>
-                  <div className="flex justify-end">
-                    <Dropdown
-                      variant="underline"
-                      ariaLabel="Pilih kategori produk"
-                      value={kategoriId}
-                      onChange={setKategoriId}
-                      placeholder="-- Pilih Kategori --"
-                      searchPlaceholder="Cari kategori..."
-                      align="right"
-                      className="!w-auto"
-                      options={[
-                        { value: "", label: "-- Pilih Kategori --" },
-                        ...categories.map((c) => ({ value: c.id, label: c.nama })),
-                      ]}
-                    />
-                  </div>
+                  <span className="text-slate-400 text-xs">Stok minimum</span>
+                  <NumberInput
+                    min={0}
+                    emptyFallback={0}
+                    value={stokMinimum}
+                    onChange={setStokMinimum}
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2.5">
@@ -1245,38 +1262,23 @@ function TabProduk() {
                 </div>
 
                 <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Barcode</span>
-                  <div className="flex items-center justify-end gap-2">
-                    <input
-                      type="text"
-                      value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                      placeholder="Opsional"
-                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                  <span className="text-slate-400 text-xs">Kategori</span>
+                  <div className="flex justify-end">
+                    <Dropdown
+                      variant="underline"
+                      ariaLabel="Pilih kategori produk"
+                      value={kategoriId}
+                      onChange={setKategoriId}
+                      placeholder="-- Pilih Kategori --"
+                      searchPlaceholder="Cari kategori..."
+                      align="right"
+                      className="!w-auto"
+                      options={[
+                        { value: "", label: "-- Pilih Kategori --" },
+                        ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                      ]}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScannerTarget("FORM");
-                        setIsScannerOpen(true);
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
-                      title="Scan kamera"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                    </button>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Stok minimum</span>
-                  <NumberInput
-                    min={0}
-                    emptyFallback={0}
-                    value={stokMinimum}
-                    onChange={setStokMinimum}
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
-                  />
                 </div>
               </div>
 
