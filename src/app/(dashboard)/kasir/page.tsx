@@ -2027,10 +2027,25 @@ export default function KasirPOSPage() {
       )}
 
       {/* Modal Quick QRIS Dinamis (Input Nominal -> Tampil Nominal di Atas QR, Input di Bawah) */}
-      {isQuickQrisOpen && (
+      {isQuickQrisOpen && (() => {
+        const canCloseQuickQris =
+          !quickQrisConfirmed ||
+          Boolean(quickQrisBuktiKey) ||
+          quickQrisSecondsLeft === 0;
+        const closeQuickQris = () => {
+          if (!canCloseQuickQris) return;
+          setIsQuickQrisOpen(false);
+          if (quickQrisSecondsLeft === 0 && !quickQrisBuktiKey) {
+            setQuickQrisConfirmed(false);
+            setQuickQrisAmount(0);
+            setQuickQrisSecondsLeft(60);
+          }
+        };
+
+        return (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
-          onClick={() => setIsQuickQrisOpen(false)}
+          onClick={closeQuickQris}
         >
           <div
             className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xl border border-slate-200/80 dark:border-zinc-800 p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto"
@@ -2053,9 +2068,18 @@ export default function KasirPOSPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsQuickQrisOpen(false)}
-                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 flex items-center justify-center text-slate-600 dark:text-zinc-300 shrink-0 cursor-pointer"
-                title="Tutup"
+                disabled={!canCloseQuickQris}
+                onClick={closeQuickQris}
+                className={`w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-300 shrink-0 transition-opacity ${
+                  canCloseQuickQris
+                    ? "hover:bg-slate-200 cursor-pointer"
+                    : "opacity-35 cursor-not-allowed"
+                }`}
+                title={
+                  canCloseQuickQris
+                    ? "Tutup"
+                    : "Upload bukti pembayaran atau tunggu timer selesai untuk menutup"
+                }
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2222,7 +2246,8 @@ export default function KasirPOSPage() {
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Modal Perbesar QRIS untuk Konsumen */}
       {isQrisZoomed && isPayModalOpen && (
