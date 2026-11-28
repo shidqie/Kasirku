@@ -638,6 +638,9 @@ export async function editKasbonManual(
 
   const oldMutasi = await prisma.kasbonMutasi.findUnique({
     where: { id: mutasiId },
+    include: {
+      user: { select: { nama: true } },
+    },
   });
   if (!oldMutasi || oldMutasi.memberId !== memberId) {
     throw new Error("Data kasbon tidak ditemukan");
@@ -657,19 +660,26 @@ export async function editKasbonManual(
 
   const tanggalCatat = input.tanggal ? new Date(input.tanggal) : oldMutasi.dibuatPada;
   let existingKodeBon: string | undefined;
+  let existingKasir: string | undefined;
   if (oldMutasi.catatan?.includes("|| JSON:")) {
     try {
       const parsedOld = JSON.parse(oldMutasi.catatan.split("|| JSON:")[1]);
       existingKodeBon = parsedOld?.kodeBon;
+      existingKasir = parsedOld?.kasir;
     } catch {}
   }
   const kodeBon = existingKodeBon || formatBonCode(tanggalCatat, 1);
+  // Pertahankan nama kasir asli; catat pengedit di dikoreksiOleh
+  const kasirAsli = existingKasir || oldMutasi.user?.nama || "Kasir";
+  const pengoreksi = actor.nama || "Kasir";
 
   // Format catatan lengkap dengan JSON rincian barang & pengambil
   const dataCatatan = {
     kodeBon,
     pengambil: input.pengambil,
-    kasir: actor.nama || "Kasir",
+    kasir: kasirAsli,
+    dikoreksiOleh: pengoreksi,
+    dikoreksiPada: new Date().toISOString(),
     tanggal: tanggalCatat.toISOString(),
     keterangan: input.catatan || "",
     items: input.items,
@@ -680,7 +690,7 @@ export async function editKasbonManual(
     .map((it) => `${it.nama} (${it.qty} ${it.satuan})`)
     .join(", ");
 
-  const catatanFormatted = `BON MANUAL [Ambil: ${input.pengambil}] [Kasir: ${actor.nama || "Kasir"}] - ${ringkasanText} || JSON:${JSON.stringify(dataCatatan)}`;
+  const catatanFormatted = `BON MANUAL [Ambil: ${input.pengambil}] [Kasir: ${kasirAsli}] [Dikoreksi oleh: ${pengoreksi}] - ${ringkasanText} || JSON:${JSON.stringify(dataCatatan)}`;
 
   const result = await prisma.$transaction(async (tx) => {
     // 1. Update Mutasi KASBON

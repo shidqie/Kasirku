@@ -454,6 +454,7 @@ export default function MemberDetailPage() {
         label: "ID Bon: #" + m.id.slice(-6).toUpperCase(),
         pengambil: parsedData?.pengambil || member.nama,
         kasir: parsedData?.kasir || m.user?.nama || "Kasir",
+        dikoreksiOleh: parsedData?.dikoreksiOleh || undefined,
         items,
         keterangan: parsedData?.keterangan,
         subtotal,
@@ -1461,6 +1462,12 @@ export default function MemberDetailPage() {
                                         <strong className="font-semibold text-slate-900 dark:text-zinc-100">
                                           {sub.kasir}
                                         </strong>
+                                        {sub.dikoreksiOleh && (
+                                          <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium">
+                                            Dikoreksi oleh :{" "}
+                                            <strong className="font-semibold ml-1">{sub.dikoreksiOleh}</strong>
+                                          </span>
+                                        )}
                                       </p>
                                       <div className="overflow-x-auto">
                                         <table className="w-full text-[11px]">
@@ -1698,6 +1705,12 @@ export default function MemberDetailPage() {
                                               <strong className="font-semibold text-slate-900 dark:text-zinc-100">
                                                 {sub.kasir}
                                               </strong>
+                                              {sub.dikoreksiOleh && (
+                                                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium">
+                                                  Dikoreksi oleh :{" "}
+                                                  <strong className="font-semibold ml-1">{sub.dikoreksiOleh}</strong>
+                                                </span>
+                                              )}
                                             </p>
 
                                             {/* Tabel Barang, Qty, Harga Satuan, Subtotal */}

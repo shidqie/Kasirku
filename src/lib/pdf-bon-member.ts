@@ -15,6 +15,7 @@ export interface BonSubEntry {
   rawDate: Date;
   pengambil: string;
   kasir: string;
+  dikoreksiOleh?: string;
   items: BonItem[];
   total: number;
 }
@@ -312,6 +313,7 @@ async function renderMemberBonToDoc(
       rawDate: dt,
       pengambil: pd?.pengambil || member.nama,
       kasir: pd?.kasir || m.user?.nama || "Pemilik Toko",
+      dikoreksiOleh: pd?.dikoreksiOleh || undefined,
       items: (pd?.items || []).map((it: any) => ({
         nama: it.nama,
         qty: Number(it.qty),
@@ -479,6 +481,10 @@ async function renderMemberBonToDoc(
       }
       drawSeg(" · Kasir ", false, C_MUTED);
       drawSeg(sub.kasir, true, C_DARK);
+      if (sub.dikoreksiOleh) {
+        drawSeg(" · Dikoreksi oleh : ", false, C_AMBER_FG);
+        drawSeg(sub.dikoreksiOleh, true, C_AMBER_FG);
+      }
       y += 5.5;
 
       // Table Header (Barang, Qty, Harga Satuan, Subtotal)
