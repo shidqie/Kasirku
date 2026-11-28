@@ -539,6 +539,8 @@ function TabPersetujuan() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [alasanTolak, setAlasanTolak] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [itemPages, setItemPages] = useState<{ [opnameId: string]: number }>({});
+  const ITEMS_PER_PAGE = 20;
 
   const fetchOpnames = async () => {
     try {
@@ -658,6 +660,11 @@ function TabPersetujuan() {
               (sum: number, it: any) => sum + (it.nilaiSelisih || 0),
               0
             );
+            const currentItemPage = itemPages[op.id] || 1;
+            const paginatedItems = op.items.slice(
+              (currentItemPage - 1) * ITEMS_PER_PAGE,
+              currentItemPage * ITEMS_PER_PAGE
+            );
 
             return (
               <div
@@ -715,7 +722,7 @@ function TabPersetujuan() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-sans">
-                      {op.items.map((it: any) => {
+                      {paginatedItems.map((it: any) => {
                         const selisih = Number(it.selisih);
                         return (
                           <tr key={it.id}>
@@ -768,6 +775,22 @@ function TabPersetujuan() {
                     </tfoot>
                   </table>
                 </div>
+
+                {op.items.length > 0 && (
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <Pagination
+                      currentPage={currentItemPage}
+                      totalItems={op.items.length}
+                      pageSize={ITEMS_PER_PAGE}
+                      onPageChange={(page) =>
+                        setItemPages((prev) => ({ ...prev, [op.id]: page }))
+                      }
+                    />
+                    <span className="text-xs text-slate-500 tabular-nums">
+                      Total <strong className="text-slate-800">{op.items.length}</strong> produk · {ITEMS_PER_PAGE}/hal
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
