@@ -34,13 +34,6 @@ export async function PATCH(
       );
     }
 
-    if (validated.data.role === "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Tidak dapat menetapkan role Super Admin dari pengaturan toko." },
-        { status: 403 }
-      );
-    }
-
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const updated = await updateUser(params.id, validated.data, session.userId, ip);
 

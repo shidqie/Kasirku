@@ -2682,7 +2682,7 @@ export default function KasirPOSPage() {
                 className="h-9 px-3.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Tambah produk baru</span>
+                <span>Tambah / ajukan produk</span>
               </a>
               <button
                 type="button"

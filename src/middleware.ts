@@ -127,7 +127,7 @@ export async function middleware(request: NextRequest) {
     { prefix: "/owner/dashboard", anyOf: ["dashboard:view"] },
     {
       prefix: "/owner/laporan",
-      anyOf: ["reports:sales", "reports:debts", "reports:operational"],
+      anyOf: ["reports:sales", "reports:profit", "reports:debts", "reports:operational"],
     },
     {
       prefix: "/owner/produk-terlaris",
@@ -141,6 +141,10 @@ export async function middleware(request: NextRequest) {
     { prefix: "/owner/activity-log", anyOf: ["audit:view"] },
     { prefix: "/owner/go-live", anyOf: ["golive:view"] },
     { prefix: "/api/users", anyOf: ["users:manage"] },
+    {
+      prefix: "/api/reports/profit",
+      anyOf: ["reports:profit", "produk:cost"],
+    },
     {
       prefix: "/api/reports/sales",
       anyOf: ["reports:sales", "reports:operational"],
@@ -163,6 +167,13 @@ export async function middleware(request: NextRequest) {
         return deny();
       }
       break;
+    }
+  }
+
+  // Legacy STAFF_GUDANG diarahkan keluar dari halaman operasional hingga Owner memindahkan rolenya
+  if (user.role === "STAFF_GUDANG") {
+    if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth/")) {
+      return deny("Akun Petugas Gudang perlu dipindahkan ke role Kepala Toko oleh Pemilik.");
     }
   }
 

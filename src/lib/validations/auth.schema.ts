@@ -10,7 +10,9 @@ export const createUserSchema = z.object({
   username: z.string().min(3, "Username minimal 3 karakter").max(50, "Username maksimal 50 karakter"),
   nama: z.string().min(2, "Nama minimal 2 karakter"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["SUPER_ADMIN", "OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF_GUDANG", "STAFF"]),
+  role: z.enum(["OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF"], {
+    errorMap: () => ({ message: "Role tidak valid. Pilih Pemilik, Kepala Toko, atau Kasir." }),
+  }),
   permissions: z.array(z.string()).optional(),
 });
 
@@ -18,7 +20,11 @@ export const updateUserSchema = z.object({
   nama: z.string().min(2, "Nama minimal 2 karakter").optional(),
   username: z.string().trim().min(3, "Username minimal 3 karakter").max(50, "Username maksimal 50 karakter").optional(),
   aktif: z.boolean().optional(),
-  role: z.enum(["SUPER_ADMIN", "OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF_GUDANG", "STAFF"]).optional(),
+  role: z
+    .enum(["OWNER", "KEPALA_TOKO", "STAFF_KASIR", "STAFF"], {
+      errorMap: () => ({ message: "Role tidak valid. Pilih Pemilik, Kepala Toko, atau Kasir." }),
+    })
+    .optional(),
   permissions: z.array(z.string()).optional(),
 });
 

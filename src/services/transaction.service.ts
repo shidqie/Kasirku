@@ -379,7 +379,7 @@ export async function checkout(
         kasir: { select: { nama: true, username: true } },
       },
     });
-  });
+  }, { timeout: 15000 });
 
   await logActivity({
     userId: kasir.id,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { TableSkeletonRows, DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import {
@@ -31,12 +32,19 @@ import {
   Split,
   Copy,
   History,
+  Send,
+  Inbox,
 } from "lucide-react";
 import { groupProductsForDisplay, formatPriceRange } from "@/lib/product-grouping";
 import { parseScan } from "@/lib/barcode";
 import { calculateMargin } from "@/lib/product-visibility";
 import { hasPermission, hasAnyPermission } from "@/lib/auth/permissions";
 import { VariantGroupFormModal, SplitProductModal } from "@/components/produk/ProductVariantModals";
+import {
+  CreateProposalDrawer,
+  ProposalReviewDrawer,
+  type ProposalProductTarget,
+} from "@/components/produk/ProductProposalDrawers";
 import { formatRupiah, formatDecimal, formatDateTime } from "@/lib/formatters";
 import { isRefillProduct } from "@/lib/refill";
 import { formatProductCode } from "@/lib/codification";
@@ -191,7 +199,15 @@ function TabProduk() {
     { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
   ]);
   const [variantScanIdx, setVariantScanIdx] = useState<number | null>(null);
+  const searchParams = useSearchParams();
   const [userAccess, setUserAccess] = useState<{ role: string; permissions?: string[] } | null>(null);
+  const [pendingProposalCount, setPendingProposalCount] = useState(0);
+  const [proposalDrawerOpen, setProposalDrawerOpen] = useState(false);
+  const [proposalMode, setProposalMode] = useState<"PRODUK_BARU" | "UBAH_HARGA">("PRODUK_BARU");
+  const [proposalTargetProduct, setProposalTargetProduct] = useState<ProposalProductTarget | null>(null);
+  const [proposalInitialBarcode, setProposalInitialBarcode] = useState<string | null>(null);
+  const [isReviewProposalOpen, setIsReviewProposalOpen] = useState(false);
+  const [handledNewBarcode, setHandledNewBarcode] = useState<string | null>(null);
   const [costMeta, setCostMeta] = useState<{
     hargaBeliAktif: boolean;
     canViewHargaBeli: boolean;
@@ -270,14 +286,45 @@ function TabProduk() {
     }
   };
 
+  const fetchProposalCount = () => {
+    fetch("/api/proposals?status=MENUNGGU")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (typeof data?.pendingCount === "number") {
+          setPendingProposalCount(data.pendingCount);
+        }
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.user) setUserAccess(data.user);
+        if (data?.user) {
+          setUserAccess(data.user);
+          if (hasAnyPermission(data.user, ["pengajuan:approve", "pengajuan:create"])) {
+            fetchProposalCount();
+          }
+        }
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const nb = searchParams.get("newBarcode");
+    if (!nb || !userAccess || handledNewBarcode === nb) return;
+    setHandledNewBarcode(nb);
+    if (hasPermission(userAccess, "produk:manage")) {
+      openCreateModal();
+      setBarcode(nb);
+    } else if (hasPermission(userAccess, "pengajuan:create")) {
+      setProposalMode("PRODUK_BARU");
+      setProposalTargetProduct(null);
+      setProposalInitialBarcode(nb);
+      setProposalDrawerOpen(true);
+    }
+  }, [searchParams, userAccess, handledNewBarcode]);
 
   useEffect(() => {
     if (!detailProduct?.product?.id) {
@@ -853,11 +900,14 @@ function TabProduk() {
   const penyesuaianHargaCount = products.filter((p) => p.penyesuaianHarga).length;
   const updatedOrNewCount = products.filter((p) => p.isBaru || p.isDiperbarui).length;
 
-  const canManageProduct = !userAccess || hasPermission(userAccess, "produk:manage");
-  const canEditPrice =
-    !userAccess || hasAnyPermission(userAccess, ["produk:manage", "produk:price", "satuan:manage"]);
+  const canManageProduct = Boolean(userAccess && hasPermission(userAccess, "produk:manage"));
+  const canEditPrice = Boolean(
+    userAccess && hasAnyPermission(userAccess, ["produk:manage", "produk:price", "satuan:manage"])
+  );
   const canToggleCost =
     userAccess?.role === "OWNER" || (userAccess ? hasPermission(userAccess, "settings:manage") : false);
+  const canPropose = Boolean(userAccess && hasPermission(userAccess, "pengajuan:create"));
+  const canApproveProposal = Boolean(userAccess && hasPermission(userAccess, "pengajuan:approve"));
 
   const filteredProducts = products.filter((p) => {
     if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
@@ -913,6 +963,37 @@ function TabProduk() {
               >
                 <span className="hidden sm:inline">Tambah produk</span>
                 <span className="sm:hidden">Tambah</span>
+              </button>
+            )}
+            {!canManageProduct && canPropose && (
+              <button
+                onClick={() => {
+                  setProposalMode("PRODUK_BARU");
+                  setProposalTargetProduct(null);
+                  setProposalInitialBarcode(null);
+                  setProposalDrawerOpen(true);
+                }}
+                className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Ajukan produk baru</span>
+                <span className="sm:hidden">Ajukan</span>
+              </button>
+            )}
+            {(canApproveProposal || canPropose) && (
+              <button
+                type="button"
+                onClick={() => setIsReviewProposalOpen(true)}
+                className="h-10 px-3 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+                title={canApproveProposal ? "Tinjau pengajuan kasir" : "Lihat status pengajuan saya"}
+              >
+                <Inbox className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Pengajuan</span>
+                {pendingProposalCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold tabular-nums">
+                    {pendingProposalCount}
+                  </span>
+                )}
               </button>
             )}
             <button
@@ -1403,6 +1484,21 @@ function TabProduk() {
                                 aria-label="Edit produk"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {!canEditPrice && canPropose && (
+                              <button
+                                onClick={() => {
+                                  setProposalMode("UBAH_HARGA");
+                                  setProposalTargetProduct(p);
+                                  setProposalInitialBarcode(null);
+                                  setProposalDrawerOpen(true);
+                                }}
+                                className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                                title="Ajukan perubahan harga"
+                                aria-label="Ajukan perubahan harga"
+                              >
+                                <Tag className="w-3.5 h-3.5" />
                               </button>
                             )}
                             {canManageProduct && (
@@ -2124,6 +2220,23 @@ function TabProduk() {
                     >
                       <Split className="w-3.5 h-3.5" />
                       <span>Pecah produk jadi beberapa varian</span>
+                    </button>
+                  </div>
+                )}
+                {!isDrawerEditing && !canEditPrice && canPropose && (
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProposalMode("UBAH_HARGA");
+                        setProposalTargetProduct(p);
+                        setProposalInitialBarcode(null);
+                        setProposalDrawerOpen(true);
+                      }}
+                      className="w-full h-10 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 hover:bg-amber-100/70 text-amber-800 dark:text-amber-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>Ajukan perubahan harga produk ini</span>
                     </button>
                   </div>
                 )}
@@ -2880,6 +2993,30 @@ function TabProduk() {
         onSuccess={(msg) => {
           setSuccess(msg);
           setDetailProduct(null);
+          fetchData();
+        }}
+      />
+
+      <CreateProposalDrawer
+        isOpen={proposalDrawerOpen}
+        mode={proposalMode}
+        initialBarcode={proposalInitialBarcode}
+        targetProduct={proposalTargetProduct}
+        categories={categories}
+        onClose={() => setProposalDrawerOpen(false)}
+        onSubmitted={(msg) => {
+          setSuccess(msg);
+          fetchProposalCount();
+        }}
+      />
+
+      <ProposalReviewDrawer
+        isOpen={isReviewProposalOpen}
+        canApprove={canApproveProposal}
+        onClose={() => setIsReviewProposalOpen(false)}
+        onReviewed={(msg) => {
+          setSuccess(msg);
+          fetchProposalCount();
           fetchData();
         }}
       />

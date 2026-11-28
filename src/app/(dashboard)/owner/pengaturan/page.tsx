@@ -772,11 +772,42 @@ function TabPengguna() {
   const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
   const [submittingDelete, setSubmittingDelete] = useState(false);
 
+  const [migratingUserId, setMigratingUserId] = useState<string | null>(null);
+  const legacyGudangUsers = users.filter((u) => u.role === "STAFF_GUDANG");
+
+  const handleMigrateLegacyRole = async (
+    u: UserItem,
+    targetRole: "KEPALA_TOKO" | "STAFF_KASIR"
+  ) => {
+    setMigratingUserId(u.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: targetRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memindahkan role pengguna");
+      setSuccess(
+        `Akun @${u.username} dipindahkan ke ${targetRole === "KEPALA_TOKO" ? "Kepala Toko" : "Kasir"}. Riwayat transaksi lama tetap aman.`
+      );
+      await fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setMigratingUserId(null);
+    }
+  };
+
   const handleOpenEditUser = (u: UserItem) => {
     setEditingUser(u);
     setEditNama(u.nama);
     setEditUsername(u.username);
-    setEditRole(u.role === "STAFF" ? "STAFF_KASIR" : u.role);
+    setEditRole(
+      u.role === "STAFF" ? "STAFF_KASIR" : u.role === "STAFF_GUDANG" ? "KEPALA_TOKO" : u.role
+    );
     setError(null);
   };
 
@@ -972,10 +1003,10 @@ function TabPengguna() {
       <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
-            Kelola pengguna &amp; akun staff
+            Kelola pengguna &amp; akun toko
           </h3>
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-            Tambah staf kasir, ubah status aktif, dan atur ulang kata sandi.
+            Kelola role Pemilik, Kepala Toko, dan Kasir beserta izin akses khususnya.
           </p>
         </div>
 
@@ -989,6 +1020,50 @@ function TabPengguna() {
 
       <PopupAlert type="error" message={error} onClear={() => setError(null)} />
       <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
+
+      {legacyGudangUsers.length > 0 && (
+        <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 space-y-3">
+          <div>
+            <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
+              Akun Petugas Gudang Lama Perlu Dipindahkan Role ({legacyGudangUsers.length})
+            </p>
+            <p className="text-[11px] text-amber-800/90 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+              Role Petugas Gudang telah dihapus dan seluruh pekerjaan persediaan dipindahkan ke Kepala Toko. Riwayat aktivitas dan transaksi lama tidak dihapus; pindahkan role akun berikut agar kembali aktif.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {legacyGudangUsers.map((u) => (
+              <div
+                key={u.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white dark:bg-zinc-900 px-3 py-2 rounded-lg border border-amber-200/70 dark:border-zinc-800"
+              >
+                <div className="text-xs">
+                  <span className="font-semibold text-slate-900 dark:text-zinc-100">{u.nama}</span>{" "}
+                  <span className="font-mono text-[11px] text-slate-500">@{u.username}</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={migratingUserId === u.id}
+                    onClick={() => handleMigrateLegacyRole(u, "KEPALA_TOKO")}
+                    className="h-7 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-[11px] font-semibold disabled:opacity-50 cursor-pointer"
+                  >
+                    Jadikan Kepala Toko
+                  </button>
+                  <button
+                    type="button"
+                    disabled={migratingUserId === u.id}
+                    onClick={() => handleMigrateLegacyRole(u, "STAFF_KASIR")}
+                    className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-[11px] font-semibold disabled:opacity-50 cursor-pointer"
+                  >
+                    Jadikan Kasir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="pt-2">
         <div className="pb-3 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
@@ -1034,6 +1109,8 @@ function TabPengguna() {
                             ? "text-blue-600"
                             : user.role === "KEPALA_TOKO"
                             ? "text-purple-600"
+                            : user.role === "STAFF_GUDANG"
+                            ? "text-amber-600"
                             : "text-slate-700 dark:text-zinc-300"
                         }`}
                       >
@@ -1198,9 +1275,8 @@ function TabPengguna() {
                     value={newRole}
                     onChange={setNewRole}
                     options={[
-                      { value: "STAFF_KASIR", label: "Staff 1 (Kasir)" },
-                      { value: "STAFF_GUDANG", label: "Staff 2 (Stok / Gudang)" },
-                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Pengawasan)" },
+                      { value: "STAFF_KASIR", label: "Kasir" },
+                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Persediaan)" },
                       { value: "OWNER", label: "Pemilik Toko (Akses Penuh)" },
                     ]}
                   />
@@ -1277,9 +1353,8 @@ function TabPengguna() {
                     value={editRole}
                     onChange={setEditRole}
                     options={[
-                      { value: "STAFF_KASIR", label: "Staff 1 (Kasir)" },
-                      { value: "STAFF_GUDANG", label: "Staff 2 (Stok / Gudang)" },
-                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Pengawasan)" },
+                      { value: "STAFF_KASIR", label: "Kasir" },
+                      { value: "KEPALA_TOKO", label: "Kepala Toko (Operasional & Persediaan)" },
                       { value: "OWNER", label: "Pemilik Toko (Akses Penuh)" },
                     ]}
                   />

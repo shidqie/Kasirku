@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { getSettings, updateSettings } from "@/services/settings.service";
 import { updateSettingsSchema } from "@/lib/validations/auth.schema";
 import { prisma } from "@/lib/db";
@@ -21,7 +21,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   const session = await getSession();
-  if (!session || (session.role !== "OWNER" && !hasPermission(session, "settings:manage"))) {
+  if (!session || !(await hasLiveAnyPermission(session, ["settings:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko atau pengguna berizin." }, { status: 403 });
   }
 
@@ -54,7 +54,7 @@ const toggleCostSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
-  if (!session || (session.role !== "OWNER" && !hasPermission(session, "settings:manage"))) {
+  if (!session || !(await hasLiveAnyPermission(session, ["settings:manage"]))) {
     return NextResponse.json(
       { error: "Akses ditolak. Hanya Pemilik Toko yang dapat mengubah pengaturan ini." },
       { status: 403 }

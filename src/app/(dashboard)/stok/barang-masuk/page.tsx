@@ -122,14 +122,26 @@ export default function BarangMasukPage() {
       const pData = await pRes.json();
       const rData = await rRes.json();
 
-      if (pRes.ok) setProducts(pData.products || []);
-      if (rRes.ok) setReceipts(rData.receipts || []);
+      if (pRes.ok) {
+        setProducts(pData.products || []);
+        if (typeof pData.meta?.showCost === "boolean") {
+          setShowCost(pData.meta.showCost);
+        }
+      }
+      if (rRes.ok) {
+        setReceipts(rData.receipts || []);
+        if (typeof rData.meta?.showCost === "boolean") {
+          setShowCost(rData.meta.showCost);
+        }
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const [showCost, setShowCost] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -221,7 +233,7 @@ export default function BarangMasukPage() {
             namaSatuan: i.namaSatuan,
             faktorKeDasar: i.faktorKeDasar,
             qty: i.qty,
-            hargaBeliPerSatuan: i.hargaBeliPerSatuan,
+            hargaBeliPerSatuan: showCost ? i.hargaBeliPerSatuan : 0,
           })),
         }),
       });
@@ -341,7 +353,11 @@ export default function BarangMasukPage() {
                           </span>
                         </div>
                         <span className="font-semibold text-slate-700 dark:text-zinc-300 tabular-nums shrink-0">
-                          {defaultSat ? formatRupiah(defaultSat.hargaBeli) : "-"}
+                          {showCost
+                            ? defaultSat
+                              ? formatRupiah(defaultSat.hargaBeli)
+                              : "-"
+                            : defaultSat?.namaSatuan || p.satuanDasar}
                         </span>
                       </button>
                     );
@@ -371,7 +387,9 @@ export default function BarangMasukPage() {
                   Daftar Barang ({items.length})
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  Tekan Enter di kolom harga untuk tambah baris
+                  {showCost
+                    ? "Tekan Enter di kolom harga untuk tambah baris"
+                    : "Isi qty dan satuan barang yang diterima"}
                 </span>
               </div>
 
@@ -383,15 +401,19 @@ export default function BarangMasukPage() {
                         <th className="py-2.5 px-3.5 min-w-[200px]">Barang</th>
                         <th className="py-2.5 px-2 w-24">Qty</th>
                         <th className="py-2.5 px-2 w-32">Satuan</th>
-                        <th className="py-2.5 px-2 w-36 text-right">Harga Beli</th>
-                        <th className="py-2.5 px-3.5 w-32 text-right">Subtotal</th>
+                        {showCost && (
+                          <>
+                            <th className="py-2.5 px-2 w-36 text-right">Harga Beli</th>
+                            <th className="py-2.5 px-3.5 w-32 text-right">Subtotal</th>
+                          </>
+                        )}
                         <th className="py-2.5 pr-3 w-10" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                       {items.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-8 text-slate-400 text-xs">
+                          <td colSpan={showCost ? 6 : 4} className="text-center py-8 text-slate-400 text-xs">
                             Cari produk di atas atau klik &ldquo;+ Tambah Baris&rdquo; di bawah untuk mulai mencatat.
                           </td>
                         </tr>
@@ -449,40 +471,44 @@ export default function BarangMasukPage() {
                                   }))}
                                 />
                               </td>
-                              <td className="py-2.5 px-2">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <span className="text-[11px] text-slate-400">Rp</span>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    required
-                                    placeholder="0"
-                                    value={
-                                      row.hargaBeliPerSatuan
-                                        ? row.hargaBeliPerSatuan.toLocaleString("id-ID")
-                                        : ""
-                                    }
-                                    onChange={(e) => {
-                                      const digits = e.target.value.replace(/\D/g, "");
-                                      const updated = [...items];
-                                      updated[idx].hargaBeliPerSatuan = digits
-                                        ? parseInt(digits, 10)
-                                        : 0;
-                                      setItems(updated);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        handleAddItemRow();
-                                      }
-                                    }}
-                                    className="w-24 bg-transparent text-xs font-semibold text-right text-slate-900 dark:text-zinc-100 focus:outline-none tabular-nums"
-                                  />
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3.5 text-right font-bold text-slate-900 dark:text-zinc-100 tabular-nums whitespace-nowrap">
-                                {formatRupiah(subtotal)}
-                              </td>
+                              {showCost && (
+                                <>
+                                  <td className="py-2.5 px-2">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <span className="text-[11px] text-slate-400">Rp</span>
+                                      <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        required
+                                        placeholder="0"
+                                        value={
+                                          row.hargaBeliPerSatuan
+                                            ? row.hargaBeliPerSatuan.toLocaleString("id-ID")
+                                            : ""
+                                        }
+                                        onChange={(e) => {
+                                          const digits = e.target.value.replace(/\D/g, "");
+                                          const updated = [...items];
+                                          updated[idx].hargaBeliPerSatuan = digits
+                                            ? parseInt(digits, 10)
+                                            : 0;
+                                          setItems(updated);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleAddItemRow();
+                                          }
+                                        }}
+                                        className="w-24 bg-transparent text-xs font-semibold text-right text-slate-900 dark:text-zinc-100 focus:outline-none tabular-nums"
+                                      />
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-3.5 text-right font-bold text-slate-900 dark:text-zinc-100 tabular-nums whitespace-nowrap">
+                                    {formatRupiah(subtotal)}
+                                  </td>
+                                </>
+                              )}
                               <td className="py-2.5 pr-3 text-right">
                                 <button
                                   type="button"
@@ -516,14 +542,20 @@ export default function BarangMasukPage() {
 
             {items.length > 0 && (
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs text-slate-500 dark:text-zinc-400">
-                    Total Nilai Belanja Masuk:{" "}
-                  </span>
-                  <span className="text-lg font-bold text-slate-900 dark:text-zinc-100 tabular-nums ml-1">
-                    {formatRupiah(grandTotal)}
-                  </span>
-                </div>
+                {showCost ? (
+                  <div>
+                    <span className="text-xs text-slate-500 dark:text-zinc-400">
+                      Total Nilai Belanja Masuk:{" "}
+                    </span>
+                    <span className="text-lg font-bold text-slate-900 dark:text-zinc-100 tabular-nums ml-1">
+                      {formatRupiah(grandTotal)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500 dark:text-zinc-400">
+                    Total item diterima: <strong className="text-slate-900 dark:text-zinc-100">{items.length} baris</strong>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -549,21 +581,21 @@ export default function BarangMasukPage() {
                 <DataTableHead>Waktu</DataTableHead>
                 <DataTableHead>Diterima oleh</DataTableHead>
                 <DataTableHead>Rincian barang</DataTableHead>
-                <DataTableHead align="right">Total nilai</DataTableHead>
+                {showCost && <DataTableHead align="right">Total nilai</DataTableHead>}
               </tr>
             </DataTableHeader>
             <DataTableBody>
               {loading ? (
-                <TableSkeletonRows rows={5} cols={5} />
+                <TableSkeletonRows rows={5} cols={showCost ? 5 : 4} />
               ) : receipts.length === 0 ? (
-                <DataTableEmpty colSpan={5} className="py-8">
+                <DataTableEmpty colSpan={showCost ? 5 : 4} className="py-8">
                   Belum ada riwayat penerimaan barang masuk.
                 </DataTableEmpty>
               ) : (
                 receipts
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                   .map((r) => {
-                  const totalNilai = r.items.reduce((s, it) => s + it.subtotal, 0);
+                  const totalNilai = r.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);
                   return (
                     <tr key={r.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
                       <td className="py-3.5 px-4 font-sans font-bold text-[#F0090F]">{r.nomor}</td>
@@ -586,9 +618,11 @@ export default function BarangMasukPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-sans font-bold text-slate-800">
-                        {formatRupiah(totalNilai)}
-                      </td>
+                      {showCost && (
+                        <td className="py-3.5 px-4 text-right font-sans font-bold text-slate-800">
+                          {formatRupiah(totalNilai)}
+                        </td>
+                      )}
                     </tr>
                   );
                 })

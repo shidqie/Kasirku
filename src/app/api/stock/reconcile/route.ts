@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { reconcileStock } from "@/services/stock.service";
 import { reconcileStockSchema } from "@/lib/validations/stock.schema";
+import { hasLiveAnyPermission } from "@/lib/auth/cost-access";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !(await hasLiveAnyPermission(session, ["stok:adjust", "stok:opname_approve"]))) {
+    return NextResponse.json(
+      { error: "Akses ditolak. Hanya untuk Pemilik Toko atau Kepala Toko." },
+      { status: 403 }
+    );
   }
 
   try {

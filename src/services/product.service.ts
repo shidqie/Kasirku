@@ -356,7 +356,7 @@ export async function createProduct(
     });
 
     return p;
-  });
+  }, { timeout: 15000 });
 
   await logActivity({
     userId,
@@ -512,7 +512,7 @@ export async function updateProduct(
         },
       },
     });
-  });
+  }, { timeout: 15000 });
 
   // Catat riwayat perubahan harga ke log
   await logActivity({

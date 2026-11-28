@@ -7,7 +7,7 @@ import { hasAnyPermission } from "@/lib/auth/permissions";
 import { logActivity } from "@/services/activity-log.service";
 import { generateUniqueSku } from "@/services/product.service";
 import { recordPriceChanges } from "@/services/price-history.service";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, getLiveUserFromSession } from "@/lib/auth/cost-access";
 
 const importSatuanSchema = z.object({
   namaSatuan: z.string().trim().min(1, "Nama satuan wajib diisi"),
@@ -49,7 +49,15 @@ export interface ImportReportEntry {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:kasbon", "piutang:view"])) {
+  if (!session) {
+    return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+
+  const liveUser = await getLiveUserFromSession(session);
+  if (
+    !liveUser ||
+    !hasAnyPermission({ role: liveUser.role, permissions: liveUser.permissions }, ["produk:manage"])
+  ) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
@@ -398,7 +406,7 @@ export async function POST(req: NextRequest) {
 
     await logActivity({
       userId: session.userId,
-      role: session.role,
+      role: liveUser.role,
       aksi: "IMPORT_PRODUK",
       entitas: "Produk",
       entitasId: null,

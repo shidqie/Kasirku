@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { approveOpname } from "@/services/opname.service";
 
 export async function POST(
@@ -8,8 +8,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || !hasPermission(session, "stok:opname_approve")) {
-    return NextResponse.json({ error: "Akses ditolak. Persetujuan opname hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !(await hasLiveAnyPermission(session, ["stok:opname_approve"]))) {
+    return NextResponse.json(
+      { error: "Akses ditolak. Persetujuan opname hanya untuk Pemilik Toko atau Kepala Toko." },
+      { status: 403 }
+    );
   }
 
   try {

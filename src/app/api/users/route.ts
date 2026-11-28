@@ -30,13 +30,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (validated.data.role === "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Tidak dapat membuat akun Super Admin dari pengaturan toko." },
-        { status: 403 }
-      );
-    }
-
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const newUser = await createUser(
       {

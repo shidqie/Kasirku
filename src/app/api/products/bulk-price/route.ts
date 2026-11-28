@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasAnyPermission } from "@/lib/auth/permissions";
 import { bulkRaisePrices } from "@/services/product.service";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, getLiveUserFromSession } from "@/lib/auth/cost-access";
 
 const bulkPriceSchema = z.object({
   scope: z.enum(["SINGLE", "CATEGORY", "ALL"]),
@@ -17,7 +17,15 @@ const bulkPriceSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasPermission(session, "produk:manage")) {
+  if (!session) {
+    return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+
+  const liveUser = await getLiveUserFromSession(session);
+  if (
+    !liveUser ||
+    !hasAnyPermission({ role: liveUser.role, permissions: liveUser.permissions }, ["produk:manage", "produk:price"])
+  ) {
     return NextResponse.json(
       { error: "Akses ditolak. Anda tidak memiliki izin mengubah harga produk." },
       { status: 403 }
@@ -40,7 +48,7 @@ export async function POST(req: NextRequest) {
       {
         ...parsed.data,
         allowEditHargaBeli: costCtx.canViewHargaBeli,
-        role: session.role,
+        role: liveUser.role,
       },
       session.userId,
       ip

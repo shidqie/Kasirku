@@ -147,7 +147,7 @@ export async function catatBarangMasuk(input: BarangMasukInput, userId: string, 
     }
 
     return { bm, items: createdItems };
-  });
+  }, { timeout: 15000 });
 
   await logActivity({
     userId,
@@ -175,10 +175,10 @@ export async function adjustStockManual(
     throw new Error("Jumlah penyesuaian tidak boleh 0");
   }
 
-  // Jika dilakukan oleh Staff, validasi PIN Owner
-  if (user.role === "STAFF") {
+  // Jika bukan Pemilik/Kepala Toko, wajib verifikasi PIN Owner untuk penyesuaian stok
+  if (user.role !== "OWNER" && user.role !== "KEPALA_TOKO") {
     if (!input.pinOwner) {
-      throw new Error("Penyesuaian stok oleh staff memerlukan PIN Pemilik Toko");
+      throw new Error("Penyesuaian stok oleh kasir/staff memerlukan PIN Pemilik Toko");
     }
     const pinVerification = await verifyOwnerPin(input.pinOwner, user.id, ip);
     if (!pinVerification.valid) {

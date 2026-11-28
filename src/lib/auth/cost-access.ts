@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasAnyPermission, hasPermission, type Permission } from "@/lib/auth/permissions";
 import { getSettings } from "@/services/settings.service";
 import type { SessionPayload } from "@/lib/auth/session";
 
@@ -10,6 +10,24 @@ export interface CostAccessContext {
   canViewHargaBeli: boolean;
   /** Efektif boleh melihat/mengedit harga beli & margin di UI/API */
   showCost: boolean;
+}
+
+export async function getLiveUserFromSession(session: SessionPayload) {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, role: true, permissions: true, nama: true, aktif: true },
+  });
+  if (!dbUser || !dbUser.aktif) return null;
+  return dbUser;
+}
+
+export async function hasLiveAnyPermission(
+  session: SessionPayload,
+  permissions: Permission[]
+): Promise<boolean> {
+  const dbUser = await getLiveUserFromSession(session);
+  if (!dbUser) return false;
+  return hasAnyPermission({ role: dbUser.role, permissions: dbUser.permissions }, permissions);
 }
 
 /**

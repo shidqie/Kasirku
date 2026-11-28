@@ -3,8 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { getProducts, createProduct, checkPrice } from "@/services/product.service";
 import { createProductSchema } from "@/lib/validations/product.schema";
 import { groupProductsForDisplay } from "@/lib/product-grouping";
-import { hasAnyPermission } from "@/lib/auth/permissions";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { sanitizeProductCost, sanitizeProductsCost } from "@/lib/product-visibility";
 
 export async function GET(req: NextRequest) {
@@ -49,8 +48,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:kasbon", "piutang:view"])) {
-    return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
+  if (!session || !(await hasLiveAnyPermission(session, ["produk:manage"]))) {
+    return NextResponse.json(
+      {
+        error:
+          "Akses ditolak. Hanya Pemilik atau Kepala Toko yang dapat menambah produk langsung; kasir silakan gunakan Ajukan Produk Baru.",
+      },
+      { status: 403 }
+    );
   }
 
   try {

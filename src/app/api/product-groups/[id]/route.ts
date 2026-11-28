@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasAnyPermission } from "@/lib/auth/permissions";
+import { hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import {
   deleteProductGroup,
   updateProductGroup,
@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !(await hasLiveAnyPermission(session, ["produk:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
@@ -43,7 +43,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !(await hasLiveAnyPermission(session, ["produk:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 

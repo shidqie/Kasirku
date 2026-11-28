@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { getProductById, updateProduct, deleteProduct } from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validations/product.schema";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, getLiveUserFromSession } from "@/lib/auth/cost-access";
 import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function GET(
@@ -32,7 +32,15 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage", "produk:price", "satuan:manage"])) {
+  if (!session) {
+    return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+
+  const liveUser = await getLiveUserFromSession(session);
+  if (
+    !liveUser ||
+    !hasAnyPermission({ role: liveUser.role, permissions: liveUser.permissions }, ["produk:manage", "produk:price", "satuan:manage"])
+  ) {
     return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin mengelola produk." }, { status: 403 });
   }
 
@@ -50,7 +58,7 @@ export async function PATCH(
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const product = await updateProduct(params.id, validated.data, session.userId, ip, {
       allowEditHargaBeli: costCtx.canViewHargaBeli,
-      userRole: session.role,
+      userRole: liveUser.role,
     });
 
     return NextResponse.json({
@@ -70,7 +78,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session) {
+    return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+
+  const liveUser = await getLiveUserFromSession(session);
+  if (
+    !liveUser ||
+    !hasAnyPermission({ role: liveUser.role, permissions: liveUser.permissions }, ["produk:manage"])
+  ) {
     return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin menghapus produk." }, { status: 403 });
   }
 

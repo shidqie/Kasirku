@@ -60,12 +60,6 @@ export function BottomNavbar({ user, onMenuToggle }: BottomNavbarProps) {
           { label: "Riwayat", href: "/transaksi", icon: History },
           { label: "Piutang", href: "/member", icon: Users },
         ];
-      case "STAFF_GUDANG":
-        return [
-          { label: "Belanja", href: "/stok/perlu-belanja", icon: AlertTriangle },
-          { label: "Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
-          { label: "Opname", href: "/stok/opname", icon: ClipboardCheck },
-        ];
       case "OWNER":
       default:
         return [

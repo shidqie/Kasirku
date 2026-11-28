@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { adjustStockManual } from "@/services/stock.service";
 import { stockAdjustmentSchema } from "@/lib/validations/stock.schema";
+import { getLiveUserFromSession } from "@/lib/auth/cost-access";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
+  }
+
+  const liveUser = await getLiveUserFromSession(session);
+  if (!liveUser || !hasPermission({ role: liveUser.role, permissions: liveUser.permissions }, "stok:adjust")) {
+    return NextResponse.json(
+      { error: "Akses ditolak. Penyesuaian stok hanya untuk Pemilik atau Kepala Toko." },
+      { status: 403 }
+    );
   }
 
   try {
@@ -22,7 +32,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const result = await adjustStockManual(
       validated.data,
-      { id: session.userId, role: session.role },
+      { id: session.userId, role: liveUser.role },
       ip
     );
 

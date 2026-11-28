@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasAnyPermission } from "@/lib/auth/permissions";
 import { moveProductToGroup } from "@/services/product-group.service";
 import { moveProductToGroupSchema } from "@/lib/validations/product-group.schema";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function POST(
@@ -11,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !(await hasLiveAnyPermission(session, ["produk:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 

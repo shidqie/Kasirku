@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { getCategories, createCategory } from "@/services/product.service";
 import { categorySchema } from "@/lib/validations/product.schema";
 
@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasPermission(session, "kategori:manage")) {
+  if (!session || !(await hasLiveAnyPermission(session, ["kategori:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin mengelola kategori." }, { status: 403 });
   }
 

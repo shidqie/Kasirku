@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasAnyPermission } from "@/lib/auth/permissions";
 import {
   createProductGroupWithVariants,
   getProductGroups,
 } from "@/services/product-group.service";
 import { createProductGroupSchema } from "@/lib/validations/product-group.schema";
-import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { getCostAccessContext, hasLiveAnyPermission } from "@/lib/auth/cost-access";
 import { sanitizeProductsCost } from "@/lib/product-visibility";
 
 export async function GET() {
@@ -28,7 +27,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !(await hasLiveAnyPermission(session, ["produk:manage"]))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 

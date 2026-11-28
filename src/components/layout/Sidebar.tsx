@@ -155,6 +155,14 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       const kelolaItems: NavItemConfig[] = [];
       if (hasAnyPermission(user, ["produk:view", "produk:manage"])) {
         kelolaItems.push({ label: "Produk & Harga", href: "/owner/produk", icon: Package });
+      }
+      if (hasPermission(user, "satuan:manage")) {
+        kelolaItems.push({ label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes });
+      }
+      if (hasPermission(user, "kategori:manage")) {
+        kelolaItems.push({ label: "Kategori Produk", href: "/owner/kategori", icon: Layers });
+      }
+      if (hasAnyPermission(user, ["produk:view", "produk:manage"])) {
         kelolaItems.push({ label: "Aturan Promo", href: "/owner/promo", icon: Tag });
       }
       if (hasAnyPermission(user, ["reports:sales", "reports:operational"])) {
@@ -182,9 +190,17 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
           collapsible: true,
           items: [
             { label: "Kasir", href: "/kasir", icon: ShoppingCart },
+            { label: "Riwayat Transaksi", href: "/transaksi", icon: History },
             { label: "Piutang", href: "/member", icon: Users },
-            { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
-            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck, badgeKey: "pendingOpname" },
+          ],
+        },
+        {
+          key: "persediaan",
+          title: "PERSEDIAAN & STOK",
+          collapsible: true,
+          items: [
+            { label: "Stok Menipis", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
+            { label: "Stok Opname", href: "/stok/opname", icon: ClipboardCheck, badgeKey: "pendingOpname" },
             { label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
           ],
         },
@@ -193,7 +209,7 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       if (kelolaItems.length > 0) {
         result.push({
           key: "kelola",
-          title: "KELOLA & LAPORAN",
+          title: "MASTER & LAPORAN",
           collapsible: true,
           items: kelolaItems,
         });
@@ -201,23 +217,21 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       return result;
     }
 
-    if (user.role === "STAFF_GUDANG") {
-      return [
-        {
-          key: "gudang",
-          title: "GUDANG & STOK",
-          items: [
-            { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
-            { label: "Opname", href: "/stok/opname", icon: ClipboardCheck },
-            { label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus },
-            { label: "Produk", href: "/owner/produk", icon: Package },
-          ],
-        },
-      ];
-    }
-
+    // Legacy STAFF_GUDANG tanpa izin operasional tidak lagi memakai menu gudang terpisah
     // STAFF_KASIR / STAFF (default kasir) + izin delegasi tambahan
     const delegatedItems: NavItemConfig[] = [];
+    if (hasPermission(user, "satuan:manage")) {
+      delegatedItems.push({ label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes });
+    }
+    if (hasPermission(user, "kategori:manage")) {
+      delegatedItems.push({ label: "Kategori Produk", href: "/owner/kategori", icon: Layers });
+    }
+    if (hasPermission(user, "stok:view")) {
+      delegatedItems.push({ label: "Stok Menipis", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" });
+    }
+    if (hasPermission(user, "stok:barang_masuk")) {
+      delegatedItems.push({ label: "Barang Masuk", href: "/stok/barang-masuk", icon: PackagePlus });
+    }
     if (hasPermission(user, "reports:sales")) {
       delegatedItems.push({ label: "Laporan Pendapatan", href: "/owner/laporan?tab=sales", icon: TrendingUp });
     }
@@ -228,23 +242,26 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       delegatedItems.push({ label: "Kelola Staff", href: "/owner/pengaturan?tab=pengguna", icon: Settings });
     }
 
+    const operasionalKasir: NavItemConfig[] = [
+      { label: "Kasir", href: "/kasir", icon: ShoppingCart },
+      { label: "Piutang", href: "/member", icon: Users },
+    ];
+    if (hasPermission(user, "transaksi:view")) {
+      operasionalKasir.splice(1, 0, { label: "Riwayat Transaksi", href: "/transaksi", icon: History });
+    }
+
     const staffGroups: NavGroupConfig[] = [
       {
         key: "operasional",
         title: "OPERASIONAL",
-        items: [
-          { label: "Kasir", href: "/kasir", icon: ShoppingCart },
-          { label: "Piutang", href: "/member", icon: Users },
-        ],
+        items: operasionalKasir,
       },
       {
         key: "datamaster",
-        title: "DATA MASTER",
+        title: "PRODUK & HARGA",
         collapsible: true,
         items: [
           { label: "Produk & Harga", href: "/owner/produk", icon: Package },
-          { label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes },
-          { label: "Kategori Produk", href: "/owner/kategori", icon: Layers },
           { label: "Aturan Promo", href: "/owner/promo", icon: Tag },
         ],
       },
@@ -253,7 +270,7 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
     if (delegatedItems.length > 0) {
       staffGroups.push({
         key: "delegasi",
-        title: "LAPORAN & KELOLA",
+        title: "IZIN TAMBAHAN",
         collapsible: true,
         items: delegatedItems,
       });

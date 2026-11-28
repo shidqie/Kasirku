@@ -80,6 +80,8 @@ model User {
   activityLogs       ActivityLog[]
   kasbonPembayaran   KasbonPembayaran[]
   riwayatHarga       RiwayatHarga[]
+  pengajuanDiajukan  PengajuanPerubahan[] @relation("PengajuanDiajukan")
+  pengajuanDitinjau  PengajuanPerubahan[] @relation("PengajuanDitinjau")
 
   @@map("user")
 }
@@ -171,9 +173,10 @@ model Produk {
   barangMasukItem BarangMasukItem[]
   opnameItem      StokOpnameItem[]
   transaksiItem   TransaksiItem[]
-  promoTargets    PromoRule[]       @relation("PromoTargetProduk")
-  promoBonuses    PromoRule[]       @relation("PromoBonusProduk")
+  promoTargets    PromoRule[]          @relation("PromoTargetProduk")
+  promoBonuses    PromoRule[]          @relation("PromoBonusProduk")
   riwayatHarga    RiwayatHarga[]
+  pengajuan       PengajuanPerubahan[]
 
   @@index([sku])
   @@index([nama])
@@ -202,6 +205,30 @@ model RiwayatHarga {
   @@index([produkId, dibuatPada])
   @@index([dibuatPada])
   @@map("riwayat_harga")
+}
+
+// 4d. Pengajuan Produk Baru & Perubahan Harga oleh Kasir -> Persetujuan Kepala Toko / Pemilik
+model PengajuanPerubahan {
+  id              String    @id @default(cuid())
+  tipe            String    // "PRODUK_BARU" | "UBAH_HARGA"
+  status          String    @default("MENUNGGU") // "MENUNGGU" | "DISETUJUI" | "DITOLAK"
+  produkId        String?   @map("produk_id")
+  namaProduk      String    @map("nama_produk")
+  payloadJson     Json      @map("payload_json")
+  catatanPengaju  String?   @map("catatan_pengaju")
+  catatanPeninjau String?   @map("catatan_peninjau")
+  diajukanOlehId  String?   @map("diajukan_oleh_id")
+  ditinjauOlehId  String?   @map("ditinjau_oleh_id")
+  ditinjauPada    DateTime? @map("ditinjau_pada")
+  dibuatPada      DateTime  @default(now()) @map("dibuat_pada")
+
+  produk       Produk? @relation(fields: [produkId], references: [id], onDelete: SetNull)
+  diajukanOleh User?   @relation("PengajuanDiajukan", fields: [diajukanOlehId], references: [id], onDelete: SetNull)
+  ditinjauOleh User?   @relation("PengajuanDitinjau", fields: [ditinjauOlehId], references: [id], onDelete: SetNull)
+
+  @@index([status, dibuatPada])
+  @@index([diajukanOlehId])
+  @@map("pengajuan_perubahan")
 }
 
 model SatuanProduk {
