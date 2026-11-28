@@ -91,6 +91,69 @@ interface CategoryOption {
   nama: string;
 }
 
+interface UnitTemplate {
+  id: string;
+  label: string;
+  satuanDasar: string;
+  units: Array<{ namaSatuan: string; faktorKeDasar: number }>;
+}
+
+const UNIT_TEMPLATES: UnitTemplate[] = [
+  {
+    id: "pcs",
+    label: "Pcs",
+    satuanDasar: "pcs",
+    units: [{ namaSatuan: "pcs", faktorKeDasar: 1 }],
+  },
+  {
+    id: "pcs-pak-dus",
+    label: "Pcs · Pak · Dus",
+    satuanDasar: "pcs",
+    units: [
+      { namaSatuan: "pcs", faktorKeDasar: 1 },
+      { namaSatuan: "pak", faktorKeDasar: 12 },
+      { namaSatuan: "dus", faktorKeDasar: 24 },
+    ],
+  },
+  {
+    id: "sachet-renceng",
+    label: "Sachet · Renceng",
+    satuanDasar: "sachet",
+    units: [
+      { namaSatuan: "sachet", faktorKeDasar: 1 },
+      { namaSatuan: "renceng", faktorKeDasar: 10 },
+    ],
+  },
+  {
+    id: "kg-eceran",
+    label: "Kg · ½ · ¼",
+    satuanDasar: "kg",
+    units: [
+      { namaSatuan: "kg", faktorKeDasar: 1 },
+      { namaSatuan: "1/2 kg", faktorKeDasar: 0.5 },
+      { namaSatuan: "1/4 kg", faktorKeDasar: 0.25 },
+    ],
+  },
+  {
+    id: "botol-dus",
+    label: "Botol · Dus",
+    satuanDasar: "botol",
+    units: [
+      { namaSatuan: "botol", faktorKeDasar: 1 },
+      { namaSatuan: "dus", faktorKeDasar: 24 },
+    ],
+  },
+  {
+    id: "liter",
+    label: "Liter · ½",
+    satuanDasar: "liter",
+    units: [
+      { namaSatuan: "liter", faktorKeDasar: 1 },
+      { namaSatuan: "1/2 liter", faktorKeDasar: 0.5 },
+    ],
+  },
+];
+
 function TabProduk() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -303,6 +366,67 @@ function TabProduk() {
       { namaSatuan: "", faktorKeDasar: 1, hargaJual: 0, hargaBeli: 0, isDefault: false },
     ]);
   };
+
+  const applyUnitTemplate = (tpl: UnitTemplate) => {
+    const baseRow =
+      satuanList.find((s) => Number(s.faktorKeDasar) === 1) || satuanList[0];
+    const baseHargaJual = baseRow ? Number(baseRow.hargaJual) || 0 : 0;
+    const baseHargaBeli = baseRow ? Number(baseRow.hargaBeli) || 0 : 0;
+
+    setSatuanDasar(tpl.satuanDasar);
+    setSatuanList(
+      tpl.units.map((u, idx) => {
+        const existing = satuanList.find(
+          (s) => s.namaSatuan.trim().toLowerCase() === u.namaSatuan.toLowerCase()
+        );
+        return {
+          namaSatuan: u.namaSatuan,
+          faktorKeDasar: u.faktorKeDasar,
+          hargaJual: existing
+            ? existing.hargaJual
+            : baseHargaJual > 0
+            ? Math.round(baseHargaJual * u.faktorKeDasar)
+            : 0,
+          hargaBeli: existing
+            ? existing.hargaBeli
+            : baseHargaBeli > 0
+            ? Math.round(baseHargaBeli * u.faktorKeDasar)
+            : 0,
+          isDefault: idx === 0,
+        };
+      })
+    );
+  };
+
+  const renderUnitTemplates = () => (
+    <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+      <span className="text-[11px] text-slate-400 mr-0.5">Template:</span>
+      {UNIT_TEMPLATES.map((tpl) => {
+        const isActive =
+          satuanDasar.trim().toLowerCase() === tpl.satuanDasar.toLowerCase() &&
+          satuanList.length === tpl.units.length &&
+          tpl.units.every(
+            (u, i) =>
+              satuanList[i]?.namaSatuan.trim().toLowerCase() === u.namaSatuan.toLowerCase() &&
+              Number(satuanList[i]?.faktorKeDasar) === u.faktorKeDasar
+          );
+        return (
+          <button
+            key={tpl.id}
+            type="button"
+            onClick={() => applyUnitTemplate(tpl)}
+            className={`px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer ${
+              isActive
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            {tpl.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   const handleRemoveSatuanRow = (index: number) => {
     if (satuanList.length <= 1) return;
@@ -1197,6 +1321,8 @@ function TabProduk() {
                     )}
                   </div>
 
+                  {isDrawerEditing && renderUnitTemplates()}
+
                   <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                     {!isDrawerEditing ? (
                       <table className="w-full text-left text-xs border-collapse">
@@ -1727,6 +1853,8 @@ function TabProduk() {
                     <span>Tambah</span>
                   </button>
                 </div>
+
+                {renderUnitTemplates()}
 
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                   <table className="w-full text-left text-xs border-collapse">
