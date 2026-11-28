@@ -1452,9 +1452,15 @@ export default function MemberDetailPage() {
                                         </span>
                                       </div>
                                       <p className="text-[11px] text-slate-500 dark:text-zinc-400 pb-2 border-b border-slate-100 dark:border-zinc-800">
-                                        Diambil oleh {sub.pengambil}
+                                        Diambil oleh{" "}
+                                        <strong className="font-semibold text-slate-900 dark:text-zinc-100">
+                                          {sub.pengambil}
+                                        </strong>
                                         {subCode ? ` · ${subCode}` : ""}
-                                        {` · Kasir ${sub.kasir}`}
+                                        {" · Kasir "}
+                                        <strong className="font-semibold text-slate-900 dark:text-zinc-100">
+                                          {sub.kasir}
+                                        </strong>
                                       </p>
                                       <div className="overflow-x-auto">
                                         <table className="w-full text-[11px]">
@@ -1683,9 +1689,15 @@ export default function MemberDetailPage() {
                                             </div>
 
                                             <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                                              Diambil oleh {sub.pengambil}
+                                              Diambil oleh{" "}
+                                              <strong className="font-semibold text-slate-900 dark:text-zinc-100">
+                                                {sub.pengambil}
+                                              </strong>
                                               {subCode ? ` · ${subCode}` : ""}
-                                              {` · Kasir ${sub.kasir}`}
+                                              {" · Kasir "}
+                                              <strong className="font-semibold text-slate-900 dark:text-zinc-100">
+                                                {sub.kasir}
+                                              </strong>
                                             </p>
 
                                             {/* Tabel Barang, Qty, Harga Satuan, Subtotal */}
