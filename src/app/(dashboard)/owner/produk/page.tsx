@@ -83,6 +83,11 @@ function TabProduk() {
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const [downloadingPriceList, setDownloadingPriceList] = useState(false);
+  const [unregisteredBarcode, setUnregisteredBarcode] = useState<string | null>(null);
+  const [assignProducts, setAssignProducts] = useState<ProductItem[]>([]);
+  const [assignSearch, setAssignSearch] = useState("");
+  const [loadingAssignProducts, setLoadingAssignProducts] = useState(false);
+  const [assigningProductId, setAssigningProductId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [scannerRowProductId, setScannerRowProductId] = useState<string | null>(null);
@@ -1303,11 +1308,189 @@ function TabProduk() {
             setBarcode(cleanCode);
             setIsScannerOpen(false);
           } else {
-            setSearchQuery(cleanCode);
+            // Cek apakah barcode sudah terdaftar di daftar produk
             setIsScannerOpen(false);
+            try {
+              const res = await fetch(`/api/products?search=${encodeURIComponent(cleanCode)}`);
+              const data = await res.json();
+              const foundList: ProductItem[] = Array.isArray(data?.products) ? data.products : [];
+              const exactMatch = foundList.find(
+                (p) => (p.barcode || "").trim().toLowerCase() === cleanCode.toLowerCase()
+              );
+
+              if (exactMatch) {
+                setFilterStok("SEMUA");
+                setSelectedKategori("");
+                setCurrentPage(1);
+                setSearchQuery(cleanCode);
+                setSuccess(`Produk ditemukan: ${exactMatch.nama} (${cleanCode})`);
+              } else {
+                // Tidak terdaftar -> buka modal pilih produk untuk dipasangkan barcode ini
+                setUnregisteredBarcode(cleanCode);
+                setAssignSearch("");
+                setLoadingAssignProducts(true);
+                try {
+                  const allRes = await fetch("/api/products");
+                  const allData = await allRes.json();
+                  setAssignProducts(Array.isArray(allData?.products) ? allData.products : []);
+                } catch {
+                  setAssignProducts(products);
+                } finally {
+                  setLoadingAssignProducts(false);
+                }
+              }
+            } catch {
+              setSearchQuery(cleanCode);
+            }
           }
         }}
       />
+
+      {/* Modal Pilih Produk untuk Barcode yang Belum Terdaftar */}
+      {unregisteredBarcode && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setUnregisteredBarcode(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[85dvh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-zinc-800">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold mb-1.5">
+                  <Barcode className="w-3.5 h-3.5" />
+                  <span className="font-mono">{unregisteredBarcode}</span>
+                </span>
+                <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                  Barcode Belum Terdaftar
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Pilih produk untuk memasangkan barcode ini, atau buat produk baru.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUnregisteredBarcode(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-slate-100 dark:border-zinc-800">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={assignSearch}
+                  onChange={(e) => setAssignSearch(e.target.value)}
+                  placeholder="Cari nama produk..."
+                  className="w-full pl-9 pr-3 h-10 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs font-medium focus:outline-none focus:border-slate-900"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
+              {loadingAssignProducts ? (
+                <div className="py-10 text-center text-xs text-slate-400">
+                  Memuat daftar produk...
+                </div>
+              ) : (() => {
+                const q = assignSearch.trim().toLowerCase();
+                const filtered = assignProducts.filter(
+                  (p) => !q || p.nama.toLowerCase().includes(q)
+                );
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-10 text-center text-xs text-slate-400">
+                      Produk tidak ditemukan.
+                    </div>
+                  );
+                }
+                return filtered.slice(0, 40).map((p) => {
+                  const defaultUnit = p.satuanProduk.find((s) => s.isDefault) || p.satuanProduk[0];
+                  const isAssigning = assigningProductId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={Boolean(assigningProductId)}
+                      onClick={async () => {
+                        setAssigningProductId(p.id);
+                        setError(null);
+                        try {
+                          const res = await fetch(`/api/products/${p.id}/barcode`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ barcode: unregisteredBarcode }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) {
+                            setError(data.error || "Gagal memasangkan barcode");
+                            return;
+                          }
+                          setSuccess(`Barcode ${unregisteredBarcode} berhasil dipasang ke "${p.nama}"`);
+                          const scanned = unregisteredBarcode;
+                          setUnregisteredBarcode(null);
+                          setFilterStok("SEMUA");
+                          setSelectedKategori("");
+                          setCurrentPage(1);
+                          setSearchQuery(scanned);
+                          fetchData();
+                        } catch (err: any) {
+                          setError(err.message || "Gagal menghubungi server");
+                        } finally {
+                          setAssigningProductId(null);
+                        }
+                      }}
+                      className="w-full px-5 py-3 text-left hover:bg-slate-50 dark:hover:bg-zinc-800/60 flex items-center justify-between gap-3 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-900 dark:text-zinc-100 truncate">
+                          {p.nama}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {p.kategori?.nama || "Umum"} · {formatRupiah(defaultUnit?.hargaJual || 0)}
+                          {p.barcode ? ` · Barcode lama: ${p.barcode}` : " · Tanpa barcode"}
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-semibold text-blue-600 shrink-0">
+                        {isAssigning ? "Menyimpan..." : "Pilih"}
+                      </span>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2 bg-slate-50/70 dark:bg-zinc-900">
+              <button
+                type="button"
+                onClick={() => setUnregisteredBarcode(null)}
+                className="h-9 px-3.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const code = unregisteredBarcode;
+                  setUnregisteredBarcode(null);
+                  openCreateModal();
+                  setBarcode(code);
+                }}
+                className="h-9 px-4 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer"
+                style={{ background: "var(--primary)" }}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Buat Produk Baru</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <HargaNaikModal
         isOpen={isHargaNaikOpen}
