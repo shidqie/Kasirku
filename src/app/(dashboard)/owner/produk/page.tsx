@@ -436,12 +436,30 @@ function TabProduk() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={openCreateModal}
+              className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+            >
+              <span className="hidden sm:inline">Tambah produk</span>
+              <span className="sm:hidden">Tambah</span>
+            </button>
+            <button
+              onClick={() => {
+                setScannerTarget("SEARCH");
+                setIsScannerOpen(true);
+              }}
+              className="h-10 w-10 sm:w-auto sm:px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs cursor-pointer"
+              title="Scan barcode produk untuk mencari barang"
+            >
+              <Barcode className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Scan barcode</span>
+            </button>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
                 className="h-10 w-10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 active:scale-95 rounded-xl transition-all flex items-center justify-center cursor-pointer"
-                title="Menu lainnya (Import, Download Harga, Harga Naik)"
+                title="Menu lainnya (Varian, Import, Download Harga, Harga Naik)"
                 aria-label="Menu lainnya"
               >
                 <MoreHorizontal className="w-4 h-4" />
@@ -453,7 +471,18 @@ function TabProduk() {
                     className="fixed inset-0 z-30"
                     onClick={() => setIsDownloadMenuOpen(false)}
                   />
-                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
+                  <div className="absolute right-0 mt-1.5 w-56 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDownloadMenuOpen(false);
+                        setIsVariantGroupOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-violet-600" />
+                      <span>Tambah Produk Bervarian</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -510,32 +539,6 @@ function TabProduk() {
                 </>
               )}
             </div>
-            <button
-              onClick={() => {
-                setScannerTarget("SEARCH");
-                setIsScannerOpen(true);
-              }}
-              className="h-10 w-10 sm:w-auto sm:px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs cursor-pointer"
-              title="Scan barcode produk untuk mencari barang"
-            >
-              <Barcode className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">Scan barcode</span>
-            </button>
-            <button
-              onClick={() => setIsVariantGroupOpen(true)}
-              className="h-10 px-3 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-              title="Tambah produk dengan banyak varian / rasa"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">+ Varian</span>
-            </button>
-            <button
-              onClick={openCreateModal}
-              className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-            >
-              <span className="hidden sm:inline">Tambah produk</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
           </div>
         </div>
 
