@@ -134,6 +134,7 @@ export async function middleware(request: NextRequest) {
       anyOf: ["reports:top_products", "reports:sales"],
     },
     { prefix: "/owner/produk", anyOf: ["produk:view", "produk:manage"] },
+    { prefix: "/owner/promo", anyOf: ["produk:view", "produk:manage", "kasir:access"] },
     { prefix: "/owner/satuan", anyOf: ["satuan:manage"] },
     { prefix: "/owner/kategori", anyOf: ["kategori:manage"] },
     { prefix: "/owner/pengaturan", anyOf: ["settings:manage", "users:manage"] },

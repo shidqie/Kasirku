@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:access"])) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 

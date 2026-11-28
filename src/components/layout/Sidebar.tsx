@@ -155,6 +155,7 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       const kelolaItems: NavItemConfig[] = [];
       if (hasAnyPermission(user, ["produk:view", "produk:manage"])) {
         kelolaItems.push({ label: "Produk & Harga", href: "/owner/produk", icon: Package });
+        kelolaItems.push({ label: "Aturan Promo", href: "/owner/promo", icon: Tag });
       }
       if (hasAnyPermission(user, ["reports:sales", "reports:operational"])) {
         kelolaItems.push({ label: "Laporan Pendapatan", href: "/owner/laporan?tab=sales", icon: TrendingUp });
@@ -244,6 +245,7 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
           { label: "Produk & Harga", href: "/owner/produk", icon: Package },
           { label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes },
           { label: "Kategori Produk", href: "/owner/kategori", icon: Layers },
+          { label: "Aturan Promo", href: "/owner/promo", icon: Tag },
         ],
       },
     ];

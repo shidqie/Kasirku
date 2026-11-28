@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:access"])) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
@@ -31,7 +31,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+  if (!session || !hasAnyPermission(session, ["produk:manage", "kasir:access"])) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
