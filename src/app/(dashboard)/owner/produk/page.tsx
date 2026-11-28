@@ -1116,43 +1116,43 @@ function TabProduk() {
                             </div>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center justify-center gap-1 text-xs">
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center gap-0.5">
                             <button
                               onClick={() => setDetailProduct({ product: p, idBarang })}
-                              className="h-7 px-2.5 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                              title="Lihat detail produk"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                              title="Detail produk"
+                              aria-label="Detail produk"
                             >
                               <FileText className="w-3.5 h-3.5" />
-                              <span>Detail</span>
                             </button>
                             <button
                               onClick={() => {
                                 setDetailProduct({ product: p, idBarang });
                                 openEditInDrawer(p);
                               }}
-                              className="h-7 px-2.5 rounded-lg font-semibold text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
                               title="Edit produk & harga"
+                              aria-label="Edit produk"
                             >
                               <Pencil className="w-3.5 h-3.5" />
-                              <span>Edit</span>
                             </button>
                             <button
                               onClick={() => handleDuplicate(p)}
                               disabled={duplicatingId === p.id}
-                              className="h-7 px-2.5 rounded-lg font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer disabled:opacity-40"
                               title="Duplikat produk dengan ID baru"
+                              aria-label="Duplikat produk"
                             >
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>{duplicatingId === p.id ? "Menyalin..." : "Duplikat"}</span>
+                              <Copy className={`w-3.5 h-3.5 ${duplicatingId === p.id ? "animate-pulse" : ""}`} />
                             </button>
                             <button
                               onClick={() => handleDelete(p)}
-                              className="h-7 px-2.5 rounded-lg font-semibold text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                              title="Nonaktifkan produk"
+                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                              title="Hapus produk"
+                              aria-label="Hapus produk"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                              <span>Hapus</span>
                             </button>
                           </div>
                         </td>
