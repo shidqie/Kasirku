@@ -820,78 +820,91 @@ function TabProduk() {
                         <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                           <tr className="divide-x divide-slate-200">
                             <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                            <th className="py-2 px-2 font-semibold text-center w-16">Isi</th>
-                            <th className="py-2 px-2.5 font-semibold text-right">Harga</th>
+                            <th className="py-2 px-2 font-semibold text-center w-20">
+                              Isi ({satuanDasar || "pcs"})
+                            </th>
+                            <th className="py-2 px-2.5 font-semibold text-right">Harga jual</th>
+                            <th className="py-2 px-2.5 font-semibold text-right">
+                              Per {satuanDasar || "pcs"}
+                            </th>
                             <th className="py-2 px-1 w-8"></th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 text-slate-600">
-                          {satuanList.map((s, idx) => (
-                            <tr key={idx} className="divide-x divide-slate-200">
-                              <td className="p-0">
-                                <input
-                                  type="text"
-                                  required
-                                  list="preset-multi-satuan"
-                                  value={s.namaSatuan}
-                                  onChange={(e) => {
-                                    const u = [...satuanList];
-                                    u[idx].namaSatuan = e.target.value;
-                                    setSatuanList(u);
-                                  }}
-                                  placeholder="Satuan"
-                                  className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                                />
-                              </td>
-                              <td className="p-0">
-                                <NumberInput
-                                  min={0.001}
-                                  emptyFallback={1}
-                                  required
-                                  value={s.faktorKeDasar}
-                                  onChange={(val) => {
-                                    const u = [...satuanList];
-                                    u[idx].faktorKeDasar = val;
-                                    setSatuanList(u);
-                                  }}
-                                  className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                                />
-                              </td>
-                              <td className="p-0">
-                                <div className="relative flex items-center h-9 px-2.5">
-                                  <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
-                                    Rp
-                                  </span>
+                          {satuanList.map((s, idx) => {
+                            const faktor = Number(s.faktorKeDasar) || 1;
+                            const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
+                            return (
+                              <tr key={idx} className="divide-x divide-slate-200">
+                                <td className="p-0">
                                   <input
                                     type="text"
-                                    inputMode="numeric"
                                     required
-                                    placeholder="0"
-                                    value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                                    list="preset-multi-satuan"
+                                    value={s.namaSatuan}
                                     onChange={(e) => {
-                                      const digits = e.target.value.replace(/\D/g, "");
                                       const u = [...satuanList];
-                                      u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                                      u[idx].namaSatuan = e.target.value;
                                       setSatuanList(u);
                                     }}
-                                    className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
+                                    placeholder="Satuan"
+                                    className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
                                   />
-                                </div>
-                              </td>
-                              <td className="p-0 text-center">
-                                {satuanList.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveSatuanRow(idx)}
-                                    className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
-                                    title="Hapus baris satuan ini"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+                                <td className="p-0">
+                                  <NumberInput
+                                    min={0.001}
+                                    emptyFallback={1}
+                                    required
+                                    value={s.faktorKeDasar}
+                                    onChange={(val) => {
+                                      const u = [...satuanList];
+                                      u[idx].faktorKeDasar = val;
+                                      setSatuanList(u);
+                                    }}
+                                    className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                                  />
+                                </td>
+                                <td className="p-0">
+                                  <div className="relative flex items-center h-9 px-2.5">
+                                    <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
+                                      Rp
+                                    </span>
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      required
+                                      placeholder="0"
+                                      value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                                      onChange={(e) => {
+                                        const digits = e.target.value.replace(/\D/g, "");
+                                        const u = [...satuanList];
+                                        u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                                        setSatuanList(u);
+                                      }}
+                                      className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2.5 text-right text-[11px] text-slate-500 whitespace-nowrap tabular-nums">
+                                  <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>
+                                  /{satuanDasar || "pcs"}
+                                </td>
+                                <td className="p-0 text-center">
+                                  {satuanList.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSatuanRow(idx)}
+                                      className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
+                                      title="Hapus baris satuan ini"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     )}
@@ -1098,78 +1111,91 @@ function TabProduk() {
                     <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                       <tr className="divide-x divide-slate-200">
                         <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                        <th className="py-2 px-2 font-semibold text-center w-16">Isi</th>
-                        <th className="py-2 px-2.5 font-semibold text-right">Harga</th>
+                        <th className="py-2 px-2 font-semibold text-center w-20">
+                          Isi ({satuanDasar || "pcs"})
+                        </th>
+                        <th className="py-2 px-2.5 font-semibold text-right">Harga jual</th>
+                        <th className="py-2 px-2.5 font-semibold text-right">
+                          Per {satuanDasar || "pcs"}
+                        </th>
                         <th className="py-2 px-1 w-8"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-600">
-                      {satuanList.map((s, idx) => (
-                        <tr key={idx} className="divide-x divide-slate-200">
-                          <td className="p-0">
-                            <input
-                              type="text"
-                              required
-                              list="preset-multi-satuan"
-                              value={s.namaSatuan}
-                              onChange={(e) => {
-                                const updated = [...satuanList];
-                                updated[idx].namaSatuan = e.target.value;
-                                setSatuanList(updated);
-                              }}
-                              placeholder="pcs, dus..."
-                              className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                            />
-                          </td>
-                          <td className="p-0">
-                            <NumberInput
-                              min={0.001}
-                              emptyFallback={1}
-                              required
-                              value={s.faktorKeDasar}
-                              onChange={(val) => {
-                                const updated = [...satuanList];
-                                updated[idx].faktorKeDasar = val;
-                                setSatuanList(updated);
-                              }}
-                              className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                            />
-                          </td>
-                          <td className="p-0">
-                            <div className="relative flex items-center h-9 px-2.5">
-                              <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
-                                Rp
-                              </span>
+                      {satuanList.map((s, idx) => {
+                        const faktor = Number(s.faktorKeDasar) || 1;
+                        const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
+                        return (
+                          <tr key={idx} className="divide-x divide-slate-200">
+                            <td className="p-0">
                               <input
                                 type="text"
-                                inputMode="numeric"
                                 required
-                                placeholder="0"
-                                value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                                list="preset-multi-satuan"
+                                value={s.namaSatuan}
                                 onChange={(e) => {
-                                  const digits = e.target.value.replace(/\D/g, "");
                                   const updated = [...satuanList];
-                                  updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                                  updated[idx].namaSatuan = e.target.value;
                                   setSatuanList(updated);
                                 }}
-                                className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
+                                placeholder="pcs, dus..."
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
                               />
-                            </div>
-                          </td>
-                          <td className="p-0 text-center">
-                            {satuanList.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSatuanRow(idx)}
-                                className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
-                                title="Hapus baris satuan ini"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="p-0">
+                              <NumberInput
+                                min={0.001}
+                                emptyFallback={1}
+                                required
+                                value={s.faktorKeDasar}
+                                onChange={(val) => {
+                                  const updated = [...satuanList];
+                                  updated[idx].faktorKeDasar = val;
+                                  setSatuanList(updated);
+                                }}
+                                className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                              />
+                            </td>
+                            <td className="p-0">
+                              <div className="relative flex items-center h-9 px-2.5">
+                                <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
+                                  Rp
+                                </span>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  required
+                                  placeholder="0"
+                                  value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                                  onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, "");
+                                    const updated = [...satuanList];
+                                    updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                                    setSatuanList(updated);
+                                  }}
+                                  className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-2 px-2.5 text-right text-[11px] text-slate-500 whitespace-nowrap tabular-nums">
+                              <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>
+                              /{satuanDasar || "pcs"}
+                            </td>
+                            <td className="p-0 text-center">
+                              {satuanList.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSatuanRow(idx)}
+                                  className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
+                                  title="Hapus baris satuan ini"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
