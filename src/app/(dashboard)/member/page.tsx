@@ -48,9 +48,10 @@ export default function MemberListPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [downloadingAllPdf, setDownloadingAllPdf] = useState(false);
 
-  // Pagination
+  // Pagination & Selection PDF
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   // Modal Tambah Member (CREATE)
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -266,8 +267,33 @@ export default function MemberListPage() {
     return map;
   }, [members]);
 
+  const toggleSelectMember = (id: string) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const allFilteredSelected =
+    filteredMembers.length > 0 &&
+    filteredMembers.every((m) => selectedMemberIds.includes(m.id));
+
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      const filteredSet = new Set(filteredMembers.map((m) => m.id));
+      setSelectedMemberIds((prev) => prev.filter((id) => !filteredSet.has(id)));
+    } else {
+      const merged = new Set([...selectedMemberIds, ...filteredMembers.map((m) => m.id)]);
+      setSelectedMemberIds(Array.from(merged));
+    }
+  };
+
   const handleDownloadAllPDF = async () => {
-    if (filteredMembers.length === 0) return;
+    const targetMembers =
+      selectedMemberIds.length > 0
+        ? filteredMembers.filter((m) => selectedMemberIds.includes(m.id))
+        : filteredMembers;
+
+    if (targetMembers.length === 0) return;
     setDownloadingAllPdf(true);
     try {
       let storeInfo = { namaToko: "Toko Sembako" } as any;
@@ -280,14 +306,16 @@ export default function MemberListPage() {
       } catch {}
 
       const filterLabel =
-        filterDebt === "DEBT"
+        selectedMemberIds.length > 0
+          ? `${targetMembers.length} Pelanggan Terpilih`
+          : filterDebt === "DEBT"
           ? "Punya Utang"
           : filterDebt === "CLEARED"
           ? "Lunas"
           : "Semua Pelanggan";
 
       const detailList = await Promise.all(
-        filteredMembers.map(async (m) => {
+        targetMembers.map(async (m) => {
           try {
             const res = await fetch(`/api/members/${m.id}`);
             if (res.ok) {
@@ -300,7 +328,7 @@ export default function MemberListPage() {
       );
 
       await generateAllMembersPDF(
-        filteredMembers.map((m, i) => ({
+        targetMembers.map((m, i) => ({
           kode: memberCodeMap[m.id] || "MBR-0001",
           nama: m.nama,
           telepon: m.telepon,
@@ -339,14 +367,34 @@ export default function MemberListPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+          {selectedMemberIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedMemberIds([])}
+              className="h-10 px-3 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-semibold rounded-xl transition-all text-xs cursor-pointer"
+            >
+              Batal Pilih
+            </button>
+          )}
+
           <button
             type="button"
             disabled={downloadingAllPdf || filteredMembers.length === 0}
             onClick={handleDownloadAllPDF}
-            className="h-10 px-4 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 active:scale-95 disabled:opacity-40 text-slate-700 dark:text-zinc-200 font-semibold rounded-xl transition-all text-xs inline-flex items-center gap-2 cursor-pointer"
+            className={`h-10 px-4 border active:scale-95 disabled:opacity-40 font-semibold rounded-xl transition-all text-xs inline-flex items-center gap-2 cursor-pointer ${
+              selectedMemberIds.length > 0
+                ? "bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
+                : "bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200"
+            }`}
           >
-            <FileText className="w-3.5 h-3.5 text-blue-500" />
-            <span>{downloadingAllPdf ? "Membuat PDF..." : "Unduh PDF Semua"}</span>
+            <FileText className={`w-3.5 h-3.5 ${selectedMemberIds.length > 0 ? "text-white" : "text-blue-500"}`} />
+            <span>
+              {downloadingAllPdf
+                ? "Membuat PDF..."
+                : selectedMemberIds.length > 0
+                ? `Unduh PDF Terpilih (${selectedMemberIds.length})`
+                : "Unduh PDF Semua"}
+            </span>
           </button>
 
           <button
@@ -539,19 +587,28 @@ export default function MemberListPage() {
               return (
                 <div key={m.id} className="py-3.5 space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/member/${m.id}`}
-                        className="font-semibold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2 truncate"
-                      >
-                        <span className="text-[10px] font-mono font-semibold text-slate-400 shrink-0">
-                          {memberCodeMap[m.id]}
-                        </span>
-                        <span className="truncate">{m.nama}</span>
-                      </Link>
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                        {m.telepon || "Tanpa No. HP"} {m.alamat ? `· ${m.alamat}` : ""}
-                      </p>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={selectedMemberIds.includes(m.id)}
+                        onChange={() => toggleSelectMember(m.id)}
+                        aria-label={`Pilih ${m.nama} untuk PDF`}
+                        className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0 cursor-pointer"
+                      />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/member/${m.id}`}
+                          className="font-semibold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2 truncate"
+                        >
+                          <span className="text-[10px] font-mono font-semibold text-slate-400 shrink-0">
+                            {memberCodeMap[m.id]}
+                          </span>
+                          <span className="truncate">{m.nama}</span>
+                        </Link>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                          {m.telepon || "Tanpa No. HP"} {m.alamat ? `· ${m.alamat}` : ""}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[10px] text-slate-400 block">Total utang</span>
@@ -597,6 +654,16 @@ export default function MemberListPage() {
         <table className="hidden md:table w-full text-left text-xs text-slate-600 dark:text-zinc-300">
             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
               <tr>
+                <th className="py-3 pl-1 pr-2 w-9">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAllFiltered}
+                    aria-label="Pilih semua pelanggan untuk PDF"
+                    title="Pilih semua pelanggan"
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
                 <th className="py-3 pr-4">Nama pelanggan</th>
                 <th className="py-3 px-4">No. HP / WA</th>
                 <th className="py-3 px-4">Alamat</th>
@@ -606,10 +673,10 @@ export default function MemberListPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
               {loading ? (
-                <TableSkeletonRows rows={6} cols={5} />
+                <TableSkeletonRows rows={6} cols={6} />
               ) : filteredMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-400">
+                  <td colSpan={6} className="text-center py-12 text-slate-400">
                     <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
                     {search
                       ? "Tidak ada pelanggan yang cocok dengan pencarian."
@@ -623,7 +690,23 @@ export default function MemberListPage() {
                   const hasDebt = (m.saldoUtangCache || 0) > 0;
 
                   return (
-                    <tr key={m.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150 group">
+                    <tr
+                      key={m.id}
+                      className={`hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150 group ${
+                        selectedMemberIds.includes(m.id) ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
+                      }`}
+                    >
+                      {/* Checkbox Pilih PDF */}
+                      <td className="py-3.5 pl-1 pr-2 w-9">
+                        <input
+                          type="checkbox"
+                          checked={selectedMemberIds.includes(m.id)}
+                          onChange={() => toggleSelectMember(m.id)}
+                          aria-label={`Pilih ${m.nama} untuk PDF`}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Nama Pelanggan */}
                       <td className="py-3.5 px-4">
                         <Link
