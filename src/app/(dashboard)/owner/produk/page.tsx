@@ -1009,28 +1009,8 @@ function TabProduk() {
                   </div>
                 </div>
 
-                {/* 3. Tombol Aksi */}
-                {!isDrawerEditing ? (
-                  <div className="pt-3 flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(p)}
-                      className="flex-1 h-11 rounded-xl font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Hapus</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openEditInDrawer(p)}
-                      className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-                      style={{ background: "var(--primary)" }}
-                    >
-                      <Pencil className="w-4 h-4" />
-                      <span>Ubah Data Produk Ini</span>
-                    </button>
-                  </div>
-                ) : (
+                {/* 3. Tombol Aksi (Detail/Read hanya tombol Tutup di header; Edit menampilkan Batal + Simpan) */}
+                {isDrawerEditing && (
                   <div className="pt-3 flex items-center gap-2.5">
                     <button
                       type="button"
