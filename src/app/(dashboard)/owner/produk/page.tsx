@@ -345,9 +345,9 @@ function TabProduk() {
     try {
       const res = await fetch(`/api/products/${deleteTarget.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal menonaktifkan produk");
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus produk");
 
-      setSuccess(`Produk "${deleteTarget.nama}" berhasil dinonaktifkan`);
+      setSuccess(`Produk "${deleteTarget.nama}" berhasil dihapus`);
       if (detailProduct?.product.id === deleteTarget.id) {
         setDetailProduct(null);
         setIsDrawerEditing(false);
@@ -1643,13 +1643,13 @@ function TabProduk() {
 
       <ConfirmModal
         isOpen={Boolean(deleteTarget)}
-        title="Nonaktifkan Produk?"
+        title={deleteTarget ? `Hapus Produk "${deleteTarget.nama}"?` : "Hapus Produk?"}
         description={
           deleteTarget
-            ? `Produk "${deleteTarget.nama}" akan dinonaktifkan dari daftar kasir.`
+            ? `Produk "${deleteTarget.nama}" akan dihapus secara permanen dari sistem.`
             : ""
         }
-        confirmText="Ya, Nonaktifkan"
+        confirmText="Ya, Hapus"
         variant="danger"
         loading={deleting}
         onConfirm={confirmDelete}
