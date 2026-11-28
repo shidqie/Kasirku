@@ -478,8 +478,8 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
                 <span className="absolute -bottom-0.5 -left-0.5 w-5 h-5 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl" />
                 <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 border-b-4 border-r-4 border-emerald-400 rounded-br-xl" />
 
-                {/* Garis scan beranimasi */}
-                <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent animate-pulse" />
+                {/* Garis scan merah bergerak naik-turun */}
+                <div className="absolute inset-x-3 h-0.5 -translate-y-1/2 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_8px_rgba(244,63,94,0.85)] scanner-laser" />
               </div>
 
               {engineLabel && (

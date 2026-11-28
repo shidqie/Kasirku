@@ -451,6 +451,21 @@ tbody tr {
   overflow-x: hidden;
 }
 
+@keyframes scanner-laser-sweep {
+  0%,
+  100% {
+    top: 12%;
+  }
+  50% {
+    top: 88%;
+  }
+}
+
+.scanner-laser {
+  animation: scanner-laser-sweep 2s ease-in-out infinite;
+  will-change: top;
+}
+
 /* Mobile-First, Safe Area iOS & Anti-Zoom App Experience */
 html,
 body {
