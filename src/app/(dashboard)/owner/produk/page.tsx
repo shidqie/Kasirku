@@ -479,8 +479,8 @@ function TabProduk() {
           </div>
         </div>
 
-        {/* Search bar full-width */}
-        <div className="pt-4 relative">
+        {/* Search bar compact */}
+        <div className="pt-4 relative w-full max-w-xs">
           <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
