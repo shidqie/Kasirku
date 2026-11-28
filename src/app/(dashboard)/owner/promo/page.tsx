@@ -39,6 +39,7 @@ import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { TableSearchRow, TableFilterPills } from "@/components/shared/TableToolbar";
 
 interface ProductOption {
   id: string;
@@ -445,67 +446,44 @@ export default function PromoPage() {
         </div>
 
         {/* Search & Filter Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-[220px] max-w-xs border-b border-slate-200 dark:border-zinc-800 pb-1.5">
-            <Search className="w-4 h-4 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Cari nama promo atau produk..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full bg-transparent text-xs text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setCurrentPage(1);
-                }}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+        <TableSearchRow
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+          placeholder="Cari nama promo atau produk..."
+          onRefresh={fetchData}
+          loading={loading}
+        />
 
-          <div className="flex items-center gap-2">
-            {(
-              [
-                { id: "ALL", label: "Semua" },
-                { id: "ACTIVE", label: "Aktif" },
-                { id: "INACTIVE", label: "Nonaktif" },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setFilterStatus(tab.id);
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
-                  filterStatus === tab.id
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-zinc-900 dark:border-white"
-                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              onClick={fetchData}
-              title="Muat ulang"
-              className="h-8 w-8 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-            </button>
-          </div>
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-2">
+          <TableFilterPills
+            value={filterStatus}
+            onChange={(val) => {
+              setFilterStatus(val);
+              setCurrentPage(1);
+            }}
+            items={[
+              { value: "ALL", label: "Semua", count: promos.length },
+              {
+                value: "ACTIVE",
+                label: "Aktif",
+                count: promos.filter((p) => isPromoActiveNow(p)).length,
+                accent: "blue",
+              },
+              {
+                value: "INACTIVE",
+                label: "Nonaktif",
+                count: promos.filter((p) => !isPromoActiveNow(p)).length,
+              },
+            ]}
+          />
+          {!loading && (
+            <span className="text-slate-400 dark:text-zinc-500 text-[11px] tabular-nums shrink-0 pt-2">
+              {Math.min(currentPage * pageSize, filteredPromos.length)} dari {filteredPromos.length} aturan
+            </span>
+          )}
         </div>
 
         <PopupAlert type="error" message={error} onClear={() => setError(null)} />

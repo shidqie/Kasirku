@@ -24,6 +24,7 @@ import { formatMemberCode } from "@/lib/codification";
 import { generateAllMembersPDF } from "@/lib/pdf-bon-member";
 import { Pagination } from "@/components/shared/Pagination";
 import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
+import { TableSearchRow, TableFilterPills } from "@/components/shared/TableToolbar";
 
 interface MemberItem {
   id: string;
@@ -472,88 +473,35 @@ export default function MemberListPage() {
       </div>
 
       {/* Filter Tab Garis Bawah & Pencarian Minimalis */}
-      <div className="pt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 dark:border-zinc-800">
-        <div className="flex items-center gap-6 text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setFilterDebt("ALL");
-              setCurrentPage(1);
-            }}
-            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
-              filterDebt === "ALL"
-                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
-            }`}
-          >
-            Semua ({members.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFilterDebt("DEBT");
-              setCurrentPage(1);
-            }}
-            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
-              filterDebt === "DEBT"
-                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
-            }`}
-          >
-            Punya utang ({memberBerutang})
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFilterDebt("CLEARED");
-              setCurrentPage(1);
-            }}
-            className={`pb-3 border-b-2 transition-colors cursor-pointer ${
-              filterDebt === "CLEARED"
-                ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
-            }`}
-          >
-            Lunas ({memberLunas})
-          </button>
-        </div>
+      <TableSearchRow
+        value={search}
+        onChange={(val) => {
+          setSearch(val);
+          setCurrentPage(1);
+        }}
+        placeholder="Cari nama atau no. HP pelanggan"
+        onRefresh={fetchMembers}
+        loading={loading}
+      />
 
-        {/* Input Pencarian Garis Bawah & Muat Ulang */}
-        <div className="flex items-center gap-4 pb-2.5">
-          <div className="relative w-full sm:w-56">
-            <input
-              type="text"
-              placeholder="Cari pelanggan"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
-            />
-            {search && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setCurrentPage(1);
-                }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={fetchMembers}
-            title="Muat ulang"
-            aria-label="Muat ulang"
-            className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-2">
+        <TableFilterPills
+          value={filterDebt}
+          onChange={(val) => {
+            setFilterDebt(val);
+            setCurrentPage(1);
+          }}
+          items={[
+            { value: "ALL", label: "Semua", count: members.length },
+            { value: "DEBT", label: "Punya utang", count: memberBerutang, accent: "amber" },
+            { value: "CLEARED", label: "Lunas", count: memberLunas },
+          ]}
+        />
+        {!loading && (
+          <span className="text-slate-400 dark:text-zinc-500 text-[11px] tabular-nums shrink-0 pt-2">
+            {Math.min(currentPage * pageSize, filteredMembers.length)} dari {filteredMembers.length} pelanggan
+          </span>
+        )}
       </div>
 
       {/* Toast Notification Popup di Pojok Kanan Atas */}
