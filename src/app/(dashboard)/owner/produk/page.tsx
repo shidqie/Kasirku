@@ -1619,8 +1619,10 @@ function TabProduk() {
       <ImportProdukModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        onImported={() => {
-          setSuccess("Data produk berhasil diimport.");
+        onImported={(res) => {
+          setSuccess(
+            `Import selesai: ${res.created} ditambahkan, ${res.updated} diperbarui, ${res.skipped} dilewati.`
+          );
           fetchData();
         }}
       />
