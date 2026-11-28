@@ -22,9 +22,11 @@ import {
   Save,
   FileText,
   TrendingUp,
+  Download,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
 import { formatProductCode } from "@/lib/codification";
+import { downloadPriceListPdf, downloadPriceListCsv } from "@/lib/pdf-price-list";
 import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
@@ -79,6 +81,8 @@ function TabProduk() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM">("FORM");
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
+  const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const [downloadingPriceList, setDownloadingPriceList] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [scannerRowProductId, setScannerRowProductId] = useState<string | null>(null);
@@ -363,6 +367,56 @@ function TabProduk() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
+            <div className="relative">
+              <button
+                type="button"
+                disabled={downloadingPriceList || products.length === 0}
+                onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
+                className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 disabled:opacity-50 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+                title="Download daftar harga produk (PDF / CSV)"
+              >
+                <Download className="w-4 h-4" />
+                <span>{downloadingPriceList ? "Menyiapkan..." : "Download Harga"}</span>
+              </button>
+
+              {isDownloadMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setIsDownloadMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsDownloadMenuOpen(false);
+                        setDownloadingPriceList(true);
+                        try {
+                          await downloadPriceListPdf(products);
+                        } finally {
+                          setDownloadingPriceList(false);
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Download PDF (.pdf)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDownloadMenuOpen(false);
+                        downloadPriceListCsv(products);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Download Excel (.csv)</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <button
               onClick={() => setIsHargaNaikOpen(true)}
               className="h-10 px-3.5 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
