@@ -398,9 +398,90 @@ export default function PromoPage() {
         <PopupAlert type="success" message={success} onClear={() => setSuccess(null)} />
       </div>
 
-      {/* Table */}
+      {/* Table & Mobile Cards */}
       <DataTableContainer>
-        <DataTable>
+        {/* Mobile Card List (< md) */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-zinc-800">
+          {loading ? (
+            <div className="py-8 text-center text-xs text-slate-400">Memuat aturan promo...</div>
+          ) : paginated.length === 0 ? (
+            <div className="py-10 text-center text-xs text-slate-400">
+              <Tag className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
+              Belum ada aturan promo.
+            </div>
+          ) : (
+            paginated.map((p) => {
+              const meta = PROMO_TYPE_META[p.tipe];
+              const Icon = meta.icon;
+              return (
+                <div key={p.id} className="py-3.5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <p className="font-semibold text-sm text-slate-900 dark:text-zinc-100 truncate">
+                        {p.nama}
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${meta.badgeClass}`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          {meta.label}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                          {formatPromoShortLabel(p)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                        {p.produk
+                          ? p.produk.nama
+                          : p.kategori
+                          ? `Kategori: ${p.kategori.nama}`
+                          : "Semua Produk"}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={p.aktif}
+                      onClick={() => handleToggleAktif(p)}
+                      className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer inline-flex items-center shrink-0 mt-0.5 ${
+                        p.aktif ? "bg-blue-500" : "bg-slate-200 dark:bg-zinc-700"
+                      }`}
+                    >
+                      <span
+                        className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                          p.aktif ? "translate-x-5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(p)}
+                      className="flex-1 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(p)}
+                      className="h-9 px-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <DataTable className="hidden md:table">
           <DataTableHeader>
             <tr>
               <DataTableHead>Nama Promo</DataTableHead>
@@ -527,24 +608,37 @@ export default function PromoPage() {
         </div>
       )}
 
-      {/* Modal Form Tambah / Edit Promo */}
+      {/* Slide Drawer Form Tambah / Edit Promo */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-              <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
-                {editingId ? "Edit Aturan Promo" : "Tambah Aturan Promo"}
-              </h3>
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-[1px] drawer-backdrop"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-lg bg-white dark:bg-zinc-900 h-full shadow-2xl border-l border-slate-200 dark:border-zinc-800 flex flex-col drawer-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Drawer */}
+            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100">
+                  {editingId ? "Edit Aturan Promo" : "Tambah Aturan Promo"}
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Atur promo otomatis untuk kasir dari Data Master produk.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4 text-xs">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
                   Nama Promo
@@ -554,7 +648,7 @@ export default function PromoPage() {
                   value={nama}
                   onChange={(e) => setNama(e.target.value)}
                   placeholder="Misal: Beli 1 Gratis 1 Aqua 600ml"
-                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
+                  className="w-full h-10 sm:h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
                   required
                 />
               </div>
@@ -563,7 +657,7 @@ export default function PromoPage() {
                 <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
                   Jenis Aturan
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(Object.keys(PROMO_TYPE_META) as TipePromo[]).map((key) => {
                     const m = PROMO_TYPE_META[key];
                     const Icon = m.icon;
@@ -782,7 +876,7 @@ export default function PromoPage() {
               </div>
 
               {/* Kelipatan & Periode */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
                     Mulai Tanggal (Opsional)
@@ -791,7 +885,7 @@ export default function PromoPage() {
                     type="date"
                     value={mulaiPada}
                     onChange={(e) => setMulaiPada(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100"
+                    className="w-full h-10 sm:h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
@@ -802,12 +896,12 @@ export default function PromoPage() {
                     type="date"
                     value={berakhirPada}
                     onChange={(e) => setBerakhirPada(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100"
+                    className="w-full h-10 sm:h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -832,19 +926,21 @@ export default function PromoPage() {
                   </span>
                 </label>
               </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+              {/* Sticky Footer Drawer */}
+              <div className="px-4 sm:px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2 shrink-0 bg-white dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
+                  className="h-10 sm:h-9 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
+                  className="h-10 sm:h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 text-white font-semibold disabled:opacity-50 cursor-pointer"
                 >
                   {submitting ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Simpan Promo"}
                 </button>
