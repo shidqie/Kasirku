@@ -654,7 +654,7 @@ function TabPersetujuan() {
           <p className="text-xs text-slate-400 mt-1">Semua hitungan fisik telah diproses.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {opnameList.map((op) => {
             const totalNilaiSelisih = op.items.reduce(
               (sum: number, it: any) => sum + (it.nilaiSelisih || 0),
@@ -667,26 +667,23 @@ function TabPersetujuan() {
             );
 
             return (
-              <div
-                key={op.id}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div key={op.id} className="space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-zinc-800 pb-4">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-black font-sans text-primary-700">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-lg font-bold font-sans text-slate-900 dark:text-zinc-100">
                         {op.nomor}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/70">
                         Menunggu Persetujuan
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      Diajukan oleh: <strong>{op.dibuatOleh?.nama}</strong> · Waktu:{" "}
+                      Diajukan oleh: <strong className="text-slate-600 dark:text-zinc-300">{op.dibuatOleh?.nama}</strong> · Waktu:{" "}
                       {formatDateTime(op.createdAt)}
                     </p>
                     {op.catatan && (
-                      <p className="text-xs text-slate-600 mt-1 italic">&ldquo;{op.catatan}&rdquo;</p>
+                      <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 italic">&ldquo;{op.catatan}&rdquo;</p>
                     )}
                   </div>
 
@@ -694,48 +691,48 @@ function TabPersetujuan() {
                     <button
                       disabled={processing}
                       onClick={() => setRejectingId(op.id)}
-                      className="h-10 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5"
+                      className="h-9 px-3.5 bg-white dark:bg-zinc-900 hover:bg-rose-50 text-rose-600 border border-slate-200 dark:border-zinc-700 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                       <span>Tolak</span>
                     </button>
                     <button
                       disabled={processing}
                       onClick={() => handleApprove(op.id)}
-                      className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5"
+                      className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-3.5 h-3.5" />
                       <span>Setujui Opname</span>
                     </button>
                   </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600">
-                    <thead className="bg-slate-50 uppercase font-sans tracking-wider text-slate-500">
+                  <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
+                    <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
                       <tr>
-                        <th className="py-2.5 px-3">Nama Produk</th>
-                        <th className="py-2.5 px-3 text-center">Stok Sistem</th>
-                        <th className="py-2.5 px-3 text-center">Hitung Fisik Staff</th>
-                        <th className="py-2.5 px-3 text-center font-bold">Selisih Kuantitas</th>
-                        <th className="py-2.5 px-3 text-right">Nilai Rupiah Selisih</th>
+                        <th className="py-3 pr-3 font-medium">Nama produk</th>
+                        <th className="py-3 px-3 text-center font-medium">Stok sistem</th>
+                        <th className="py-3 px-3 text-center font-medium">Hitung fisik staff</th>
+                        <th className="py-3 px-3 text-center font-medium">Selisih kuantitas</th>
+                        <th className="py-3 pl-3 text-right font-medium">Nilai rupiah selisih</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-sans">
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
                       {paginatedItems.map((it: any) => {
                         const selisih = Number(it.selisih);
                         return (
-                          <tr key={it.id}>
-                            <td className="py-2.5 px-3 font-sans font-bold text-slate-800">
+                          <tr key={it.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/50 transition-colors">
+                            <td className="py-3.5 pr-3 font-semibold text-slate-900 dark:text-zinc-100">
                               {it.produk?.nama}
                             </td>
-                            <td className="py-2.5 px-3 text-center text-slate-500">
+                            <td className="py-3.5 px-3 text-center text-slate-500 dark:text-zinc-400 tabular-nums">
                               {formatDecimal(it.stokSistem)} {it.produk?.satuanDasar}
                             </td>
-                            <td className="py-2.5 px-3 text-center font-bold text-slate-900">
+                            <td className="py-3.5 px-3 text-center font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
                               {formatDecimal(it.stokFisik)} {it.produk?.satuanDasar}
                             </td>
-                            <td className="py-2.5 px-3 text-center font-black">
+                            <td className="py-3.5 px-3 text-center font-bold tabular-nums">
                               {selisih === 0 ? (
                                 <span className="text-slate-400">0</span>
                               ) : selisih > 0 ? (
@@ -744,7 +741,7 @@ function TabPersetujuan() {
                                 <span className="text-rose-600">{formatDecimal(selisih)}</span>
                               )}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold">
+                            <td className="py-3.5 pl-3 text-right font-semibold tabular-nums">
                               <span
                                 className={
                                   it.nilaiSelisih < 0
@@ -761,12 +758,12 @@ function TabPersetujuan() {
                         );
                       })}
                     </tbody>
-                    <tfoot className="border-t border-slate-200 font-sans text-xs">
+                    <tfoot className="border-t border-slate-200 dark:border-zinc-800 font-sans text-xs">
                       <tr>
-                        <td colSpan={4} className="py-3 px-3 font-bold text-right text-slate-700">
+                        <td colSpan={4} className="py-3.5 pr-3 font-semibold text-right text-slate-600 dark:text-zinc-400">
                           Total Estimasi Selisih Nilai Barang:
                         </td>
-                        <td className="py-3 px-3 text-right font-black text-sm">
+                        <td className="py-3.5 pl-3 text-right font-bold text-sm tabular-nums">
                           <span className={totalNilaiSelisih < 0 ? "text-rose-600" : "text-emerald-600"}>
                             {formatRupiah(totalNilaiSelisih)}
                           </span>
@@ -777,7 +774,7 @@ function TabPersetujuan() {
                 </div>
 
                 {op.items.length > 0 && (
-                  <div className="flex items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center justify-between gap-3">
                     <Pagination
                       currentPage={currentItemPage}
                       totalItems={op.items.length}
@@ -786,8 +783,8 @@ function TabPersetujuan() {
                         setItemPages((prev) => ({ ...prev, [op.id]: page }))
                       }
                     />
-                    <span className="text-xs text-slate-500 tabular-nums">
-                      Total <strong className="text-slate-800">{op.items.length}</strong> produk · {ITEMS_PER_PAGE}/hal
+                    <span className="text-xs text-slate-500 dark:text-zinc-400 tabular-nums">
+                      Total <strong className="text-slate-800 dark:text-zinc-200">{op.items.length}</strong> produk · {ITEMS_PER_PAGE}/hal
                     </span>
                   </div>
                 )}
