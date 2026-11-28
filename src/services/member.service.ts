@@ -205,20 +205,22 @@ export async function createMember(input: CreateMemberInput, actorId: string, ip
   return result;
 }
 
+import { hasPermission } from "@/lib/auth/permissions";
+
 // 3. Ubah Data Member
 export async function updateMember(
   id: string,
   input: UpdateMemberInput,
-  actor: { id: string; role: string },
+  actor: { id: string; role: string; permissions?: string[] },
   ip?: string
 ) {
   const sebelum = await prisma.member.findUnique({ where: { id } });
   if (!sebelum) throw new Error("Member tidak ditemukan");
 
-  // Hanya OWNER yang boleh mengubah batas kasbon (Matriks Hak Akses Bagian 3)
+  // Hanya OWNER atau penerima delegasi piutang:limit yang boleh mengubah batas kasbon
   if (input.batasKasbon !== undefined && input.batasKasbon !== sebelum.batasKasbon) {
-    if (actor.role !== "OWNER") {
-      throw new Error("Akses ditolak. Mengubah batas kasbon hanya dapat dilakukan oleh Pemilik Toko.");
+    if (actor.role !== "OWNER" && !hasPermission(actor, "piutang:limit")) {
+      throw new Error("Akses ditolak. Mengubah batas kasbon memerlukan izin Pemilik Toko.");
     }
   }
 

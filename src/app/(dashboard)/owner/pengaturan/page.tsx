@@ -742,6 +742,7 @@ function TabPengguna() {
   const [delegatingUser, setDelegatingUser] = useState<(UserItem & { permissions?: string[] }) | null>(null);
   const [delegatedPerms, setDelegatedPerms] = useState<string[]>([]);
   const [savingDelegation, setSavingDelegation] = useState(false);
+  const [delegationError, setDelegationError] = useState<string | null>(null);
 
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [editNama, setEditNama] = useState("");
@@ -819,6 +820,7 @@ function TabPengguna() {
     try {
       setSavingDelegation(true);
       setError(null);
+      setDelegationError(null);
       const res = await fetch(`/api/users/${delegatingUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -830,6 +832,7 @@ function TabPengguna() {
       setDelegatingUser(null);
       fetchUsers();
     } catch (err: any) {
+      setDelegationError(err.message);
       setError(err.message);
     } finally {
       setSavingDelegation(false);
@@ -1054,6 +1057,7 @@ function TabPengguna() {
                             onClick={() => {
                               setDelegatingUser(user as any);
                               setDelegatedPerms(Array.isArray((user as any).permissions) ? (user as any).permissions : []);
+                              setDelegationError(null);
                             }}
                             className="h-7 px-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
                             title="Atur delegasi izin"
@@ -1337,6 +1341,12 @@ function TabPengguna() {
                 );
               })}
             </div>
+
+            {delegationError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                {delegationError}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <button

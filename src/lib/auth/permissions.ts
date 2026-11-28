@@ -223,10 +223,7 @@ export function hasPermission(
   permission: Permission
 ): boolean {
   if (!user) return false;
-  const effective =
-    Array.isArray(user.permissions) && user.permissions.length > 0
-      ? (user.permissions as Permission[])
-      : resolvePermissions(user.role as AppRole);
+  const effective = resolvePermissions(user.role as AppRole, user.permissions);
   return effective.includes(permission);
 }
 

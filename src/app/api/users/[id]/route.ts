@@ -25,6 +25,7 @@ export async function PATCH(
 
     if (
       (validated.data.permissions !== undefined || validated.data.role !== undefined) &&
+      session.role !== "OWNER" &&
       !hasPermission(session, "users:delegate")
     ) {
       return NextResponse.json(

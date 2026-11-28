@@ -341,7 +341,7 @@ export async function checkout(
 export async function voidTransaction(
   transactionId: string,
   alasan: string,
-  actor: { id: string; role: string },
+  actor: { id: string; role: string; permissions?: string[] },
   pinOwner?: string,
   ip?: string
 ) {
@@ -357,8 +357,9 @@ export async function voidTransaction(
   if (!trx) throw new Error("Transaksi tidak ditemukan");
   if (trx.status === "BATAL") throw new Error("Transaksi sudah dibatalkan sebelumnya");
 
-  // Jika Staff yang melakukan pembatalan, wajib verifikasi PIN Owner (Prinsip 5.2 #11)
-  if (actor.role === "STAFF") {
+  const { hasPermission } = await import("@/lib/auth/permissions");
+  // Jika bukan OWNER dan tidak memiliki delegasi kasir:void, wajib verifikasi PIN Owner
+  if (actor.role !== "OWNER" && !hasPermission(actor, "kasir:void")) {
     if (!pinOwner) {
       throw new Error("Pembatalan transaksi oleh staff memerlukan PIN Pemilik Toko");
     }

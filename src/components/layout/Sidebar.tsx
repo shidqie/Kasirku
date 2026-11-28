@@ -215,8 +215,19 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
       ];
     }
 
-    // STAFF_KASIR / STAFF (default kasir)
-    return [
+    // STAFF_KASIR / STAFF (default kasir) + izin delegasi tambahan
+    const delegatedItems: NavItemConfig[] = [];
+    if (hasPermission(user, "reports:sales")) {
+      delegatedItems.push({ label: "Laporan Pendapatan", href: "/owner/laporan?tab=sales", icon: TrendingUp });
+    }
+    if (hasPermission(user, "reports:debts")) {
+      delegatedItems.push({ label: "Laporan Piutang", href: "/owner/laporan?tab=debts", icon: Users });
+    }
+    if (hasPermission(user, "users:manage")) {
+      delegatedItems.push({ label: "Kelola Staff", href: "/owner/pengaturan?tab=pengguna", icon: Settings });
+    }
+
+    const staffGroups: NavGroupConfig[] = [
       {
         key: "operasional",
         title: "OPERASIONAL",
@@ -237,6 +248,17 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
         ],
       },
     ];
+
+    if (delegatedItems.length > 0) {
+      staffGroups.push({
+        key: "delegasi",
+        title: "LAPORAN & KELOLA",
+        collapsible: true,
+        items: delegatedItems,
+      });
+    }
+
+    return staffGroups;
   })();
 
   const [collapsedGroups, setCollapsedGroups] = useState<{ [key: string]: boolean }>({});

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { getMemberById, updateMember, deleteMember } from "@/services/member.service";
 import { updateMemberSchema } from "@/lib/validations/member.schema";
+import { prisma } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
@@ -39,11 +40,20 @@ export async function PATCH(
       );
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { role: true, permissions: true },
+    });
+
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const updated = await updateMember(
       params.id,
       validated.data,
-      { id: session.userId, role: session.role },
+      {
+        id: session.userId,
+        role: dbUser?.role || session.role,
+        permissions: dbUser?.permissions ?? session.permissions,
+      },
       ip
     );
 

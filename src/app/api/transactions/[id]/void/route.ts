@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { voidTransaction } from "@/services/transaction.service";
 import { voidTransactionSchema } from "@/lib/validations/transaction.schema";
+import { prisma } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
@@ -22,11 +23,20 @@ export async function POST(
       );
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { role: true, permissions: true },
+    });
+
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const result = await voidTransaction(
       params.id,
       validated.data.alasan,
-      { id: session.userId, role: session.role },
+      {
+        id: session.userId,
+        role: dbUser?.role || session.role,
+        permissions: dbUser?.permissions ?? session.permissions,
+      },
       validated.data.pinOwner,
       ip
     );

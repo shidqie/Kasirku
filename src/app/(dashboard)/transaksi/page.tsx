@@ -55,6 +55,7 @@ export default function RiwayatTransaksiPage() {
   const [voidPin, setVoidPin] = useState("");
   const [submittingVoid, setSubmittingVoid] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string>("STAFF");
+  const [canVoidWithoutPin, setCanVoidWithoutPin] = useState<boolean>(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +80,12 @@ export default function RiwayatTransaksiPage() {
 
       if (tRes.ok) setTransactions(tData.transactions || []);
       if (sRes.ok) setStoreInfo(sData.settings || {});
-      if (uRes.ok) setCurrentUserRole(uData.user?.role || "STAFF");
+      if (uRes.ok) {
+        const u = uData.user;
+        setCurrentUserRole(u?.role || "STAFF");
+        const perms: string[] = Array.isArray(u?.permissions) ? u.permissions : [];
+        setCanVoidWithoutPin(u?.role === "OWNER" || perms.includes("kasir:void"));
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -116,7 +122,7 @@ export default function RiwayatTransaksiPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           alasan: voidAlasan,
-          pinOwner: currentUserRole === "STAFF" ? voidPin : undefined,
+          pinOwner: !canVoidWithoutPin ? voidPin : undefined,
         }),
       });
 
@@ -445,7 +451,7 @@ export default function RiwayatTransaksiPage() {
                 />
               </div>
 
-              {currentUserRole === "STAFF" && (
+              {!canVoidWithoutPin && (
                 <div>
                   <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider font-sans flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-primary-600" />
@@ -473,7 +479,7 @@ export default function RiwayatTransaksiPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingVoid || !voidAlasan.trim() || (currentUserRole === "STAFF" && voidPin.length !== 6)}
+                  disabled={submittingVoid || !voidAlasan.trim() || (!canVoidWithoutPin && voidPin.length !== 6)}
                   className="w-1/2 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md"
                 >
                   {submittingVoid ? "Memproses..." : "Konfirmasi Void"}
