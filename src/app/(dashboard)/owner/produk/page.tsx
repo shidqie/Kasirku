@@ -418,11 +418,11 @@ function TabProduk() {
     setSku("");
     setKategoriId("");
     setBarcode("");
-    setSatuanDasar("kg");
+    setSatuanDasar("pcs");
     setStokMinimum(5);
     setAktif(true);
     setSatuanList([
-      { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 14000, hargaBeli: 12000, isDefault: true, isDefaultBeli: true },
+      { namaSatuan: "pcs", faktorKeDasar: 1, hargaJual: 0, hargaBeli: 0, isDefault: true, isDefaultBeli: true },
     ]);
     setError(null);
     setIsModalOpen(true);
@@ -641,128 +641,6 @@ function TabProduk() {
     </div>
   );
 
-  const renderEditableUnitTable = () => (
-    <table className="w-full text-left text-xs border-collapse">
-      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-        <tr className="divide-x divide-slate-200">
-          <th className="py-2 px-2.5 font-semibold">Satuan</th>
-          <th className="py-2 px-1.5 font-semibold text-center w-16">
-            Isi ({satuanDasar || "pcs"})
-          </th>
-          {costMeta.showCost && (
-            <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
-          )}
-          <th className="py-2 px-2.5 font-semibold text-right">Jual</th>
-          <th className="py-2 px-2 font-semibold text-right whitespace-nowrap">
-            {costMeta.showCost ? "Margin" : `Per ${satuanDasar || "pcs"}`}
-          </th>
-          {satuanList.length > 1 && <th className="py-2 px-1 w-7"></th>}
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-slate-200 text-slate-600">
-        {satuanList.map((s, idx) => {
-          const faktor = Number(s.faktorKeDasar) || 1;
-          const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
-          const margin = calculateMargin(Number(s.hargaJual) || 0, Number(s.hargaBeli ?? 0));
-          return (
-            <tr key={idx} className="divide-x divide-slate-200">
-              <td className="p-0">
-                <input
-                  type="text"
-                  required
-                  list="preset-multi-satuan"
-                  value={s.namaSatuan}
-                  onChange={(e) => {
-                    const updated = [...satuanList];
-                    updated[idx].namaSatuan = e.target.value;
-                    setSatuanList(updated);
-                  }}
-                  placeholder="pcs, dus..."
-                  className="w-full h-9 px-2 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                />
-              </td>
-              <td className="p-0">
-                <NumberInput
-                  min={0.001}
-                  emptyFallback={1}
-                  required
-                  value={s.faktorKeDasar}
-                  onChange={(val) => {
-                    const updated = [...satuanList];
-                    updated[idx].faktorKeDasar = val;
-                    setSatuanList(updated);
-                  }}
-                  className="w-full h-9 text-center px-1.5 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                />
-              </td>
-              {costMeta.showCost && (
-                <td className="p-0">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="0"
-                    value={s.hargaBeli ? s.hargaBeli.toLocaleString("id-ID") : ""}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      const updated = [...satuanList];
-                      updated[idx].hargaBeli = digits ? parseInt(digits, 10) : 0;
-                      setSatuanList(updated);
-                    }}
-                    className="w-full h-9 px-2 bg-transparent text-xs font-medium text-right text-slate-700 focus:outline-none focus:bg-blue-50/40 tabular-nums"
-                  />
-                </td>
-              )}
-              <td className="p-0">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  required
-                  placeholder="0"
-                  value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
-                  onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "");
-                    const updated = [...satuanList];
-                    updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
-                    setSatuanList(updated);
-                  }}
-                  className="w-full h-9 px-2 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/40 tabular-nums"
-                />
-              </td>
-              <td className="py-2 px-2 text-right text-[11px] whitespace-nowrap tabular-nums">
-                {costMeta.showCost ? (
-                  <span
-                    className={`font-semibold ${
-                      margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
-                    }`}
-                  >
-                    {margin.percent !== null ? `${margin.percent}%` : formatRupiah(margin.nominal)}
-                  </span>
-                ) : (
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>/
-                    {satuanDasar || "pcs"}
-                  </span>
-                )}
-              </td>
-              {satuanList.length > 1 && (
-                <td className="p-0 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSatuanRow(idx)}
-                    className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer focus:outline-none"
-                    title="Hapus baris satuan ini"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </td>
-              )}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-
   const handleRemoveSatuanRow = (index: number) => {
     if (satuanList.length <= 1) return;
     const newList = satuanList.filter((_, i) => i !== index);
@@ -811,6 +689,578 @@ function TabProduk() {
       0
     );
   })();
+
+  const renderStructuredProductFormFields = ({
+    mode,
+    product,
+    onCancel,
+    isSubmitting,
+  }: {
+    mode: "CREATE" | "EDIT";
+    product?: ProductItem;
+    onCancel: () => void;
+    isSubmitting: boolean;
+  }) => {
+    const buyUnit = satuanList[selectedBuyIdx] || satuanList[0];
+    const baseUnitLabel = satuanDasar.trim() || "pcs";
+    const availableStock = product ? Number(product.stokCache) : 0;
+    const minStock = Number(stokMinimum) || 0;
+    const stockBadge =
+      availableStock <= 0
+        ? { label: "Habis", cls: "text-rose-600 bg-rose-50 border border-rose-200" }
+        : availableStock <= minStock
+        ? { label: "Menipis", cls: "text-amber-600 bg-amber-50 border border-amber-200" }
+        : { label: "Aman", cls: "text-emerald-600 bg-emerald-50 border border-emerald-200" };
+
+    return (
+      <>
+        {/* 1. IDENTITAS PRODUK */}
+        <section className="space-y-2">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            1. Identitas Produk
+          </h4>
+          <div className="divide-y divide-slate-100">
+            <div className="py-2.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs">Nama produk *</span>
+              </div>
+              <input
+                type="text"
+                required
+                value={nama}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNama(val);
+                  if (mode === "CREATE" && !merekTouched) {
+                    setMerek(detectBrandFromName(val) || "");
+                  }
+                }}
+                placeholder="Nama produk..."
+                className="w-full py-1 text-sm font-semibold text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Merek</span>
+              <div className="flex items-center justify-end gap-1.5">
+                <input
+                  type="text"
+                  list="preset-merek-toko"
+                  value={merek}
+                  onChange={(e) => {
+                    setMerek(e.target.value);
+                    setMerekTouched(true);
+                  }}
+                  placeholder="Otomatis dari nama"
+                  className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-40 text-right focus:outline-none focus:border-slate-900"
+                />
+                {!merek.trim() && detectBrandFromName(nama) && (
+                  <button
+                    type="button"
+                    onClick={() => setMerek(detectBrandFromName(nama) || "")}
+                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer"
+                    title={`Isi otomatis: ${detectBrandFromName(nama)}`}
+                  >
+                    Auto
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Barcode</span>
+              <div className="flex items-center justify-end gap-2">
+                <input
+                  type="text"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="Manual / scan"
+                  className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScannerTarget("FORM");
+                    setIsScannerOpen(true);
+                  }}
+                  className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
+                  title="Scan kamera"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">SKU otomatis</span>
+              <input
+                type="text"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="Otomatis (PRD-...)"
+                className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-40 text-right focus:outline-none focus:border-slate-900"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Kategori produk</span>
+              <div className="flex justify-end">
+                <Dropdown
+                  variant="underline"
+                  ariaLabel="Pilih kategori produk"
+                  value={kategoriId}
+                  onChange={setKategoriId}
+                  placeholder="-- Pilih Kategori --"
+                  searchPlaceholder="Cari kategori..."
+                  align="right"
+                  className="!w-auto"
+                  options={[
+                    { value: "", label: "-- Pilih Kategori --" },
+                    ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Status produk</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={aktif}
+                onClick={() => setAktif(!aktif)}
+                className="inline-flex items-center gap-2 cursor-pointer"
+              >
+                <span className="text-xs font-medium text-slate-600">
+                  {aktif ? "Aktif" : "Nonaktif (Arsip)"}
+                </span>
+                <span
+                  className={`w-10 h-5.5 rounded-full transition-colors relative ${
+                    aktif ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-700"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
+                      aktif ? "translate-x-4.5" : "translate-x-0"
+                    }`}
+                  />
+                </span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* 2. PENGATURAN SATUAN */}
+        <section className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              2. Pengaturan Satuan
+            </h4>
+            <button
+              type="button"
+              onClick={handleAddSatuanRow}
+              className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Tambah satuan</span>
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Satuan dasar stok</span>
+              <input
+                type="text"
+                required
+                list="preset-satuan-dasar"
+                value={satuanDasar}
+                onChange={(e) => setSatuanDasar(e.target.value)}
+                placeholder="pcs / kg / botol"
+                className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-32 text-right focus:outline-none focus:border-slate-900"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Satuan pembelian</span>
+              <div className="flex justify-end">
+                <Dropdown
+                  variant="underline"
+                  searchable={false}
+                  ariaLabel="Pilih satuan pembelian"
+                  value={String(selectedBuyIdx)}
+                  onChange={(val) => handleSetDefaultBeliSatuan(Number(val))}
+                  align="right"
+                  className="!w-auto"
+                  options={satuanList.map((s, idx) => ({
+                    value: String(idx),
+                    label: s.namaSatuan || `Satuan ${idx + 1}`,
+                  }))}
+                />
+              </div>
+            </div>
+
+            {buyUnit && (
+              <div className="flex items-center justify-between py-2.5 gap-3">
+                <span className="text-slate-400 text-xs">
+                  Isi per kemasan ({buyUnit.namaSatuan || baseUnitLabel})
+                </span>
+                <div className="flex items-center justify-end gap-1.5">
+                  <NumberInput
+                    min={0.001}
+                    emptyFallback={1}
+                    value={buyUnit.faktorKeDasar}
+                    onChange={(val) => {
+                      const updated = [...satuanList];
+                      updated[selectedBuyIdx].faktorKeDasar = val;
+                      setSatuanList(updated);
+                    }}
+                    className="text-xs font-mono font-semibold py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                  />
+                  <span className="text-xs text-slate-500">{baseUnitLabel}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Satuan penjualan</span>
+              <div className="flex justify-end">
+                <Dropdown
+                  variant="underline"
+                  searchable={false}
+                  ariaLabel="Pilih satuan penjualan utama"
+                  value={String(selectedSellIdx)}
+                  onChange={(val) => handleSetDefaultSatuan(Number(val))}
+                  align="right"
+                  className="!w-auto"
+                  options={satuanList.map((s, idx) => ({
+                    value: String(idx),
+                    label: s.namaSatuan || `Satuan ${idx + 1}`,
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11px] font-medium text-slate-400 mb-2">
+              Template &amp; konversi multi-satuan
+            </div>
+            {renderUnitTemplates()}
+            <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                  <tr className="divide-x divide-slate-200">
+                    <th className="py-2 px-2.5 font-semibold">Satuan</th>
+                    <th className="py-2 px-2 font-semibold text-center w-20">
+                      Isi ({baseUnitLabel})
+                    </th>
+                    <th className="py-2 px-2.5 font-semibold text-right">Konversi</th>
+                    {satuanList.length > 1 && <th className="py-2 px-1 w-7" />}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-slate-600">
+                  {satuanList.map((s, idx) => {
+                    const faktor = Number(s.faktorKeDasar) || 1;
+                    const unitName = s.namaSatuan.trim() || baseUnitLabel;
+                    return (
+                      <tr key={idx} className="divide-x divide-slate-200">
+                        <td className="p-0">
+                          <input
+                            type="text"
+                            required
+                            list="preset-multi-satuan"
+                            value={s.namaSatuan}
+                            onChange={(e) => {
+                              const updated = [...satuanList];
+                              updated[idx].namaSatuan = e.target.value;
+                              setSatuanList(updated);
+                            }}
+                            placeholder="pcs, dus..."
+                            className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                          />
+                        </td>
+                        <td className="p-0">
+                          <NumberInput
+                            min={0.001}
+                            emptyFallback={1}
+                            required
+                            value={s.faktorKeDasar}
+                            onChange={(val) => {
+                              const updated = [...satuanList];
+                              updated[idx].faktorKeDasar = val;
+                              setSatuanList(updated);
+                            }}
+                            className="w-full h-9 text-center px-1.5 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                          />
+                        </td>
+                        <td className="py-2 px-2.5 text-right text-[11px] font-mono text-slate-500 whitespace-nowrap">
+                          1 {unitName} = {formatDecimal(faktor)} {baseUnitLabel}
+                        </td>
+                        {satuanList.length > 1 && (
+                          <td className="p-0 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSatuanRow(idx)}
+                              className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer focus:outline-none"
+                              title="Hapus baris satuan ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. PENGATURAN HARGA */}
+        <section className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              3. Pengaturan Harga
+            </h4>
+            {canToggleCost && (
+              <button
+                type="button"
+                disabled={togglingHargaBeli}
+                onClick={handleToggleHargaBeli}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer disabled:opacity-50"
+                title="Aktifkan atau nonaktifkan pencatatan harga beli secara global"
+              >
+                <span
+                  className={`w-7 h-4 rounded-full transition-colors relative inline-flex items-center ${
+                    costMeta.hargaBeliAktif ? "bg-emerald-500" : "bg-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`w-3 h-3 bg-white rounded-full shadow transition-transform ${
+                      costMeta.hargaBeliAktif ? "translate-x-3.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </span>
+                <span>Harga beli {costMeta.hargaBeliAktif ? "Aktif" : "Nonaktif"}</span>
+              </button>
+            )}
+          </div>
+
+          {costMeta.showCost && buyUnit && (
+            <div className="flex items-center justify-between py-2 border-b border-slate-100 gap-3">
+              <span className="text-slate-500 text-xs">
+                Harga beli per{" "}
+                <strong className="text-slate-800">{buyUnit.namaSatuan || baseUnitLabel}</strong>
+              </span>
+              <div className="flex items-center justify-end gap-1">
+                <span className="text-xs text-slate-400">Rp</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={buyUnit.hargaBeli ? buyUnit.hargaBeli.toLocaleString("id-ID") : ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    const updated = [...satuanList];
+                    updated[selectedBuyIdx].hargaBeli = digits ? parseInt(digits, 10) : 0;
+                    setSatuanList(updated);
+                  }}
+                  className="text-xs font-semibold py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900 tabular-nums"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                <tr className="divide-x divide-slate-200">
+                  <th className="py-2 px-2.5 font-semibold">Satuan</th>
+                  {costMeta.showCost && (
+                    <th className="py-2 px-2.5 font-semibold text-right">Harga Beli</th>
+                  )}
+                  <th className="py-2 px-2.5 font-semibold text-right">Harga Jual</th>
+                  <th className="py-2 px-2.5 font-semibold text-right whitespace-nowrap">
+                    Per {baseUnitLabel}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-slate-600">
+                {satuanList.map((s, idx) => {
+                  const faktor = Number(s.faktorKeDasar) || 1;
+                  const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
+                  const margin = calculateMargin(Number(s.hargaJual) || 0, Number(s.hargaBeli ?? 0));
+                  return (
+                    <tr key={idx} className="divide-x divide-slate-200">
+                      <td className="py-2 px-2.5 font-medium text-slate-900 capitalize whitespace-nowrap">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span>{s.namaSatuan || `Satuan ${idx + 1}`}</span>
+                          {idx === selectedSellIdx && (
+                            <span className="px-1 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold">
+                              Jual
+                            </span>
+                          )}
+                          {idx === selectedBuyIdx && (
+                            <span className="px-1 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold">
+                              Beli
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {costMeta.showCost && (
+                        <td className="p-0">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={s.hargaBeli ? s.hargaBeli.toLocaleString("id-ID") : ""}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, "");
+                              const updated = [...satuanList];
+                              updated[idx].hargaBeli = digits ? parseInt(digits, 10) : 0;
+                              setSatuanList(updated);
+                            }}
+                            className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-right text-slate-700 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                          />
+                        </td>
+                      )}
+                      <td className="p-0">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          required
+                          placeholder="0"
+                          value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "");
+                            const updated = [...satuanList];
+                            updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                            setSatuanList(updated);
+                          }}
+                          className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                        />
+                      </td>
+                      <td className="py-2 px-2.5 text-right text-[11px] whitespace-nowrap tabular-nums">
+                        <div className="font-semibold text-slate-700">
+                          {formatRupiah(perDasar)}
+                        </div>
+                        {costMeta.showCost && Number(s.hargaBeli) > 0 && (
+                          <div
+                            className={`text-[10px] font-semibold ${
+                              margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
+                            }`}
+                          >
+                            {margin.percent !== null ? `Margin ${margin.percent}%` : formatRupiah(margin.nominal)}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* 4. PENGELOLAAN PERSEDIAAN */}
+        <section className="space-y-2 pt-4 border-t border-slate-100">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            4. Pengelolaan Persediaan
+          </h4>
+          <div className="divide-y divide-slate-100">
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Stok minimum</span>
+              <NumberInput
+                min={0}
+                emptyFallback={0}
+                value={stokMinimum}
+                onChange={setStokMinimum}
+                className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900 tabular-nums"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2.5 gap-3">
+              <span className="text-slate-400 text-xs">Satuan stok</span>
+              <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                {baseUnitLabel}
+              </span>
+            </div>
+
+            {mode === "EDIT" && product && (
+              <>
+                <div className="flex items-center justify-between py-2.5 gap-3">
+                  <span className="text-slate-400 text-xs">
+                    {isRefill ? "Stok terisi tersedia" : "Stok tersedia"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-900 text-xs tabular-nums">
+                      {formatDecimal(availableStock)} {product.satuanDasar}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stockBadge.cls}`}>
+                      {stockBadge.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between py-2.5 gap-3">
+                  <span className="text-slate-400 text-xs">Mode Isi Ulang (Galon)</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isRefill}
+                    onClick={() => setIsRefill(!isRefill)}
+                    className={`w-10 h-5.5 rounded-full transition-colors relative cursor-pointer ${
+                      isRefill ? "bg-blue-500" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
+                        isRefill ? "translate-x-4.5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {isRefill && (
+                  <div className="flex items-center justify-between py-2.5 gap-3">
+                    <span className="text-slate-400 text-xs">Stok kosong</span>
+                    <NumberInput
+                      min={0}
+                      emptyFallback={0}
+                      value={stokKosong}
+                      onChange={setStokKosong}
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900 tabular-nums"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* 5. TOMBOL AKSI */}
+        <div className="pt-4 border-t border-slate-100 flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+            style={{ background: "var(--primary)" }}
+          >
+            <Save className="w-4 h-4" />
+            <span>{isSubmitting ? "Menyimpan..." : "Simpan Produk"}</span>
+          </button>
+        </div>
+      </>
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1843,22 +2293,11 @@ function TabProduk() {
               <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 shrink-0">
                 <div className="pr-3 flex-1 min-w-0">
                   <span className="text-[11px] font-mono text-slate-400 block tracking-wider">
-                    {detailProduct.idBarang}
+                    {isDrawerEditing ? `EDIT PRODUK · ${detailProduct.idBarang}` : detailProduct.idBarang}
                   </span>
-                  {!isDrawerEditing ? (
-                    <h3 className="text-lg font-bold text-slate-900 mt-0.5 leading-snug">
-                      {p.nama}
-                    </h3>
-                  ) : (
-                    <input
-                      type="text"
-                      value={nama}
-                      onChange={(e) => setNama(e.target.value)}
-                      placeholder="Nama Produk..."
-                      required
-                      className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
-                    />
-                  )}
+                  <h3 className="text-lg font-bold text-slate-900 mt-0.5 leading-snug truncate">
+                    {isDrawerEditing ? nama.trim() || p.nama : p.nama}
+                  </h3>
                 </div>
                 <button
                   type="button"
@@ -1884,47 +2323,21 @@ function TabProduk() {
                 }}
                 className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm"
               >
-                {/* 1. SKU & Barcode */}
-                {isDrawerEditing && (
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                    <span className="text-slate-400 text-xs">SKU</span>
-                    <input
-                      type="text"
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      placeholder="Otomatis (PRD-...)"
-                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                )}
+                {isDrawerEditing ? (
+                  renderStructuredProductFormFields({
+                    mode: "EDIT",
+                    product: p,
+                    onCancel: () => setIsDrawerEditing(false),
+                    isSubmitting: savingInDrawer,
+                  })
+                ) : (
+                  <>
+                {/* 1. Barcode */}
                 <div className="flex items-center justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-400 text-xs">Barcode</span>
-                  {!isDrawerEditing ? (
-                    <span className="font-medium text-slate-900 text-xs font-mono text-right">
-                      {p.barcode || "-"}
-                    </span>
-                  ) : (
-                    <div className="flex items-center justify-end gap-2">
-                      <input
-                        type="text"
-                        value={barcode}
-                        onChange={(e) => setBarcode(e.target.value)}
-                        placeholder="Opsional"
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setScannerTarget("FORM");
-                          setIsScannerOpen(true);
-                        }}
-                        className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
-                        title="Scan kamera"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
+                  <span className="font-medium text-slate-900 text-xs font-mono text-right">
+                    {p.barcode || "-"}
+                  </span>
                 </div>
 
                 {/* 2. Section: Harga Produk */}
@@ -1957,204 +2370,135 @@ function TabProduk() {
                         </button>
                       )}
                     </div>
-                    {isDrawerEditing && (
-                      <button
-                        type="button"
-                        onClick={handleAddSatuanRow}
-                        className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Tambah</span>
-                      </button>
-                    )}
                   </div>
 
-                  {isDrawerEditing && renderUnitTemplates()}
-
                   <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                    {!isDrawerEditing ? (
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                          <tr className="divide-x divide-slate-200">
-                            <th className="py-2 px-3 font-semibold">Satuan</th>
-                            <th className="py-2 px-2 font-semibold text-center">Konversi</th>
-                            {costMeta.showCost && (
-                              <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
-                            )}
-                            <th className="py-2 px-2.5 font-semibold text-right">Jual</th>
-                            <th className="py-2 px-2.5 font-semibold text-right">
-                              {costMeta.showCost ? "Margin" : `Per ${p.satuanDasar}`}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 text-slate-600">
-                          {p.satuanProduk.map((s, idx) => {
-                            const faktor = Number(s.faktorKeDasar) || 1;
-                            const hargaPerDasar = Math.round(s.hargaJual / faktor);
-                            const margin = calculateMargin(s.hargaJual, s.hargaBeli);
-                            const hasExplicitBuy = p.satuanProduk.some((u) => u.isDefaultBeli);
-                            const largestIdx = p.satuanProduk.reduce(
-                              (best, cur, i, arr) =>
-                                Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
-                              0
-                            );
-                            const isBeli = hasExplicitBuy ? Boolean(s.isDefaultBeli) : idx === largestIdx;
-                            return (
-                              <tr key={s.id} className="divide-x divide-slate-200">
-                                <td className="py-2 px-3 font-medium text-slate-900">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="capitalize">{s.namaSatuan}</span>
-                                    {s.isDefault && (
-                                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold">
-                                        Jual
-                                      </span>
-                                    )}
-                                    {isBeli && (
-                                      <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold">
-                                        Beli
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-2 px-2 text-center text-slate-600 font-mono text-[11px] whitespace-nowrap">
-                                  1 = {formatDecimal(faktor)} {p.satuanDasar}
-                                </td>
-                                {costMeta.showCost && (
-                                  <td className="py-2 px-2.5 text-right text-slate-600 whitespace-nowrap tabular-nums">
-                                    {typeof s.hargaBeli === "number" ? formatRupiah(s.hargaBeli) : "-"}
-                                  </td>
-                                )}
-                                <td className="py-2 px-2.5 text-right font-semibold text-slate-900 whitespace-nowrap tabular-nums">
-                                  {formatRupiah(s.hargaJual)}
-                                </td>
-                                <td className="py-2 px-2.5 text-right whitespace-nowrap tabular-nums">
-                                  {costMeta.showCost ? (
-                                    <span
-                                      className={`font-semibold ${
-                                        margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
-                                      }`}
-                                    >
-                                      {margin.percent !== null
-                                        ? `${margin.percent}%`
-                                        : formatRupiah(margin.nominal)}
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                        <tr className="divide-x divide-slate-200">
+                          <th className="py-2 px-3 font-semibold">Satuan</th>
+                          <th className="py-2 px-2 font-semibold text-center">Konversi</th>
+                          {costMeta.showCost && (
+                            <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
+                          )}
+                          <th className="py-2 px-2.5 font-semibold text-right">Jual</th>
+                          <th className="py-2 px-2.5 font-semibold text-right">
+                            {costMeta.showCost ? "Margin" : `Per ${p.satuanDasar}`}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-600">
+                        {p.satuanProduk.map((s, idx) => {
+                          const faktor = Number(s.faktorKeDasar) || 1;
+                          const hargaPerDasar = Math.round(s.hargaJual / faktor);
+                          const margin = calculateMargin(s.hargaJual, s.hargaBeli);
+                          const hasExplicitBuy = p.satuanProduk.some((u) => u.isDefaultBeli);
+                          const largestIdx = p.satuanProduk.reduce(
+                            (best, cur, i, arr) =>
+                              Number(cur.faktorKeDasar) > Number(arr[best].faktorKeDasar) ? i : best,
+                            0
+                          );
+                          const isBeli = hasExplicitBuy ? Boolean(s.isDefaultBeli) : idx === largestIdx;
+                          return (
+                            <tr key={s.id} className="divide-x divide-slate-200">
+                              <td className="py-2 px-3 font-medium text-slate-900">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="capitalize">{s.namaSatuan}</span>
+                                  {s.isDefault && (
+                                    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold">
+                                      Jual
                                     </span>
-                                  ) : (
-                                    <span className="text-slate-500">{formatRupiah(hargaPerDasar)}</span>
                                   )}
+                                  {isBeli && (
+                                    <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold">
+                                      Beli
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2 px-2 text-center text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                                1 = {formatDecimal(faktor)} {p.satuanDasar}
+                              </td>
+                              {costMeta.showCost && (
+                                <td className="py-2 px-2.5 text-right text-slate-600 whitespace-nowrap tabular-nums">
+                                  {typeof s.hargaBeli === "number" ? formatRupiah(s.hargaBeli) : "-"}
                                 </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    ) : (
-                      renderEditableUnitTable()
-                    )}
+                              )}
+                              <td className="py-2 px-2.5 text-right font-semibold text-slate-900 whitespace-nowrap tabular-nums">
+                                {formatRupiah(s.hargaJual)}
+                              </td>
+                              <td className="py-2 px-2.5 text-right whitespace-nowrap tabular-nums">
+                                {costMeta.showCost ? (
+                                  <span
+                                    className={`font-semibold ${
+                                      margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
+                                    }`}
+                                  >
+                                    {margin.percent !== null
+                                      ? `${margin.percent}%`
+                                      : formatRupiah(margin.nominal)}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500">{formatRupiah(hargaPerDasar)}</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                {/* 3. Info List Properti Produk (Status, Merek, Stok, Satuan, Kategori) */}
+                {/* 3. Info List Properti Produk */}
                 <div className="divide-y divide-slate-100 dark:divide-zinc-800">
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Status produk</span>
-                    {isDrawerEditing ? (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={aktif}
-                        onClick={() => setAktif(!aktif)}
-                        className={`inline-flex items-center gap-2 cursor-pointer`}
-                      >
-                        <span className="text-xs font-medium text-slate-600">
-                          {aktif ? "Aktif" : "Nonaktif (Arsip)"}
-                        </span>
-                        <span
-                          className={`w-10 h-5.5 rounded-full transition-colors relative ${
-                            aktif ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-700"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
-                              aktif ? "translate-x-4.5" : "translate-x-0"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    ) : (
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          p.aktif !== false
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {p.aktif !== false ? "Aktif" : "Nonaktif (Arsip)"}
-                      </span>
-                    )}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        p.aktif !== false
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {p.aktif !== false ? "Aktif" : "Nonaktif (Arsip)"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Mode Isi Ulang (Galon)</span>
-                    {isDrawerEditing ? (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isRefill}
-                        onClick={() => setIsRefill(!isRefill)}
-                        className={`w-10 h-5.5 rounded-full transition-colors relative cursor-pointer ${
-                          isRefill ? "bg-blue-500" : "bg-slate-200 dark:bg-zinc-700"
-                        }`}
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
-                            isRefill ? "translate-x-4.5" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                    ) : (
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          (p.isRefill ?? isRefillProduct(p.nama))
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
-                            : "bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400"
-                        }`}
-                      >
-                        {(p.isRefill ?? isRefillProduct(p.nama)) ? "Aktif" : "Nonaktif"}
-                      </span>
-                    )}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        (p.isRefill ?? isRefillProduct(p.nama))
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                          : "bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      {(p.isRefill ?? isRefillProduct(p.nama)) ? "Aktif" : "Nonaktif"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">
-                      {(isDrawerEditing ? isRefill : (p.isRefill ?? isRefillProduct(p.nama))) ? "Stok terisi" : "Stok saat ini"}
+                      {(p.isRefill ?? isRefillProduct(p.nama)) ? "Stok terisi" : "Stok saat ini"}
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-zinc-100 text-xs text-right">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
 
-                  {(isDrawerEditing ? isRefill : (p.isRefill ?? isRefillProduct(p.nama))) && (
+                  {(p.isRefill ?? isRefillProduct(p.nama)) && (
                     <>
                       <div className="flex items-center justify-between py-2.5">
                         <span className="text-slate-400 text-xs">Stok kosong</span>
-                        {!isDrawerEditing ? (
-                          <span className="font-semibold text-slate-700 dark:text-zinc-300 text-xs text-right">
-                            {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
-                          </span>
-                        ) : (
-                          <NumberInput
-                            min={0}
-                            emptyFallback={0}
-                            value={stokKosong}
-                            onChange={setStokKosong}
-                            className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 w-20 text-right focus:outline-none focus:border-slate-900 dark:focus:border-zinc-300"
-                          />
-                        )}
+                        <span className="font-semibold text-slate-700 dark:text-zinc-300 text-xs text-right">
+                          {formatDecimal(Number(p.stokKosong ?? 0))} {p.satuanDasar}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between py-2.5">
                         <span className="text-slate-400 text-xs">Total stok (Terisi + Kosong)</span>
                         <span className="font-bold text-blue-600 dark:text-blue-400 text-xs text-right tabular-nums">
-                          {formatDecimal(stok + (isDrawerEditing ? Number(stokKosong) || 0 : Number(p.stokKosong ?? 0)))} {p.satuanDasar}
+                          {formatDecimal(stok + Number(p.stokKosong ?? 0))} {p.satuanDasar}
                         </span>
                       </div>
                     </>
@@ -2162,170 +2506,57 @@ function TabProduk() {
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Stok minimum</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs text-right">
-                        {formatDecimal(min)}
-                      </span>
-                    ) : (
-                      <NumberInput
-                        min={0}
-                        emptyFallback={0}
-                        value={stokMinimum}
-                        onChange={setStokMinimum}
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Satuan</span>
-                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                      {!isDrawerEditing
-                        ? defaultUnit?.namaSatuan || p.satuanDasar
-                        : satuanList[0]?.namaSatuan || satuanDasar}
+                    <span className="font-medium text-slate-900 text-xs text-right">
+                      {formatDecimal(min)} {p.satuanDasar}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Merek</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs text-right">
-                        {p.merek || p.group?.brand || "-"}
-                      </span>
-                    ) : (
-                      <div className="flex items-center justify-end gap-1.5">
-                        <input
-                          type="text"
-                          list="preset-merek-toko"
-                          value={merek}
-                          onChange={(e) => {
-                            setMerek(e.target.value);
-                            setMerekTouched(true);
-                          }}
-                          placeholder="Otomatis / kosong"
-                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-36 text-right focus:outline-none focus:border-slate-900"
-                        />
-                        {!merek.trim() && detectBrandFromName(nama) && (
-                          <button
-                            type="button"
-                            onClick={() => setMerek(detectBrandFromName(nama) || "")}
-                            className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer"
-                            title={`Isi otomatis: ${detectBrandFromName(nama)}`}
-                          >
-                            Auto
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <span className="font-medium text-slate-900 text-xs text-right">
+                      {p.merek || p.group?.brand || "-"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan dasar</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                        {p.satuanDasar}
-                      </span>
-                    ) : (
-                      <input
-                        type="text"
-                        required
-                        list="preset-satuan-dasar"
-                        value={satuanDasar}
-                        onChange={(e) => setSatuanDasar(e.target.value)}
-                        placeholder="Satuan dasar"
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
-                      />
-                    )}
+                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                      {p.satuanDasar}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan pembelian</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                        {(() => {
-                          const buyU =
-                            p.satuanProduk.find((u) => u.isDefaultBeli) ||
-                            p.satuanProduk.reduce<typeof p.satuanProduk[0] | undefined>(
-                              (best, cur) =>
-                                !best || Number(cur.faktorKeDasar) > Number(best.faktorKeDasar)
-                                  ? cur
-                                  : best,
-                              undefined
-                            );
-                          return buyU
-                            ? `${buyU.namaSatuan} (${formatDecimal(Number(buyU.faktorKeDasar))} ${p.satuanDasar})`
-                            : p.satuanDasar;
-                        })()}
-                      </span>
-                    ) : (
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          searchable={false}
-                          ariaLabel="Pilih satuan pembelian"
-                          value={String(selectedBuyIdx)}
-                          onChange={(val) => handleSetDefaultBeliSatuan(Number(val))}
-                          align="right"
-                          className="!w-auto"
-                          options={satuanList.map((s, idx) => ({
-                            value: String(idx),
-                            label: `${s.namaSatuan || `Satuan ${idx + 1}`} (${formatDecimal(Number(s.faktorKeDasar) || 1)} ${satuanDasar || "pcs"})`,
-                          }))}
-                        />
-                      </div>
-                    )}
+                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                      {(() => {
+                        const buyU =
+                          p.satuanProduk.find((u) => u.isDefaultBeli) ||
+                          p.satuanProduk.reduce<typeof p.satuanProduk[0] | undefined>(
+                            (best, cur) =>
+                              !best || Number(cur.faktorKeDasar) > Number(best.faktorKeDasar)
+                                ? cur
+                                : best,
+                            undefined
+                          );
+                        return buyU
+                          ? `${buyU.namaSatuan} (${formatDecimal(Number(buyU.faktorKeDasar))} ${p.satuanDasar})`
+                          : p.satuanDasar;
+                      })()}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan penjualan utama</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                        {(p.satuanProduk.find((u) => u.isDefault) || p.satuanProduk[0])?.namaSatuan ||
-                          p.satuanDasar}
-                      </span>
-                    ) : (
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          searchable={false}
-                          ariaLabel="Pilih satuan penjualan utama"
-                          value={String(selectedSellIdx)}
-                          onChange={(val) => handleSetDefaultSatuan(Number(val))}
-                          align="right"
-                          className="!w-auto"
-                          options={satuanList.map((s, idx) => ({
-                            value: String(idx),
-                            label: `${s.namaSatuan || `Satuan ${idx + 1}`}`,
-                          }))}
-                        />
-                      </div>
-                    )}
+                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                      {defaultUnit?.namaSatuan || p.satuanDasar}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Kategori</span>
-                    {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs text-right">
-                        {p.kategori?.nama || "Umum"}
-                      </span>
-                    ) : (
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          ariaLabel="Pilih kategori produk"
-                          value={kategoriId}
-                          onChange={setKategoriId}
-                          placeholder="-- Pilih Kategori --"
-                          searchPlaceholder="Cari kategori..."
-                          align="right"
-                          className="!w-auto"
-                          options={[
-                            { value: "", label: "-- Pilih Kategori --" },
-                            ...categories.map((c) => ({ value: c.id, label: c.nama })),
-                          ]}
-                        />
-                      </div>
-                    )}
+                    <span className="font-medium text-slate-900 text-xs text-right">
+                      {p.kategori?.nama || "Umum"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
@@ -2337,7 +2568,8 @@ function TabProduk() {
                 </div>
 
                 {/* 2b. Daftar Semua Kode / Barcode Produk */}
-                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                {!isDrawerEditing && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                       Daftar Kode / Barcode ({p.barcodes?.length || (p.barcode ? 1 : 0)})
@@ -2474,7 +2706,8 @@ function TabProduk() {
                       </button>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
 
                 {/* 2c. Riwayat Perubahan Harga & Mutasi Stok */}
                 {!isDrawerEditing && (
@@ -2639,25 +2872,7 @@ function TabProduk() {
                     </button>
                   </div>
                 )}
-                {isDrawerEditing && (
-                  <div className="pt-3 flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setIsDrawerEditing(false)}
-                      className="flex-1 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={savingInDrawer}
-                      className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
-                      style={{ background: "var(--primary)" }}
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>{savingInDrawer ? "Menyimpan..." : "Simpan Perubahan"}</span>
-                    </button>
-                  </div>
+                  </>
                 )}
               </form>
             </div>
@@ -2708,20 +2923,20 @@ function TabProduk() {
                     </div>
                   )}
                 </div>
-                <input
-                  type="text"
-                  required
-                  value={nama}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setNama(val);
-                    if (!isMultiVariant && !editingProductId && !merekTouched) {
-                      setMerek(detectBrandFromName(val) || "");
-                    }
-                  }}
-                  placeholder={isMultiVariant ? "Nama Produk / Merek..." : "Nama Produk..."}
-                  className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
-                />
+                {!editingProductId && isMultiVariant ? (
+                  <input
+                    type="text"
+                    required
+                    value={nama}
+                    onChange={(e) => setNama(e.target.value)}
+                    placeholder="Nama Induk / Merek (mis. Cimory)..."
+                    className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
+                  />
+                ) : (
+                  <h3 className="text-lg font-bold text-slate-900 mt-0.5 leading-snug truncate">
+                    {nama.trim() || (editingProductId ? "Edit Produk" : "Tambah Produk Baru")}
+                  </h3>
+                )}
               </div>
               <button
                 type="button"
@@ -2735,401 +2950,236 @@ function TabProduk() {
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm">
               {!editingProductId && isMultiVariant ? (
-                <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      Daftar Produk
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVariantRows((prev) => [
-                          ...prev,
-                          { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
-                        ])
-                      }
-                      className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Tambah baris</span>
-                    </button>
-                  </div>
+                <>
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Daftar Produk
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVariantRows((prev) => [
+                            ...prev,
+                            { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
+                          ])
+                        }
+                        className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah baris</span>
+                      </button>
+                    </div>
 
-                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50/70">
-                        <tr className="divide-x divide-slate-200">
-                          <th className="py-2 px-2.5 font-semibold">Nama</th>
-                          <th className="py-2 px-2.5 font-semibold w-28">Barcode</th>
-                          {costMeta.showCost && (
-                            <th className="py-2 px-2 font-semibold text-right w-20">Beli</th>
-                          )}
-                          <th className="py-2 px-2 font-semibold text-right w-20">Jual</th>
-                          <th className="py-2 px-2 font-semibold text-right w-14">Stok</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 text-slate-700">
-                        {variantRows.map((row, idx) => (
-                          <tr key={idx} className="group divide-x divide-slate-200">
-                            <td className="p-0">
-                              <input
-                                type="text"
-                                value={row.nama}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setVariantRows((prev) =>
-                                    prev.map((r, i) => (i === idx ? { ...r, nama: val } : r))
-                                  );
-                                }}
-                                placeholder="Nama produk..."
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30"
-                              />
-                            </td>
-                            <td className="p-0 relative">
-                              <div className="flex items-center h-9">
+                    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50/70">
+                          <tr className="divide-x divide-slate-200">
+                            <th className="py-2 px-2.5 font-semibold">Nama</th>
+                            <th className="py-2 px-2.5 font-semibold w-28">Barcode</th>
+                            {costMeta.showCost && (
+                              <th className="py-2 px-2 font-semibold text-right w-20">Beli</th>
+                            )}
+                            <th className="py-2 px-2 font-semibold text-right w-20">Jual</th>
+                            <th className="py-2 px-2 font-semibold text-right w-14">Stok</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 text-slate-700">
+                          {variantRows.map((row, idx) => (
+                            <tr key={idx} className="group divide-x divide-slate-200">
+                              <td className="p-0">
                                 <input
                                   type="text"
-                                  value={row.barcode}
+                                  value={row.nama}
                                   onChange={(e) => {
                                     const val = e.target.value;
                                     setVariantRows((prev) =>
-                                      prev.map((r, i) => (i === idx ? { ...r, barcode: val } : r))
+                                      prev.map((r, i) => (i === idx ? { ...r, nama: val } : r))
                                     );
                                   }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      if (idx === variantRows.length - 1) {
-                                        setVariantRows((prev) => [
-                                          ...prev,
-                                          { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
-                                        ]);
-                                      }
-                                    }
-                                  }}
-                                  placeholder="scan barcode"
-                                  className="w-full h-full px-2 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500/80 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
+                                  placeholder="Nama produk..."
+                                  className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30"
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setVariantScanIdx(idx);
-                                    setScannerTarget("VARIANT_ROW");
-                                    setIsScannerOpen(true);
-                                  }}
-                                  className="absolute right-1 p-1 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
-                                  title="Scan kamera"
-                                >
-                                  <Camera className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </td>
-                            {costMeta.showCost && (
+                              </td>
+                              <td className="p-0 relative">
+                                <div className="flex items-center h-9">
+                                  <input
+                                    type="text"
+                                    value={row.barcode}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setVariantRows((prev) =>
+                                        prev.map((r, i) => (i === idx ? { ...r, barcode: val } : r))
+                                      );
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        if (idx === variantRows.length - 1) {
+                                          setVariantRows((prev) => [
+                                            ...prev,
+                                            { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
+                                          ]);
+                                        }
+                                      }
+                                    }}
+                                    placeholder="scan barcode"
+                                    className="w-full h-full px-2 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500/80 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVariantScanIdx(idx);
+                                      setScannerTarget("VARIANT_ROW");
+                                      setIsScannerOpen(true);
+                                    }}
+                                    className="absolute right-1 p-1 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+                                    title="Scan kamera"
+                                  >
+                                    <Camera className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                              {costMeta.showCost && (
+                                <td className="p-0">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="0"
+                                    value={row.hargaBeli ? row.hargaBeli.toLocaleString("id-ID") : ""}
+                                    onChange={(e) => {
+                                      const digits = e.target.value.replace(/\D/g, "");
+                                      const num = digits ? parseInt(digits, 10) : 0;
+                                      setVariantRows((prev) =>
+                                        prev.map((r, i) => (i === idx ? { ...r, hargaBeli: num } : r))
+                                      );
+                                    }}
+                                    className="w-full h-9 px-2 bg-transparent text-xs font-medium text-right text-slate-700 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
+                                  />
+                                </td>
+                              )}
                               <td className="p-0">
                                 <input
                                   type="text"
                                   inputMode="numeric"
                                   placeholder="0"
-                                  value={row.hargaBeli ? row.hargaBeli.toLocaleString("id-ID") : ""}
+                                  value={row.hargaJual ? row.hargaJual.toLocaleString("id-ID") : ""}
                                   onChange={(e) => {
                                     const digits = e.target.value.replace(/\D/g, "");
                                     const num = digits ? parseInt(digits, 10) : 0;
                                     setVariantRows((prev) =>
-                                      prev.map((r, i) => (i === idx ? { ...r, hargaBeli: num } : r))
+                                      prev.map((r, i) => (i === idx ? { ...r, hargaJual: num } : r))
                                     );
                                   }}
-                                  className="w-full h-9 px-2 bg-transparent text-xs font-medium text-right text-slate-700 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
+                                  className="w-full h-9 px-2 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
                                 />
                               </td>
-                            )}
-                            <td className="p-0">
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                placeholder="0"
-                                value={row.hargaJual ? row.hargaJual.toLocaleString("id-ID") : ""}
-                                onChange={(e) => {
-                                  const digits = e.target.value.replace(/\D/g, "");
-                                  const num = digits ? parseInt(digits, 10) : 0;
-                                  setVariantRows((prev) =>
-                                    prev.map((r, i) => (i === idx ? { ...r, hargaJual: num } : r))
-                                  );
-                                }}
-                                className="w-full h-9 px-2 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
-                              />
-                            </td>
-                            <td className="p-0 relative">
-                              <NumberInput
-                                min={0}
-                                emptyFallback={0}
-                                value={row.stokAwal}
-                                onChange={(val) =>
-                                  setVariantRows((prev) =>
-                                    prev.map((r, i) => (i === idx ? { ...r, stokAwal: val } : r))
-                                  )
-                                }
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/30 tabular-nums"
-                              />
-                              {variantRows.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setVariantRows((prev) => prev.filter((_, i) => i !== idx))
+                              <td className="p-0 relative">
+                                <NumberInput
+                                  min={0}
+                                  emptyFallback={0}
+                                  value={row.stokAwal}
+                                  onChange={(val) =>
+                                    setVariantRows((prev) =>
+                                      prev.map((r, i) => (i === idx ? { ...r, stokAwal: val } : r))
+                                    )
                                   }
-                                  className="absolute left-0.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                  title="Hapus baris"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                  className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/30 tabular-nums"
+                                />
+                                {variantRows.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setVariantRows((prev) => prev.filter((_, i) => i !== idx))
+                                    }
+                                    className="absolute left-0.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                    title="Hapus baris"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  {/* 1. Barcode */}
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                    <span className="text-slate-400 text-xs">Barcode</span>
-                    <div className="flex items-center justify-end gap-2">
+
+                  <div className="divide-y divide-slate-100">
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Stok minimum</span>
+                      <NumberInput
+                        min={0}
+                        emptyFallback={0}
+                        value={stokMinimum}
+                        onChange={setStokMinimum}
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Satuan dasar</span>
                       <input
                         type="text"
-                        value={barcode}
-                        onChange={(e) => setBarcode(e.target.value)}
-                        placeholder="Opsional"
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                        required
+                        list="preset-satuan-dasar"
+                        value={satuanDasar}
+                        onChange={(e) => setSatuanDasar(e.target.value)}
+                        placeholder="Satuan dasar"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setScannerTarget("FORM");
-                          setIsScannerOpen(true);
-                        }}
-                        className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
-                        title="Scan kamera"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                      </button>
+                    </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Kategori</span>
+                      <div className="flex justify-end">
+                        <Dropdown
+                          variant="underline"
+                          ariaLabel="Pilih kategori produk"
+                          value={kategoriId}
+                          onChange={setKategoriId}
+                          placeholder="-- Pilih Kategori --"
+                          searchPlaceholder="Cari kategori..."
+                          align="right"
+                          className="!w-auto"
+                          options={[
+                            { value: "", label: "-- Pilih Kategori --" },
+                            ...categories.map((c) => ({ value: c.id, label: c.nama })),
+                          ]}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* 2. Section: Harga Produk */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5 gap-2">
-                      <div className="flex items-center gap-3">
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                          Harga Produk
-                        </h4>
-                        {canToggleCost && (
-                          <button
-                            type="button"
-                            disabled={togglingHargaBeli}
-                            onClick={handleToggleHargaBeli}
-                            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer disabled:opacity-50"
-                            title="Aktifkan atau nonaktifkan pencatatan harga beli secara global"
-                          >
-                            <span
-                              className={`w-7 h-4 rounded-full transition-colors relative inline-flex items-center ${
-                                costMeta.hargaBeliAktif ? "bg-emerald-500" : "bg-slate-200"
-                              }`}
-                            >
-                              <span
-                                className={`w-3 h-3 bg-white rounded-full shadow transition-transform ${
-                                  costMeta.hargaBeliAktif ? "translate-x-3.5" : "translate-x-0.5"
-                                }`}
-                              />
-                            </span>
-                            <span>Harga beli {costMeta.hargaBeliAktif ? "Aktif" : "Nonaktif"}</span>
-                          </button>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleAddSatuanRow}
-                        className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Tambah</span>
-                      </button>
-                    </div>
-
-                {renderUnitTemplates()}
-
-                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                  {renderEditableUnitTable()}
-                </div>
-              </div>
+                  <div className="pt-3 flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="flex-1 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      style={{ background: "var(--primary)" }}
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>
+                        {submitting
+                          ? "Menyimpan..."
+                          : `Simpan ${variantRows.filter((r) => r.nama.trim()).length || variantRows.length} Varian`}
+                      </span>
+                    </button>
+                  </div>
                 </>
+              ) : (
+                renderStructuredProductFormFields({
+                  mode: editingProductId ? "EDIT" : "CREATE",
+                  onCancel: () => setIsModalOpen(false),
+                  isSubmitting: submitting,
+                })
               )}
-
-              {/* 3. Info List Properti Produk (SKU, Merek, Stok minimum, Satuan, Satuan dasar, Kategori) */}
-              <div className="divide-y divide-slate-100">
-                {!isMultiVariant && (
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Merek</span>
-                    <input
-                      type="text"
-                      list="preset-merek-toko"
-                      value={merek}
-                      onChange={(e) => {
-                        setMerek(e.target.value);
-                        setMerekTouched(true);
-                      }}
-                      placeholder="Otomatis dari nama"
-                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-36 text-right focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                )}
-                {!isMultiVariant && (
-                  <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">SKU</span>
-                    <input
-                      type="text"
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      placeholder="Otomatis (PRD-...)"
-                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                )}
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Stok minimum</span>
-                  <NumberInput
-                    min={0}
-                    emptyFallback={0}
-                    value={stokMinimum}
-                    onChange={setStokMinimum}
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                {!isMultiVariant && (
-                  <>
-                    <div className="flex items-center justify-between py-2.5">
-                      <span className="text-slate-400 text-xs">Satuan pembelian</span>
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          searchable={false}
-                          ariaLabel="Pilih satuan pembelian"
-                          value={String(selectedBuyIdx)}
-                          onChange={(val) => handleSetDefaultBeliSatuan(Number(val))}
-                          align="right"
-                          className="!w-auto"
-                          options={satuanList.map((s, idx) => ({
-                            value: String(idx),
-                            label: `${s.namaSatuan || `Satuan ${idx + 1}`} (${formatDecimal(Number(s.faktorKeDasar) || 1)} ${satuanDasar || "pcs"})`,
-                          }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between py-2.5">
-                      <span className="text-slate-400 text-xs">Satuan penjualan utama</span>
-                      <div className="flex justify-end">
-                        <Dropdown
-                          variant="underline"
-                          searchable={false}
-                          ariaLabel="Pilih satuan penjualan utama"
-                          value={String(selectedSellIdx)}
-                          onChange={(val) => handleSetDefaultSatuan(Number(val))}
-                          align="right"
-                          className="!w-auto"
-                          options={satuanList.map((s, idx) => ({
-                            value: String(idx),
-                            label: `${s.namaSatuan || `Satuan ${idx + 1}`}`,
-                          }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between py-2.5">
-                      <span className="text-slate-400 text-xs">Status produk</span>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={aktif}
-                        onClick={() => setAktif(!aktif)}
-                        className="inline-flex items-center gap-2 cursor-pointer"
-                      >
-                        <span className="text-xs font-medium text-slate-600">
-                          {aktif ? "Aktif" : "Nonaktif (Arsip)"}
-                        </span>
-                        <span
-                          className={`w-10 h-5.5 rounded-full transition-colors relative ${
-                            aktif ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-700"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${
-                              aktif ? "translate-x-4.5" : "translate-x-0"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Satuan dasar</span>
-                  <input
-                    type="text"
-                    required
-                    list="preset-satuan-dasar"
-                    value={satuanDasar}
-                    onChange={(e) => setSatuanDasar(e.target.value)}
-                    placeholder="Satuan dasar"
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Kategori</span>
-                  <div className="flex justify-end">
-                    <Dropdown
-                      variant="underline"
-                      ariaLabel="Pilih kategori produk"
-                      value={kategoriId}
-                      onChange={setKategoriId}
-                      placeholder="-- Pilih Kategori --"
-                      searchPlaceholder="Cari kategori..."
-                      align="right"
-                      className="!w-auto"
-                      options={[
-                        { value: "", label: "-- Pilih Kategori --" },
-                        ...categories.map((c) => ({ value: c.id, label: c.nama })),
-                      ]}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-[2] h-11 rounded-xl font-bold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
-                  style={{ background: "var(--primary)" }}
-                >
-                  <Save className="w-4 h-4" />
-                  <span>
-                    {submitting
-                      ? "Menyimpan..."
-                      : !editingProductId && isMultiVariant
-                      ? `Simpan ${variantRows.filter((r) => r.nama.trim()).length || variantRows.length} Varian`
-                      : "Simpan Produk"}
-                  </span>
-                </button>
-              </div>
             </form>
           </div>
         </div>
