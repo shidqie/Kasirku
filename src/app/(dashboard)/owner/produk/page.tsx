@@ -88,6 +88,7 @@ function TabProduk() {
   const [assignSearch, setAssignSearch] = useState("");
   const [loadingAssignProducts, setLoadingAssignProducts] = useState(false);
   const [assigningProductId, setAssigningProductId] = useState<string | null>(null);
+  const [replaceBarcodeTarget, setReplaceBarcodeTarget] = useState<ProductItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [scannerRowProductId, setScannerRowProductId] = useState<string | null>(null);
@@ -1439,43 +1440,44 @@ function TabProduk() {
                     </div>
                   );
                 }
+                const assignBarcodeToProduct = async (p: ProductItem) => {
+                  setAssigningProductId(p.id);
+                  setError(null);
+                  try {
+                    const res = await fetch(`/api/products/${p.id}/barcode`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ barcode: unregisteredBarcode }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      setError(data.error || "Gagal memasangkan barcode");
+                      return;
+                    }
+                    setSuccess(`Barcode ${unregisteredBarcode} berhasil dipasang ke "${p.nama}"`);
+                    const scanned = unregisteredBarcode;
+                    setReplaceBarcodeTarget(null);
+                    setUnregisteredBarcode(null);
+                    setFilterStok("SEMUA");
+                    setSelectedKategori("");
+                    setCurrentPage(1);
+                    setSearchQuery(scanned);
+                    fetchData();
+                  } catch (err: any) {
+                    setError(err.message || "Gagal menghubungi server");
+                  } finally {
+                    setAssigningProductId(null);
+                  }
+                };
+
                 return filtered.slice(0, 40).map((p) => {
                   const defaultUnit = p.satuanProduk.find((s) => s.isDefault) || p.satuanProduk[0];
                   const isAssigning = assigningProductId === p.id;
+                  const hasExistingBarcode = Boolean(p.barcode && p.barcode.trim() !== "");
                   return (
-                    <button
+                    <div
                       key={p.id}
-                      type="button"
-                      disabled={Boolean(assigningProductId)}
-                      onClick={async () => {
-                        setAssigningProductId(p.id);
-                        setError(null);
-                        try {
-                          const res = await fetch(`/api/products/${p.id}/barcode`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ barcode: unregisteredBarcode }),
-                          });
-                          const data = await res.json();
-                          if (!res.ok) {
-                            setError(data.error || "Gagal memasangkan barcode");
-                            return;
-                          }
-                          setSuccess(`Barcode ${unregisteredBarcode} berhasil dipasang ke "${p.nama}"`);
-                          const scanned = unregisteredBarcode;
-                          setUnregisteredBarcode(null);
-                          setFilterStok("SEMUA");
-                          setSelectedKategori("");
-                          setCurrentPage(1);
-                          setSearchQuery(scanned);
-                          fetchData();
-                        } catch (err: any) {
-                          setError(err.message || "Gagal menghubungi server");
-                        } finally {
-                          setAssigningProductId(null);
-                        }
-                      }}
-                      className="w-full px-5 py-3 text-left hover:bg-slate-50 dark:hover:bg-zinc-800/60 flex items-center justify-between gap-3 transition-colors disabled:opacity-50 cursor-pointer"
+                      className="w-full px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition-colors"
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-slate-900 dark:text-zinc-100 truncate">
@@ -1483,13 +1485,29 @@ function TabProduk() {
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
                           {p.kategori?.nama || "Umum"} · {formatRupiah(defaultUnit?.hargaJual || 0)}
-                          {p.barcode ? ` · Barcode lama: ${p.barcode}` : " · Tanpa barcode"}
+                          {hasExistingBarcode ? ` · Barcode lama: ${p.barcode}` : " · Tanpa barcode"}
                         </p>
                       </div>
-                      <span className="text-[11px] font-semibold text-blue-600 shrink-0">
-                        {isAssigning ? "Menyimpan..." : "Pilih"}
-                      </span>
-                    </button>
+                      {hasExistingBarcode ? (
+                        <button
+                          type="button"
+                          disabled={Boolean(assigningProductId)}
+                          onClick={() => setReplaceBarcodeTarget(p)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 text-[11px] font-semibold shrink-0 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {isAssigning ? "Menyimpan..." : "Ganti"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={Boolean(assigningProductId)}
+                          onClick={() => assignBarcodeToProduct(p)}
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold shrink-0 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {isAssigning ? "Menyimpan..." : "Pilih"}
+                        </button>
+                      )}
+                    </div>
                   );
                 });
               })()}
@@ -1521,6 +1539,50 @@ function TabProduk() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(replaceBarcodeTarget && unregisteredBarcode)}
+        title="Ganti Barcode Produk?"
+        description={
+          replaceBarcodeTarget && unregisteredBarcode
+            ? `Anda yakin ingin mengganti barcode produk "${replaceBarcodeTarget.nama}" dari ${replaceBarcodeTarget.barcode} menjadi ${unregisteredBarcode}?`
+            : ""
+        }
+        confirmText="Ya, Ganti Barcode"
+        variant="danger"
+        loading={Boolean(assigningProductId)}
+        onConfirm={async () => {
+          if (!replaceBarcodeTarget || !unregisteredBarcode) return;
+          setAssigningProductId(replaceBarcodeTarget.id);
+          setError(null);
+          try {
+            const res = await fetch(`/api/products/${replaceBarcodeTarget.id}/barcode`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ barcode: unregisteredBarcode }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              setError(data.error || "Gagal mengganti barcode");
+              return;
+            }
+            setSuccess(`Barcode "${replaceBarcodeTarget.nama}" berhasil diganti menjadi ${unregisteredBarcode}`);
+            const scanned = unregisteredBarcode;
+            setReplaceBarcodeTarget(null);
+            setUnregisteredBarcode(null);
+            setFilterStok("SEMUA");
+            setSelectedKategori("");
+            setCurrentPage(1);
+            setSearchQuery(scanned);
+            fetchData();
+          } catch (err: any) {
+            setError(err.message || "Gagal menghubungi server");
+          } finally {
+            setAssigningProductId(null);
+          }
+        }}
+        onCancel={() => !assigningProductId && setReplaceBarcodeTarget(null)}
+      />
 
       <HargaNaikModal
         isOpen={isHargaNaikOpen}
