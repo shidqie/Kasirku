@@ -591,10 +591,10 @@ function TabProduk() {
         p.satuanProduk && p.satuanProduk.length > 0
           ? p.satuanProduk.map((s) => ({
               namaSatuan: s.namaSatuan,
-              faktorKeDasar: s.faktorKeDasar,
-              hargaJual: s.hargaJual,
-              hargaBeli: s.hargaBeli,
-              isDefault: s.isDefault,
+              faktorKeDasar: Number(s.faktorKeDasar) || 1,
+              hargaJual: Number(s.hargaJual) || 0,
+              hargaBeli: Number(s.hargaBeli) || 0,
+              isDefault: Boolean(s.isDefault),
             }))
           : [
               {
@@ -613,7 +613,7 @@ function TabProduk() {
         variantName: p.variantName || null,
         barcode: null,
         satuanDasar: p.satuanDasar,
-        stokMinimum: p.stokMinimum,
+        stokMinimum: Number(p.stokMinimum) || 0,
         isRefill: Boolean(p.isRefill),
         satuanList: satuanListPayload,
       };
