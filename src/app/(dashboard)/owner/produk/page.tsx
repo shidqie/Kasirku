@@ -479,27 +479,29 @@ function TabProduk() {
           </div>
         </div>
 
-        {/* Search bar compact */}
-        <div className="pt-4 relative w-full max-w-xs">
-          <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Cari nama atau barcode"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-6 pr-10 h-9 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-          />
+        {/* Search bar compact + Reload ujung kanan */}
+        <div className="pt-4 flex items-center justify-between gap-4">
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cari nama atau barcode"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-6 pr-2 h-9 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+            />
+          </div>
           <button
             type="button"
             onClick={fetchData}
-            className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
+            className="h-8 w-8 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
             title="Muat ulang"
             aria-label="Muat ulang"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-500" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-500" : ""}`} />
           </button>
         </div>
 
