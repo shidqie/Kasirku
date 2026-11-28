@@ -75,12 +75,16 @@ export async function middleware(request: NextRequest) {
   // 2. Proteksi seluruh rute dashboard & API (Kecuali login)
   if (!user) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "Sesi tidak valid atau telah berakhir. Silakan login kembali." },
         { status: 401 }
       );
+      if (token) res.cookies.delete("kasirku_session");
+      return res;
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    const res = NextResponse.redirect(new URL("/login", request.url));
+    if (token) res.cookies.delete("kasirku_session");
+    return res;
   }
 
   const deny = (msg = "Akses ditolak. Anda tidak memiliki izin untuk fitur ini.") => {

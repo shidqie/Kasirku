@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
 
 const COOKIE_NAME = "kasirku_session";
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 jam
+export const SESSION_EXPIRATION = "12h";
 
 function getSessionSecretKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
@@ -31,6 +33,8 @@ export interface SessionPayload {
   role: Role;
   tokoId?: string;
   permissions?: string[];
+  iat?: number;
+  exp?: number;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -45,7 +49,7 @@ export async function encryptSession(payload: SessionPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("24h")
+    .setExpirationTime(SESSION_EXPIRATION)
     .sign(key);
 }
 
@@ -68,7 +72,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24, // 24 jam
+    maxAge: SESSION_MAX_AGE_SECONDS, // 12 jam
   });
 }
 

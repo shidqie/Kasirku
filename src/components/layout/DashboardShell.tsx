@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { MotionConfig, motion } from "motion/react";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -17,6 +17,47 @@ interface DashboardShellProps {
 export function DashboardShell({ user, storeName, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!user.exp) return;
+
+    const handleSessionExpired = () => {
+      fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+        window.location.replace("/login");
+      });
+    };
+
+    const checkExpiry = () => {
+      if (user.exp && user.exp * 1000 <= Date.now()) {
+        handleSessionExpired();
+        return true;
+      }
+      return false;
+    };
+
+    if (checkExpiry()) return;
+
+    const msRemaining = user.exp * 1000 - Date.now();
+    const timer = window.setTimeout(
+      handleSessionExpired,
+      Math.min(msRemaining, 2147483647)
+    );
+
+    const onVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        checkExpiry();
+      }
+    };
+
+    window.addEventListener("focus", onVisibilityOrFocus);
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("focus", onVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+    };
+  }, [user.exp]);
 
   return (
     <MotionConfig reducedMotion="user">

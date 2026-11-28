@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginSchema } from "@/lib/validations/auth.schema";
 import { login } from "@/services/auth.service";
-import { encryptSession } from "@/lib/auth/session";
+import { encryptSession, SESSION_MAX_AGE_SECONDS } from "@/lib/auth/session";
 import { getDefaultLandingRoute } from "@/lib/auth/permissions";
 
 export async function POST(req: NextRequest) {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         secure: isHttps,
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24,
+        maxAge: SESSION_MAX_AGE_SECONDS,
       });
       return res;
     }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       secure: isHttps,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24,
+      maxAge: SESSION_MAX_AGE_SECONDS,
     });
     return res;
   } catch (error: any) {
