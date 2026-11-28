@@ -93,6 +93,120 @@ function toDateInput(d: string | Date | null | undefined): string {
   return dt.toISOString().slice(0, 10);
 }
 
+function ProductSearchBar({
+  products,
+  value,
+  onChange,
+  placeholder = "Cari nama atau scan/ketik barcode...",
+}: {
+  products: ProductOption[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+}) {
+  const selected = products.find((p) => p.id === value);
+  const [query, setQuery] = useState(selected ? selected.nama : "");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setQuery(selected ? selected.nama : "");
+  }, [value, selected]);
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? products.filter(
+          (p) =>
+            p.nama.toLowerCase().includes(q) ||
+            (p.barcode && p.barcode.toLowerCase().includes(q))
+        )
+      : products;
+    return list.slice(0, 10);
+  }, [products, query]);
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <div className="flex items-center h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus-within:border-blue-500">
+        <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
+        <input
+          type="text"
+          value={query}
+          placeholder={placeholder}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setQuery(val);
+            setOpen(true);
+            if (!val.trim()) onChange("");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && query.trim()) {
+              e.preventDefault();
+              const clean = query.trim().toLowerCase();
+              const exact =
+                products.find((p) => p.barcode?.toLowerCase() === clean) || matches[0];
+              if (exact) {
+                onChange(exact.id);
+                setQuery(exact.nama);
+                setOpen(false);
+              }
+            }
+          }}
+          className="w-full bg-transparent text-xs text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none"
+        />
+        {(query || value) && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setQuery("");
+              onChange("");
+              setOpen(true);
+            }}
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 ml-1 shrink-0 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
+          {matches.length === 0 ? (
+            <div className="px-3 py-2.5 text-[11px] text-slate-400 text-center">
+              Produk tidak ditemukan di Data Master
+            </div>
+          ) : (
+            matches.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(p.id);
+                  setQuery(p.nama);
+                  setOpen(false);
+                }}
+                className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer ${
+                  p.id === value ? "bg-blue-50/70 dark:bg-blue-950/30 font-semibold text-blue-700 dark:text-blue-300" : "text-slate-800 dark:text-zinc-200"
+                }`}
+              >
+                <span className="truncate">{p.nama}</span>
+                {p.barcode && (
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                    {p.barcode}
+                  </span>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PromoPage() {
   const [promos, setPromos] = useState<PromoRuleDTO[]>([]);
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -715,21 +829,12 @@ export default function PromoPage() {
 
                 {targetMode === "PRODUK" && (
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 h-9 flex items-center bg-white dark:bg-zinc-800">
-                      <Dropdown
-                        searchable
-                        variant="underline"
-                        className="w-full"
-                        searchPlaceholder="Ketik nama atau barcode dari Data Master..."
-                        value={produkId}
-                        onChange={setProdukId}
-                        placeholder="Ketik / pilih produk dari Data Master..."
-                        options={products.map((pr) => ({
-                          value: pr.id,
-                          label: pr.barcode ? `${pr.nama} · ${pr.barcode}` : pr.nama,
-                        }))}
-                      />
-                    </div>
+                    <ProductSearchBar
+                      products={products}
+                      value={produkId}
+                      onChange={setProdukId}
+                      placeholder="Ketik nama atau barcode dari Data Master..."
+                    />
                     <button
                       type="button"
                       onClick={() => setScanTarget("TARGET")}
@@ -851,24 +956,12 @@ export default function PromoPage() {
                       Produk Gratis (Opsional — kosongkan jika sama dengan produk yang dibeli)
                     </label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 min-w-0 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 h-9 flex items-center bg-white dark:bg-zinc-900">
-                        <Dropdown
-                          searchable
-                          variant="underline"
-                          className="w-full"
-                          searchPlaceholder="Ketik nama atau barcode produk bonus..."
-                          value={bonusProdukId}
-                          onChange={setBonusProdukId}
-                          placeholder="Sama dengan produk yang dibeli"
-                          options={[
-                            { value: "", label: "Sama dengan produk yang dibeli" },
-                            ...products.map((pr) => ({
-                              value: pr.id,
-                              label: pr.barcode ? `${pr.nama} · ${pr.barcode}` : pr.nama,
-                            })),
-                          ]}
-                        />
-                      </div>
+                      <ProductSearchBar
+                        products={products}
+                        value={bonusProdukId}
+                        onChange={setBonusProdukId}
+                        placeholder="Kosongkan jika sama, atau ketik produk bonus..."
+                      />
                       <button
                         type="button"
                         onClick={() => setScanTarget("BONUS")}
