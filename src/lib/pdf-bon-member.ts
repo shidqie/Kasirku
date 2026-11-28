@@ -900,20 +900,43 @@ export async function generateAllMembersPDF(
     y += rowH;
   });
 
-  // Render rincian nota bon tiap pelanggan secara berkesinambungan (dipisah garis)
+  // Render rincian nota bon tiap pelanggan pada halaman baru masing-masing (tidak digabung)
   const detailedMembers = members.filter((m) => Boolean(m.detail));
   if (detailedMembers.length > 0) {
-    y += 8;
     for (let i = 0; i < detailedMembers.length; i++) {
       const m = detailedMembers[i];
       if (!m.detail) continue;
 
-      if (y + 52 > pageH - 22) {
-        doc.addPage();
-        y = 16;
-      } else if (i > 0) {
-        y += 6;
-      }
+      // Selalu mulai di halaman baru untuk setiap pelanggan berbeda
+      doc.addPage();
+      y = 16;
+
+      // Sub-bab judul per pelanggan
+      doc.setFillColor(248, 250, 252);
+      doc.rect(marginL, y, contentW, 10, "F");
+      doc.setDrawColor(...C_BORDER);
+      doc.setLineWidth(0.25);
+      doc.line(marginL, y, marginR, y);
+      doc.line(marginL, y + 10, marginR, y + 10);
+
+      font(9.5, true);
+      color(...C_DARK);
+      doc.text(
+        `RINCIAN BON PELANGGAN ${i + 1} : ${m.nama.toUpperCase()}`,
+        marginL + 3,
+        y + 6.5
+      );
+
+      font(7.5, false);
+      color(...C_MUTED);
+      doc.text(
+        `${storeInfo.namaToko || "Kasirku POS"} · ${i + 1}/${detailedMembers.length}`,
+        marginR - 3,
+        y + 6.5,
+        { align: "right" }
+      );
+
+      y += 14;
 
       const { finalY } = await renderMemberBonToDoc(
         doc,
