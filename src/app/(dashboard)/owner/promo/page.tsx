@@ -796,13 +796,17 @@ export default function PromoPage() {
                     <label className="block font-semibold text-slate-600 dark:text-zinc-300 mb-1">
                       Harga Paket (Rp)
                     </label>
-                    <NumberInput
-                      min={0}
-                      emptyFallback={0}
-                      value={hargaPaket}
-                      onChange={setHargaPaket}
-                      className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100"
-                    />
+                    <div className="flex items-center h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                      <span className="text-slate-400 font-semibold mr-1.5 select-none">Rp</span>
+                      <NumberInput
+                        rupiah
+                        min={0}
+                        emptyFallback={0}
+                        value={hargaPaket}
+                        onChange={setHargaPaket}
+                        className="w-full bg-transparent text-slate-900 dark:text-zinc-100 tabular-nums focus:outline-none"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -827,13 +831,17 @@ export default function PromoPage() {
                     <label className="block font-semibold text-slate-600 dark:text-zinc-300 mb-1">
                       Potongan (Rp)
                     </label>
-                    <NumberInput
-                      min={0}
-                      emptyFallback={0}
-                      value={diskonNominal}
-                      onChange={setDiskonNominal}
-                      className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100"
-                    />
+                    <div className="flex items-center h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                      <span className="text-slate-400 font-semibold mr-1.5 select-none">Rp</span>
+                      <NumberInput
+                        rupiah
+                        min={0}
+                        emptyFallback={0}
+                        value={diskonNominal}
+                        onChange={setDiskonNominal}
+                        className="w-full bg-transparent text-slate-900 dark:text-zinc-100 tabular-nums focus:outline-none"
+                      />
+                    </div>
                   </div>
                 )}
 

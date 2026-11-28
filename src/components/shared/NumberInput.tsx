@@ -11,6 +11,8 @@ export interface NumberInputProps
   onChange: (value: number) => void;
   /** Hanya izinkan bilangan bulat (tanpa koma/titik) */
   integer?: boolean;
+  /** Format tampilan angka dengan pemisah ribuan Indonesia (10.000) */
+  rupiah?: boolean;
   /** Nilai fallback saat input dikosongkan lalu keluar fokus (blur) */
   emptyFallback?: number;
   min?: number;
@@ -27,6 +29,7 @@ export function NumberInput({
   value,
   onChange,
   integer = false,
+  rupiah = false,
   emptyFallback,
   min,
   max,
@@ -39,7 +42,8 @@ export function NumberInput({
   const formatPropValue = (v: number | string | null | undefined) => {
     if (v === null || v === undefined || v === "") return "";
     const n = typeof v === "number" ? v : Number(v);
-    return Number.isFinite(n) ? String(n) : "";
+    if (!Number.isFinite(n)) return "";
+    return rupiah ? Math.round(n).toLocaleString("id-ID") : String(n);
   };
 
   const [draft, setDraft] = useState<string>(() => formatPropValue(value));
@@ -53,6 +57,22 @@ export function NumberInput({
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (rupiah) {
+      let digits = e.target.value.replace(/\D/g, "");
+      if (digits.length > 1) {
+        digits = digits.replace(/^0+/, "") || "0";
+      }
+      if (digits === "") {
+        setDraft("");
+        return;
+      }
+      let parsed = parseInt(digits, 10);
+      if (typeof max === "number" && parsed > max) parsed = max;
+      setDraft(parsed.toLocaleString("id-ID"));
+      onChange(parsed);
+      return;
+    }
+
     let raw = e.target.value.replace(",", ".");
 
     if (integer) {
@@ -98,18 +118,19 @@ export function NumberInput({
     isFocusedRef.current = false;
 
     const fallback = emptyFallback ?? (typeof min === "number" ? min : 0);
+    const cleanedDraft = rupiah ? draft.replace(/\D/g, "") : draft;
     let parsed =
-      draft === "" || draft === "."
+      cleanedDraft === "" || cleanedDraft === "."
         ? fallback
-        : integer
-        ? parseInt(draft, 10)
-        : parseFloat(draft);
+        : integer || rupiah
+        ? parseInt(cleanedDraft, 10)
+        : parseFloat(cleanedDraft);
 
     if (Number.isNaN(parsed)) parsed = fallback;
     if (typeof min === "number" && parsed < min) parsed = min;
     if (typeof max === "number" && parsed > max) parsed = max;
 
-    setDraft(String(parsed));
+    setDraft(rupiah ? parsed.toLocaleString("id-ID") : String(parsed));
     onChange(parsed);
     onBlur?.(e);
   };
@@ -117,7 +138,7 @@ export function NumberInput({
   return (
     <input
       type="text"
-      inputMode={integer ? "numeric" : "decimal"}
+      inputMode={integer || rupiah ? "numeric" : "decimal"}
       value={draft}
       placeholder={placeholder}
       onChange={handleChange}
