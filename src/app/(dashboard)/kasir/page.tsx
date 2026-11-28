@@ -256,6 +256,7 @@ export default function KasirPOSPage() {
   const [isQuickQrisOpen, setIsQuickQrisOpen] = useState(false);
   const [quickQrisAmount, setQuickQrisAmount] = useState<number>(0);
   const [quickQrisConfirmed, setQuickQrisConfirmed] = useState(false);
+  const [quickQrisSecondsLeft, setQuickQrisSecondsLeft] = useState<number>(30);
   const [quickQrisDataUrl, setQuickQrisDataUrl] = useState<string | null>(null);
   const [uangDiterima, setUangDiterima] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
@@ -739,6 +740,25 @@ export default function KasirPOSPage() {
     };
   }, [isQuickQrisOpen, quickQrisConfirmed, quickQrisAmount, storeInfo?.qrisPayload]);
 
+  useEffect(() => {
+    if (!isQuickQrisOpen || !quickQrisConfirmed) return;
+
+    const timer = setInterval(() => {
+      setQuickQrisSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsQuickQrisOpen(false);
+          setQuickQrisConfirmed(false);
+          setQuickQrisAmount(0);
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isQuickQrisOpen, quickQrisConfirmed]);
+
   const openPaymentModal = () => {
     if (cart.length === 0) return;
     setUangDiterima(grandTotal);
@@ -864,6 +884,7 @@ export default function KasirPOSPage() {
               onClick={() => {
                 setQuickQrisAmount(0);
                 setQuickQrisConfirmed(false);
+                setQuickQrisSecondsLeft(30);
                 setIsQuickQrisOpen(true);
               }}
               className="h-11 px-3 sm:px-3.5 rounded-[14px] text-xs font-semibold bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 shrink-0 transition-all hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 flex items-center gap-2 shadow-2xs cursor-pointer"
@@ -1955,11 +1976,14 @@ export default function KasirPOSPage() {
         </div>
       )}
 
-      {/* Modal Quick QRIS Dinamis (Input Nominal -> Tampil Nominal di Atas QR, Input di Bawah) */}
+      {/* Modal Quick QRIS Dinamis (1 Kesempatan, Timer 30s, Tanpa Ubah Nominal) */}
       {isQuickQrisOpen && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
-          onClick={() => setIsQuickQrisOpen(false)}
+          onClick={() => {
+            setIsQuickQrisOpen(false);
+            setQuickQrisConfirmed(false);
+          }}
         >
           <div
             className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xl border border-slate-200/80 dark:border-zinc-800 p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto"
@@ -1982,7 +2006,10 @@ export default function KasirPOSPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsQuickQrisOpen(false)}
+                onClick={() => {
+                  setIsQuickQrisOpen(false);
+                  setQuickQrisConfirmed(false);
+                }}
                 className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 flex items-center justify-center text-slate-600 dark:text-zinc-300 shrink-0 cursor-pointer"
                 title="Tutup"
               >
@@ -2000,108 +2027,122 @@ export default function KasirPOSPage() {
                   .
                 </p>
               </div>
-            ) : (
-              <>
-                {/* 1. Area Output QRIS (Tampil setelah nominal diinput & dikonfirmasi) */}
-                {quickQrisConfirmed && quickQrisAmount > 0 && (
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-center space-y-3">
-                    {/* Output Nominal di Atas QR */}
-                    <div className="py-2 px-4 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700">
-                      <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
-                        Total Tagihan
-                      </p>
-                      <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100 tabular-nums mt-0.5">
-                        {formatRupiah(quickQrisAmount)}
-                      </p>
-                    </div>
+            ) : quickQrisConfirmed && quickQrisAmount > 0 ? (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-center space-y-3">
+                {/* Output Nominal di Atas QR */}
+                <div className="py-2 px-4 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700">
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
+                    Total Tagihan
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100 tabular-nums mt-0.5">
+                    {formatRupiah(quickQrisAmount)}
+                  </p>
+                </div>
 
-                    {/* QR Code */}
-                    <div className="w-60 h-60 mx-auto bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
-                      {quickQrisDataUrl ? (
-                        <img
-                          src={quickQrisDataUrl}
-                          alt="Quick QRIS Dinamis"
-                          className="w-full h-full object-contain rounded-lg"
-                        />
-                      ) : (
-                        <QrCode className="w-32 h-32 text-slate-800 animate-pulse" />
-                      )}
-                    </div>
+                {/* QR Code */}
+                <div className="w-60 h-60 mx-auto bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+                  {quickQrisDataUrl ? (
+                    <img
+                      src={quickQrisDataUrl}
+                      alt="Quick QRIS Dinamis"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <QrCode className="w-32 h-32 text-slate-800 animate-pulse" />
+                  )}
+                </div>
 
-                    <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                      Tunjukkan ke konsumen untuk langsung scan (nominal otomatis terisi).
-                    </p>
-                  </div>
-                )}
-
-                {/* 2. Input Nominal Total (Di bawah QR setelah QR tampil, atau utama saat awal) */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (quickQrisAmount > 0) setQuickQrisConfirmed(true);
-                  }}
-                  className="space-y-2.5"
-                >
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    {quickQrisConfirmed ? "Ubah Nominal Pembayaran" : "Total yang harus dibayar"}
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">
-                      Rp
+                {/* Timer 30s */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums ${
+                        quickQrisSecondsLeft <= 10
+                          ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 animate-pulse"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                      }`}
+                    >
+                      Berlaku {quickQrisSecondsLeft} detik
                     </span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoFocus={!quickQrisConfirmed}
-                      value={quickQrisAmount ? quickQrisAmount.toLocaleString("id-ID") : ""}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "");
-                        const val = digits ? parseInt(digits, 10) : 0;
-                        setQuickQrisAmount(val);
-                        if (val <= 0) setQuickQrisConfirmed(false);
-                      }}
-                      placeholder="0"
-                      className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xl font-black text-right text-slate-900 dark:text-zinc-100 tabular-nums focus:outline-none focus:border-[var(--primary)]"
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-zinc-700 overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-1000 ease-linear ${
+                        quickQrisSecondsLeft <= 10 ? "bg-rose-500" : "bg-amber-500"
+                      }`}
+                      style={{ width: `${(quickQrisSecondsLeft / 30) * 100}%` }}
                     />
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap gap-1.5">
-                    {[5000, 10000, 20000, 50000, 100000].map((addVal) => (
-                      <button
-                        key={addVal}
-                        type="button"
-                        onClick={() => setQuickQrisAmount((prev) => prev + addVal)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
-                      >
-                        +{addVal >= 1000 ? `${addVal / 1000}rb` : addVal}
-                      </button>
-                    ))}
-                    {quickQrisAmount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuickQrisAmount(0);
-                          setQuickQrisConfirmed(false);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-semibold hover:bg-rose-100 transition-colors cursor-pointer"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                  Tunjukkan ke konsumen untuk langsung scan (nominal otomatis terisi).
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (quickQrisAmount > 0) {
+                    setQuickQrisSecondsLeft(30);
+                    setQuickQrisConfirmed(true);
+                  }
+                }}
+                className="space-y-2.5"
+              >
+                <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  Total yang harus dibayar
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">
+                    Rp
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    value={quickQrisAmount ? quickQrisAmount.toLocaleString("id-ID") : ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      const val = digits ? parseInt(digits, 10) : 0;
+                      setQuickQrisAmount(val);
+                    }}
+                    placeholder="0"
+                    className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xl font-black text-right text-slate-900 dark:text-zinc-100 tabular-nums focus:outline-none focus:border-[var(--primary)]"
+                  />
+                </div>
 
-                  {!quickQrisConfirmed && (
+                <div className="flex flex-wrap gap-1.5">
+                  {[5000, 10000, 20000, 50000, 100000].map((addVal) => (
                     <button
-                      type="submit"
-                      disabled={quickQrisAmount <= 0}
-                      className="w-full h-11 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-95 disabled:opacity-40 transition-all cursor-pointer mt-1"
-                      style={{ backgroundColor: "var(--primary, #F0090F)" }}
+                      key={addVal}
+                      type="button"
+                      onClick={() => setQuickQrisAmount((prev) => prev + addVal)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
                     >
-                      Tampilkan QRIS
+                      +{addVal >= 1000 ? `${addVal / 1000}rb` : addVal}
+                    </button>
+                  ))}
+                  {quickQrisAmount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setQuickQrisAmount(0)}
+                      className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-semibold hover:bg-rose-100 transition-colors cursor-pointer"
+                    >
+                      Reset
                     </button>
                   )}
-                </form>
-              </>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={quickQrisAmount <= 0}
+                  className="w-full h-11 rounded-2xl text-white font-bold text-xs shadow-md hover:opacity-95 disabled:opacity-40 transition-all cursor-pointer mt-1"
+                  style={{ backgroundColor: "var(--primary, #F0090F)" }}
+                >
+                  Tampilkan QRIS
+                </button>
+              </form>
             )}
           </div>
         </div>
