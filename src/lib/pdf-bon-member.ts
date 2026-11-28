@@ -390,19 +390,18 @@ async function renderMemberBonToDoc(
     const bInfo = bonStatusList[i];
     checkPage(45);
 
-    // Bon Header (Clean minimalist + Status teks tanpa bubble)
-    font(9.5, true);
+    // Bon Header (Sama seperti UI: BON 0001 + Status di kanan, lalu baris Tanggal)
+    const bonCode = `BON ${String(i + 1).padStart(4, "0")}`;
+    font(10, true);
     color(...C_DARK);
-    const titleStr = `Bon ${i + 1} · ${bon.label.replace(/^ID Bon:\s*/i, "")}`;
-    doc.text(titleStr, marginL, y);
+    doc.text(bonCode, marginL, y);
 
-    const titleW = doc.getTextWidth(titleStr);
     const statusLabel =
       bInfo.status === "LUNAS"
-        ? "· Lunas"
+        ? "Lunas"
         : bInfo.status === "CICIL"
-        ? "· Cicilan"
-        : "· Belum Lunas";
+        ? "Cicilan"
+        : "Belum Lunas";
     const statusFg =
       bInfo.status === "LUNAS"
         ? C_PILL_OK_FG
@@ -412,13 +411,22 @@ async function renderMemberBonToDoc(
 
     font(8.5, true);
     color(...statusFg);
-    doc.text(statusLabel, marginL + titleW + 2.5, y);
-
-    font(8.5, false);
-    color(...C_MUTED);
-    doc.text(bon.tanggal, marginR, y, { align: "right" });
+    doc.text(statusLabel, marginR, y, { align: "right" });
 
     y += 5;
+    font(8.5, false);
+    color(...C_MUTED);
+    doc.text("Tanggal", marginL, y);
+
+    font(8.5, true);
+    color(...C_DARK);
+    doc.text(bon.tanggal, marginR, y, { align: "right" });
+
+    y += 3.5;
+    draw(...C_BORDER);
+    doc.setLineWidth(0.25);
+    doc.line(marginL, y, marginR, y);
+    y += 6;
 
     // Render tiap pengambilan (sub-entry) pada tanggal tersebut dengan jamnya
     const subEntries = bon.subEntries && bon.subEntries.length > 0
@@ -445,25 +453,41 @@ async function renderMemberBonToDoc(
       const sub = subEntries[sIdx];
       checkPage(28);
 
-      font(8, true);
+      // Baris Pengambilan X + Jam
+      font(9, true);
       color(...C_DARK);
-      doc.text(
-        `Diambil oleh ${sub.pengambil} · Jam ${sub.jam}`,
-        marginL,
-        y
-      );
-      font(7.5, false);
+      doc.text(`Pengambilan ${sIdx + 1}`, marginL, y);
+
+      font(8.5, false);
       color(...C_MUTED);
-      doc.text(`${sub.label} · Kasir ${sub.kasir}`, marginR, y, { align: "right" });
+      doc.text(sub.jam || "", marginR, y, { align: "right" });
       y += 4.5;
 
-      // Table Header (tanpa kotak abu-abu)
-      font(7.5, true);
+      // Baris Diambil oleh [Bold] · #... · Kasir [Bold]
+      let curX = marginL;
+      const drawSeg = (txt: string, bold: boolean, rgb: [number, number, number]) => {
+        font(8, bold);
+        color(...rgb);
+        doc.text(txt, curX, y);
+        curX += doc.getTextWidth(txt);
+      };
+      drawSeg("Diambil oleh ", false, C_MUTED);
+      drawSeg(sub.pengambil, true, C_DARK);
+      const cleanSubCode = String(sub.label || "").replace(/^ID Bon:\s*/i, "");
+      if (cleanSubCode) {
+        drawSeg(` · ${cleanSubCode}`, false, C_MUTED);
+      }
+      drawSeg(" · Kasir ", false, C_MUTED);
+      drawSeg(sub.kasir, true, C_DARK);
+      y += 5.5;
+
+      // Table Header (Barang, Qty, Harga Satuan, Subtotal)
+      font(8, true);
       color(...C_MUTED);
-      doc.text("BARANG", marginL, y);
-      doc.text("QTY", colQtyX, y, { align: "right" });
-      doc.text("HARGA SATUAN", colHargaX, y, { align: "right" });
-      doc.text("SUBTOTAL", colSubtotalX, y, { align: "right" });
+      doc.text("Barang", marginL, y);
+      doc.text("Qty", colQtyX, y, { align: "right" });
+      doc.text("Harga Satuan", colHargaX, y, { align: "right" });
+      doc.text("Subtotal", colSubtotalX, y, { align: "right" });
 
       y += 2.5;
       draw(...C_DARK);
@@ -514,9 +538,9 @@ async function renderMemberBonToDoc(
     const summaryX = marginR - summaryW;
 
     const summaryRows: Array<{ lbl: string; val: number; isGreen?: boolean }> = [
-      { lbl: "Sub total", val: bon.total },
-      { lbl: "Sudah dibayar", val: bInfo.paidAmt, isGreen: bInfo.paidAmt > 0 },
-      { lbl: "Sisa tagihan", val: bInfo.sisaAmt },
+      { lbl: "Subtotal", val: bon.total },
+      { lbl: "Total Bon", val: bon.total },
+      { lbl: "Sudah Dibayar", val: bInfo.paidAmt, isGreen: bInfo.paidAmt > 0 },
     ];
 
     for (const row of summaryRows) {
@@ -536,16 +560,16 @@ async function renderMemberBonToDoc(
     font(10.5, true);
     if (bInfo.status === "LUNAS") {
       color(...C_PILL_OK_FG);
-      doc.text("Total bon (Lunas)", summaryX, y);
-      doc.text(rp(bon.total), marginR, y, { align: "right" });
+      doc.text("Sisa Tagihan (Lunas)", summaryX, y);
+      doc.text(rp(0), marginR, y, { align: "right" });
     } else if (bInfo.status === "CICIL") {
       color(...C_AMBER_FG);
-      doc.text("Sisa tagihan", summaryX, y);
+      doc.text("Sisa Tagihan", summaryX, y);
       doc.text(rp(bInfo.sisaAmt), marginR, y, { align: "right" });
     } else {
       color(...C_ACCENT);
-      doc.text("Total bon", summaryX, y);
-      doc.text(rp(bon.total), marginR, y, { align: "right" });
+      doc.text("Sisa Tagihan", summaryX, y);
+      doc.text(rp(bInfo.sisaAmt), marginR, y, { align: "right" });
     }
 
     y += 12;
