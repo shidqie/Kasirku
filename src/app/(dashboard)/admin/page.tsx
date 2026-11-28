@@ -7,6 +7,7 @@ import { getRoleLabel } from "@/lib/auth/permissions";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableRow } from "@/components/shared/DataTable";
 
 export default function SuperAdminPage() {
   const [stores, setStores] = useState<any[]>([]);
@@ -122,24 +123,24 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto pt-4">
+      <DataTableContainer className="pt-4">
         {activeTab === "stores" && (
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-500">
+          <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">ID Toko</th>
-                <th className="py-3 px-4">Nama Toko</th>
-                <th className="py-3 px-4">Paket Langganan</th>
-                <th className="py-3 px-4">Status Layanan</th>
-                <th className="py-3 pl-4 text-right">Aksi</th>
+                <DataTableHead>ID Toko</DataTableHead>
+                <DataTableHead>Nama Toko</DataTableHead>
+                <DataTableHead>Paket Langganan</DataTableHead>
+                <DataTableHead>Status Layanan</DataTableHead>
+                <DataTableHead align="right">Aksi</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={3} cols={5} />
               ) : (
                 stores.map((s) => (
-                  <tr key={s.id}>
+                  <DataTableRow key={s.id}>
                     <td className="py-3.5 pr-4 font-mono text-[11px]">{s.id}</td>
                     <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-zinc-100">
                       {s.namaToko}
@@ -179,27 +180,27 @@ export default function SuperAdminPage() {
                     <td className="py-3.5 pl-4 text-right text-[11px] text-slate-400">
                       Diperbarui {formatDateTime(s.updatedAt)}
                     </td>
-                  </tr>
+                  </DataTableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         )}
 
         {activeTab === "users" && (
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-500">
+          <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">Nama</th>
-                <th className="py-3 px-4">Username</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Toko ID</th>
-                <th className="py-3 pl-4">Status</th>
+                <DataTableHead>Nama</DataTableHead>
+                <DataTableHead>Username</DataTableHead>
+                <DataTableHead>Role</DataTableHead>
+                <DataTableHead>Toko ID</DataTableHead>
+                <DataTableHead>Status</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            </DataTableHeader>
+            <DataTableBody>
               {users.map((u) => (
-                <tr key={u.id}>
+                <DataTableRow key={u.id}>
                   <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-zinc-100">{u.nama}</td>
                   <td className="py-3 px-4 font-mono text-[11px]">@{u.username}</td>
                   <td className="py-3 px-4 font-medium">{getRoleLabel(u.role)}</td>
@@ -209,35 +210,35 @@ export default function SuperAdminPage() {
                       {u.aktif ? "Aktif" : "Nonaktif"}
                     </span>
                   </td>
-                </tr>
+                </DataTableRow>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         )}
 
         {activeTab === "audit" && (
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-500">
+          <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">Waktu</th>
-                <th className="py-3 px-4">Pengguna</th>
-                <th className="py-3 px-4">Aksi</th>
-                <th className="py-3 pl-4">Entitas</th>
+                <DataTableHead>Waktu</DataTableHead>
+                <DataTableHead>Pengguna</DataTableHead>
+                <DataTableHead>Aksi</DataTableHead>
+                <DataTableHead>Entitas</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            </DataTableHeader>
+            <DataTableBody>
               {logs.map((l) => (
-                <tr key={l.id}>
+                <DataTableRow key={l.id}>
                   <td className="py-3 pr-4 text-slate-500 whitespace-nowrap">{formatDateTime(l.dibuatPada)}</td>
                   <td className="py-3 px-4 font-medium">{l.user?.nama || "Sistem"}</td>
                   <td className="py-3 px-4 font-semibold">{l.aksi}</td>
                   <td className="py-3 pl-4">{l.entitas}</td>
-                </tr>
+                </DataTableRow>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         )}
-      </div>
+      </DataTableContainer>
     </div>
   );
 }

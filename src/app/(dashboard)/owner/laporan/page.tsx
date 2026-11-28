@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatRupiah } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function formatTanggal(dateStr: string) {
@@ -309,26 +310,21 @@ function TabPendapatan() {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-slate-600 dark:text-zinc-300">
-                <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+              <DataTable>
+                <DataTableHeader>
                   <tr>
-                    <th className="py-3 pr-4 text-left">
+                    <DataTableHead>
                       {view === "harian" ? "Tanggal" : "Bulan"}
-                    </th>
-                    <th className="py-3 px-4 text-center">Jumlah transaksi</th>
-                    <th className="py-3 pl-4 text-right">Pendapatan kotor</th>
+                    </DataTableHead>
+                    <DataTableHead align="center">Jumlah transaksi</DataTableHead>
+                    <DataTableHead align="right">Pendapatan kotor</DataTableHead>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                </DataTableHeader>
+                <DataTableBody>
                   {(view === "harian" ? rekapHarian : rekapBulanan).length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={3}
-                        className="text-center py-8 text-slate-400 text-xs"
-                      >
-                        Tidak ada data pada periode ini.
-                      </td>
-                    </tr>
+                    <DataTableEmpty colSpan={3} className="py-8 text-xs">
+                      Tidak ada data pada periode ini.
+                    </DataTableEmpty>
                   ) : (
                     (view === "harian" ? rekapHarian : rekapBulanan)
                       .slice((rekapPage - 1) * rekapPageSize, rekapPage * rekapPageSize)
@@ -351,7 +347,7 @@ function TabPendapatan() {
                       </tr>
                     ))
                   )}
-                </tbody>
+                </DataTableBody>
                 {(view === "harian" ? rekapHarian : rekapBulanan).length > 0 && (
                   <tfoot className="border-t border-slate-200 dark:border-zinc-800">
                     <tr>
@@ -367,7 +363,7 @@ function TabPendapatan() {
                     </tr>
                   </tfoot>
                 )}
-              </table>
+              </DataTable>
             </div>
             {(view === "harian" ? rekapHarian : rekapBulanan).length > 0 && (
               <div className="pt-3">
@@ -515,23 +511,21 @@ function TabPiutang() {
             {viewMode === "saldo" ? (
               <>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-slate-600 dark:text-zinc-300">
-                  <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                <DataTable>
+                  <DataTableHeader>
                     <tr>
-                      <th className="py-3 pr-4 text-left">Nama Pelanggan</th>
-                      <th className="py-3 px-4 text-left">No. HP</th>
-                      <th className="py-3 px-4 text-center">Umur utang</th>
-                      <th className="py-3 px-4 text-right">Saldo utang</th>
-                      <th className="py-3 pl-4 text-center">Status</th>
+                      <DataTableHead>Nama Pelanggan</DataTableHead>
+                      <DataTableHead>No. HP</DataTableHead>
+                      <DataTableHead align="center">Umur utang</DataTableHead>
+                      <DataTableHead align="right">Saldo utang</DataTableHead>
+                      <DataTableHead align="center">Status</DataTableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  </DataTableHeader>
+                  <DataTableBody>
                     {members.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-8 text-slate-400 text-xs">
-                          Tidak ada piutang aktif.
-                        </td>
-                      </tr>
+                      <DataTableEmpty colSpan={5} className="py-8 text-xs">
+                        Tidak ada piutang aktif.
+                      </DataTableEmpty>
                     ) : (
                       members
                         .slice((saldoPage - 1) * saldoPageSize, saldoPage * saldoPageSize)
@@ -570,7 +564,7 @@ function TabPiutang() {
                         </tr>
                       ))
                     )}
-                  </tbody>
+                  </DataTableBody>
                   {members.length > 0 && (
                     <tfoot className="border-t border-slate-200 dark:border-zinc-800">
                       <tr>
@@ -587,7 +581,7 @@ function TabPiutang() {
                       </tr>
                     </tfoot>
                   )}
-                </table>
+                </DataTable>
               </div>
               {members.length > 0 && (
                 <div className="pt-3">
@@ -604,23 +598,21 @@ function TabPiutang() {
             ) : (
               <>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-slate-600 dark:text-zinc-300">
-                  <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                <DataTable>
+                  <DataTableHeader>
                     <tr>
-                      <th className="py-3 pr-4 text-left">Tanggal</th>
-                      <th className="py-3 px-4 text-left">Pelanggan</th>
-                      <th className="py-3 px-4 text-left">Tipe</th>
-                      <th className="py-3 px-4 text-right">Jumlah</th>
-                      <th className="py-3 pl-4 text-left">Catatan</th>
+                      <DataTableHead>Tanggal</DataTableHead>
+                      <DataTableHead>Pelanggan</DataTableHead>
+                      <DataTableHead>Tipe</DataTableHead>
+                      <DataTableHead align="right">Jumlah</DataTableHead>
+                      <DataTableHead>Catatan</DataTableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
+                  </DataTableHeader>
+                  <DataTableBody className="text-xs">
                     {(data?.riwayatMutasi ?? []).length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-8 text-slate-400">
-                          Belum ada riwayat kasbon.
-                        </td>
-                      </tr>
+                      <DataTableEmpty colSpan={5} className="py-8">
+                        Belum ada riwayat kasbon.
+                      </DataTableEmpty>
                     ) : (
                       (data.riwayatMutasi as any[])
                         .slice((mutasiPage - 1) * mutasiPageSize, mutasiPage * mutasiPageSize)
@@ -665,8 +657,8 @@ function TabPiutang() {
                         </tr>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </DataTableBody>
+                </DataTable>
               </div>
               {(data?.riwayatMutasi ?? []).length > 0 && (
                 <div className="pt-3">

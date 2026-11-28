@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 import {
   Settings,
   Lock,
@@ -985,26 +986,24 @@ function TabPengguna() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+          <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">Nama lengkap</th>
-                <th className="py-3 px-4">Username</th>
-                <th className="py-3 px-4">Peran</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Tanggal dibuat</th>
-                <th className="py-3 pl-4 text-center">Aksi</th>
+                <DataTableHead>Nama lengkap</DataTableHead>
+                <DataTableHead>Username</DataTableHead>
+                <DataTableHead>Peran</DataTableHead>
+                <DataTableHead>Status</DataTableHead>
+                <DataTableHead>Tanggal dibuat</DataTableHead>
+                <DataTableHead align="center">Aksi</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={5} cols={6} />
               ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
-                    Belum ada data pengguna.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={6} className="py-8">
+                  Belum ada data pengguna.
+                </DataTableEmpty>
               ) : (
                 users.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
@@ -1112,8 +1111,8 @@ function TabPengguna() {
                   </tr>
                 ))
               )}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         </div>
       </div>
 

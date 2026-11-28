@@ -33,6 +33,7 @@ import { downloadPriceListPdf, downloadPriceListCsv } from "@/lib/pdf-price-list
 import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { HargaNaikModal } from "@/components/produk/HargaNaikModal";
 import { ImportProdukModal } from "@/components/produk/ImportProdukModal";
@@ -636,27 +637,25 @@ function TabProduk() {
       </div>
 
       {/* Tabel Produk Minimalist (Scrollable Internal, Sticky Header) */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      <DataTableContainer>
+        <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4 whitespace-nowrap">ID</th>
-                <th className="py-3 px-4">Nama Produk</th>
-                <th className="py-3 px-4 whitespace-nowrap">Kategori</th>
-                <th className="py-3 px-4 text-right whitespace-nowrap">Harga Jual</th>
-                <th className="py-3 px-4 text-right whitespace-nowrap">Stok</th>
-                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                <DataTableHead>ID</DataTableHead>
+                <DataTableHead>Nama Produk</DataTableHead>
+                <DataTableHead>Kategori</DataTableHead>
+                <DataTableHead align="right">Harga Jual</DataTableHead>
+                <DataTableHead align="right">Stok</DataTableHead>
+                <DataTableHead align="center">Aksi</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={8} cols={6} />
               ) : filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
-                    Tidak ada produk yang cocok.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={6}>
+                  Tidak ada produk yang cocok.
+                </DataTableEmpty>
               ) : (
                 filteredProducts
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -820,9 +819,9 @@ function TabProduk() {
                   );
                 })
               )}
-            </tbody>
-          </table>
-      </div>
+            </DataTableBody>
+          </DataTable>
+      </DataTableContainer>
 
       {products.length > 0 && (
         <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#121214]">

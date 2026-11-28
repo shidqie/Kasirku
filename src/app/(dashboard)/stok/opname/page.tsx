@@ -7,6 +7,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ClipboardCheck,
@@ -213,27 +214,25 @@ function TabHitungFisik() {
 
           return (
             <>
-              <div className="flex-1 min-h-0 overflow-auto">
-                <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-                  <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+              <DataTableContainer>
+                <DataTable>
+                  <DataTableHeader>
                     <tr>
-                      <th className="py-3 pr-3 w-12">No</th>
-                      <th className="py-3 px-3">Nama produk</th>
-                      <th className="py-3 px-3">Satuan</th>
-                      <th className="py-3 px-3 text-right">Stok sistem</th>
-                      <th className="py-3 px-3 text-center w-44">Stok fisik nyata</th>
-                      <th className="py-3 pl-3 text-center">Selisih Stok</th>
+                      <DataTableHead className="w-12">No</DataTableHead>
+                      <DataTableHead>Nama produk</DataTableHead>
+                      <DataTableHead>Satuan</DataTableHead>
+                      <DataTableHead align="right">Stok sistem</DataTableHead>
+                      <DataTableHead align="center" className="w-44">Stok fisik nyata</DataTableHead>
+                      <DataTableHead align="center">Selisih Stok</DataTableHead>
                     </tr>
-                  </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+                  </DataTableHeader>
+                    <DataTableBody>
                       {loading ? (
                         <TableSkeletonRows rows={8} cols={6} />
                       ) : paginated.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="text-center py-10 text-slate-400">
-                            Tidak ada produk yang cocok dengan pencarian.
-                          </td>
-                        </tr>
+                        <DataTableEmpty colSpan={6}>
+                          Tidak ada produk yang cocok dengan pencarian.
+                        </DataTableEmpty>
                       ) : (
                         paginated.map((p, idx) => {
                           const sistem = Number(p.stokCache);
@@ -279,9 +278,9 @@ function TabHitungFisik() {
                           );
                         })
                       )}
-                    </tbody>
-                  </table>
-                </div>
+                    </DataTableBody>
+                  </DataTable>
+                </DataTableContainer>
 
               {filtered.length > 0 && (
                 <div className="shrink-0">
@@ -452,26 +451,24 @@ function TabRiwayat() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      <DataTableContainer>
+        <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">No. Opname</th>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">Diajukan oleh</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 pl-4">Disetujui / Ditolak oleh</th>
+                <DataTableHead>No. Opname</DataTableHead>
+                <DataTableHead>Waktu</DataTableHead>
+                <DataTableHead>Diajukan oleh</DataTableHead>
+                <DataTableHead>Status</DataTableHead>
+                <DataTableHead>Disetujui / Ditolak oleh</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
+            </DataTableHeader>
+            <DataTableBody className="text-xs">
               {loading ? (
                 <TableSkeletonRows rows={6} cols={5} />
               ) : opnameList.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-400">
-                    Belum ada pengajuan stok opname.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={5} className="py-8">
+                  Belum ada pengajuan stok opname.
+                </DataTableEmpty>
               ) : (
                 opnameList
                   .slice((opnamePage - 1) * opnamePageSize, opnamePage * opnamePageSize)
@@ -511,9 +508,9 @@ function TabRiwayat() {
                     </tr>
                   ))
               )}
-            </tbody>
-          </table>
-      </div>
+            </DataTableBody>
+          </DataTable>
+      </DataTableContainer>
 
       {opnameList.length > 0 && (
         <div className="shrink-0">
@@ -708,17 +705,17 @@ function TabPersetujuan() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-                    <thead className="border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+                  <DataTable>
+                    <DataTableHeader sticky={false}>
                       <tr>
-                        <th className="py-3 pr-3 font-medium">Nama produk</th>
-                        <th className="py-3 px-3 text-center font-medium">Stok sistem</th>
-                        <th className="py-3 px-3 text-center font-medium">Hitung fisik staff</th>
-                        <th className="py-3 px-3 text-center font-medium">Selisih kuantitas</th>
-                        <th className="py-3 pl-3 text-right font-medium">Nilai rupiah selisih</th>
+                        <DataTableHead>Nama produk</DataTableHead>
+                        <DataTableHead align="center">Stok sistem</DataTableHead>
+                        <DataTableHead align="center">Hitung fisik staff</DataTableHead>
+                        <DataTableHead align="center">Selisih kuantitas</DataTableHead>
+                        <DataTableHead align="right">Nilai rupiah selisih</DataTableHead>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+                    </DataTableHeader>
+                    <DataTableBody>
                       {paginatedItems.map((it: any) => {
                         const selisih = Number(it.selisih);
                         return (
@@ -757,7 +754,7 @@ function TabPersetujuan() {
                           </tr>
                         );
                       })}
-                    </tbody>
+                    </DataTableBody>
                     <tfoot className="border-t border-slate-200 dark:border-zinc-800 font-sans text-xs">
                       <tr>
                         <td colSpan={4} className="py-3.5 pr-3 font-semibold text-right text-slate-600 dark:text-zinc-400">
@@ -770,7 +767,7 @@ function TabPersetujuan() {
                         </td>
                       </tr>
                     </tfoot>
-                  </table>
+                  </DataTable>
                 </div>
 
                 {op.items.length > 0 && (
@@ -857,8 +854,7 @@ function StokOpnameContent() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const rawTab = searchParams.get("tab");
-  const activeTab = rawTab || "hitung";
+  const activeTab = searchParams.get("tab") || "hitung";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -866,13 +862,6 @@ function StokOpnameContent() {
       .then((d) => setUserRole(d.user?.role || null))
       .catch(() => {});
   }, []);
-
-  // Default ke tab Persetujuan untuk KEPALA_TOKO jika belum ada tab di URL
-  useEffect(() => {
-    if (userRole === "KEPALA_TOKO" && !rawTab) {
-      router.replace("/stok/opname?tab=persetujuan");
-    }
-  }, [userRole, rawTab, router]);
 
   return (
     <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">

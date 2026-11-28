@@ -23,6 +23,7 @@ import { formatRupiah } from "@/lib/formatters";
 import { formatMemberCode } from "@/lib/codification";
 import { generateAllMembersPDF } from "@/lib/pdf-bon-member";
 import { Pagination } from "@/components/shared/Pagination";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface MemberItem {
   id: string;
@@ -683,11 +684,11 @@ export default function MemberListPage() {
           )}
         </div>
 
-        <table className="hidden md:table w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+        <DataTable className="hidden md:table">
+            <DataTableHeader>
               <tr>
                 {isPdfSelectMode && (
-                  <th className="py-3 pl-1 pr-2 w-9">
+                  <DataTableHead className="pl-1 pr-2 w-9">
                     <input
                       type="checkbox"
                       checked={allFilteredSelected}
@@ -696,29 +697,27 @@ export default function MemberListPage() {
                       title="Pilih semua pelanggan"
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
-                  </th>
+                  </DataTableHead>
                 )}
-                <th className="py-3 pr-4">Nama pelanggan</th>
-                <th className="py-3 px-4">No. HP / WA</th>
-                <th className="py-3 px-4">Alamat</th>
-                <th className="py-3 px-4 text-right">Total utang</th>
-                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                <DataTableHead>Nama pelanggan</DataTableHead>
+                <DataTableHead>No. HP / WA</DataTableHead>
+                <DataTableHead>Alamat</DataTableHead>
+                <DataTableHead align="right">Total utang</DataTableHead>
+                <DataTableHead align="center">Aksi</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={6} cols={isPdfSelectMode ? 6 : 5} />
               ) : filteredMembers.length === 0 ? (
-                <tr>
-                  <td colSpan={isPdfSelectMode ? 6 : 5} className="text-center py-12 text-slate-400">
-                    <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
-                    {search
-                      ? "Tidak ada pelanggan yang cocok dengan pencarian."
-                      : filterDebt === "DEBT"
-                      ? "Tidak ada pelanggan yang memiliki utang aktif saat ini."
-                      : "Belum ada data pelanggan piutang."}
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={isPdfSelectMode ? 6 : 5} className="py-12">
+                  <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
+                  {search
+                    ? "Tidak ada pelanggan yang cocok dengan pencarian."
+                    : filterDebt === "DEBT"
+                    ? "Tidak ada pelanggan yang memiliki utang aktif saat ini."
+                    : "Belum ada data pelanggan piutang."}
+                </DataTableEmpty>
               ) : (
                 paginatedMembers.map((m) => {
                   const hasDebt = (m.saldoUtangCache || 0) > 0;
@@ -824,8 +823,8 @@ export default function MemberListPage() {
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
       </div>
 
       {filteredMembers.length > 0 && (

@@ -8,6 +8,7 @@ import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface ProductOption {
   id: string;
@@ -540,26 +541,24 @@ export default function BarangMasukPage() {
       {/* Tab 2: Tabel Riwayat Penerimaan Sebelumnya (Flat Minimalist, Scrollable Internal) */}
       {activeTab === "RIWAYAT" && (
         <>
-          <div className="flex-1 min-h-0 overflow-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-                <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+          <DataTableContainer>
+            <DataTable>
+                <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">No. Dokumen</th>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">Diterima oleh</th>
-                <th className="py-3 px-4">Rincian barang</th>
-                <th className="py-3 pl-4 text-right">Total nilai</th>
+                <DataTableHead>No. Dokumen</DataTableHead>
+                <DataTableHead>Waktu</DataTableHead>
+                <DataTableHead>Diterima oleh</DataTableHead>
+                <DataTableHead>Rincian barang</DataTableHead>
+                <DataTableHead align="right">Total nilai</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={5} cols={5} />
               ) : receipts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-400">
-                    Belum ada riwayat penerimaan barang masuk.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={5} className="py-8">
+                  Belum ada riwayat penerimaan barang masuk.
+                </DataTableEmpty>
               ) : (
                 receipts
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -594,9 +593,9 @@ export default function BarangMasukPage() {
                   );
                 })
               )}
-            </tbody>
-              </table>
-          </div>
+            </DataTableBody>
+              </DataTable>
+          </DataTableContainer>
           {receipts.length > 0 && (
             <div className="shrink-0">
               <Pagination

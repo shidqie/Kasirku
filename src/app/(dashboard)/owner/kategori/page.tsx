@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Pencil, Trash2, AlertCircle, CheckCircle, RefreshCw, X } from "lucide-react";
 import { Pagination } from "@/components/shared/Pagination";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableRow, DataTableCell, DataTableEmpty } from "@/components/shared/DataTable";
 import { PopupAlert } from "@/components/shared/ToastProvider";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
@@ -161,34 +162,32 @@ export default function CategoriesPage() {
       </div>
 
       {/* Tabel Kategori Minimalist (Scrollable Internal, Sticky Header) */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      <DataTableContainer>
+        <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">Nama kategori</th>
-                <th className="py-3 px-4 text-center">Jumlah produk</th>
-                <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                <DataTableHead>Nama kategori</DataTableHead>
+                <DataTableHead align="center">Jumlah produk</DataTableHead>
+                <DataTableHead align="center">Aksi</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+            </DataTableHeader>
+            <DataTableBody>
               {loading ? (
                 <TableSkeletonRows rows={6} cols={3} />
               ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="text-center py-12 text-slate-400">
-                    Belum ada kategori. Silakan tambahkan kategori baru.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={3}>
+                  Belum ada kategori. Silakan tambahkan kategori baru.
+                </DataTableEmpty>
               ) : (
                 categories
                   .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                   .map((cat) => (
-                  <tr key={cat.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
-                    <td className="py-3.5 pr-4 font-semibold text-slate-900 dark:text-zinc-100">{cat.nama}</td>
-                    <td className="py-3.5 px-4 text-center text-slate-500 dark:text-zinc-400 tabular-nums">
+                  <DataTableRow key={cat.id}>
+                    <DataTableCell className="font-semibold text-slate-900 dark:text-zinc-100">{cat.nama}</DataTableCell>
+                    <DataTableCell align="center" className="text-slate-500 dark:text-zinc-400 tabular-nums">
                       {cat._count?.produk ?? 0} produk
-                    </td>
-                    <td className="py-3.5 pl-4 text-center whitespace-nowrap">
+                    </DataTableCell>
+                    <DataTableCell align="center" className="whitespace-nowrap">
                       <div className="inline-flex items-center justify-center gap-1">
                         <button
                           onClick={() => openEditModal(cat)}
@@ -207,13 +206,13 @@ export default function CategoriesPage() {
                           <span>Hapus</span>
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))
               )}
-            </tbody>
-          </table>
-      </div>
+            </DataTableBody>
+          </DataTable>
+      </DataTableContainer>
 
       {categories.length > 0 && (
         <div className="shrink-0">

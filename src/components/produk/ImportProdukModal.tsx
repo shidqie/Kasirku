@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { formatRupiah, formatDecimal } from "@/lib/formatters";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableRow } from "@/components/shared/DataTable";
 
 interface ExistingProductRef {
   id: string;
@@ -752,19 +753,19 @@ export function ImportProdukModal({
                 </div>
               )}
 
-              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800 sticky top-0 z-10">
+              <div className="max-h-80 overflow-y-auto">
+                <DataTable>
+                  <DataTableHeader>
                     <tr>
-                      <th className="py-2 px-3">Produk</th>
-                      <th className="py-2 px-3">Status</th>
-                      <th className="py-2 px-3 text-right">Harga Jual</th>
-                      <th className="py-2 px-3 text-right">Stok</th>
+                      <DataTableHead>Produk</DataTableHead>
+                      <DataTableHead>Status</DataTableHead>
+                      <DataTableHead align="right">Harga Jual</DataTableHead>
+                      <DataTableHead align="right">Stok</DataTableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  </DataTableHeader>
+                  <DataTableBody>
                     {previewData.rows.slice(0, 100).map((p, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 align-top">
+                      <DataTableRow key={idx} className="align-top">
                         <td className="py-2.5 px-3">
                           <p className="font-semibold text-slate-900 dark:text-zinc-100">{p.nama}</p>
                           <p className="text-[11px] text-slate-400">
@@ -815,10 +816,10 @@ export function ImportProdukModal({
                             ? `${formatDecimal(Number(p.matchedProduct.stokCache))} (tetap)`
                             : `${formatDecimal(p.stok)} ${p.satuanDasar}`}
                         </td>
-                      </tr>
+                      </DataTableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </DataTableBody>
+                </DataTable>
                 {previewData.rows.length > 100 && (
                   <div className="py-2 px-3 text-center text-[11px] text-slate-400 bg-slate-50 dark:bg-zinc-800/40 border-t border-slate-100 dark:border-zinc-800">
                     Menampilkan 100 dari {previewData.rows.length} produk...

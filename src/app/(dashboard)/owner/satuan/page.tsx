@@ -6,6 +6,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { NumberInput } from "@/components/shared/NumberInput";
 import { useToast } from "@/components/shared/ToastProvider";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface MasterSatuan {
   id: string;
@@ -287,25 +288,23 @@ export default function SatuanKonversiPage() {
       </div>
 
       {/* Tabel Minimalist (Scrollable Internal) */}
-      <div className="flex-1 min-h-0 overflow-auto pb-2">
+      <DataTableContainer className="pb-2">
         {activeTab === "SATUAN" ? (
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+            <DataTable>
+              <DataTableHeader>
                 <tr>
-                  <th className="py-3 pr-4">Nama Satuan</th>
-                  <th className="py-3 px-4">Deskripsi</th>
-                  <th className="py-3 px-4">Kategori</th>
-                  <th className="py-3 px-4 text-center">Tipe</th>
-                  <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                  <DataTableHead>Nama Satuan</DataTableHead>
+                  <DataTableHead>Deskripsi</DataTableHead>
+                  <DataTableHead>Kategori</DataTableHead>
+                  <DataTableHead align="center">Tipe</DataTableHead>
+                  <DataTableHead align="center">Aksi</DataTableHead>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+              </DataTableHeader>
+              <DataTableBody>
                 {paginatedItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-slate-400">
-                      Tidak ada satuan yang cocok dengan pencarian.
-                    </td>
-                  </tr>
+                  <DataTableEmpty colSpan={5} className="py-12">
+                    Tidak ada satuan yang cocok dengan pencarian.
+                  </DataTableEmpty>
                 ) : (
                   (paginatedItems as MasterSatuan[]).map((s) => (
                     <tr key={s.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">
@@ -359,26 +358,24 @@ export default function SatuanKonversiPage() {
                     </tr>
                   ))
                 )}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           ) : (
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+            <DataTable>
+              <DataTableHeader>
                 <tr>
-                  <th className="py-3 pr-4">Satuan Besar</th>
-                  <th className="py-3 px-4 text-right">Isi Konversi</th>
-                  <th className="py-3 px-4">Contoh Produk</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                  <DataTableHead>Satuan Besar</DataTableHead>
+                  <DataTableHead align="right">Isi Konversi</DataTableHead>
+                  <DataTableHead>Contoh Produk</DataTableHead>
+                  <DataTableHead align="center">Status</DataTableHead>
+                  <DataTableHead align="center">Aksi</DataTableHead>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+              </DataTableHeader>
+              <DataTableBody>
                 {paginatedItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-slate-400">
-                      Tidak ada aturan konversi yang cocok.
-                    </td>
-                  </tr>
+                  <DataTableEmpty colSpan={5} className="py-12">
+                    Tidak ada aturan konversi yang cocok.
+                  </DataTableEmpty>
                 ) : (
                   (paginatedItems as AturanKonversi[]).map((k) => (
                     <tr key={k.id} className="hover:bg-slate-50/90 dark:hover:bg-zinc-800/60 transition-colors duration-150">
@@ -430,10 +427,10 @@ export default function SatuanKonversiPage() {
                     </tr>
                   ))
                 )}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           )}
-      </div>
+      </DataTableContainer>
 
       {/* Pagination Fixed at Bottom */}
       {activeItems.length > 0 && (

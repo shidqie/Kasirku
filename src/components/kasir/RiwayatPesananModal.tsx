@@ -21,6 +21,7 @@ import {
 } from "@/components/kasir/TransactionDetailDrawer";
 import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface TransactionRow {
   id: string;
@@ -285,32 +286,28 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
 
           {/* Tabel Riwayat Minimalist */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+            <DataTable>
+              <DataTableHeader>
                 <tr>
-                  <th className="py-3 pr-4 whitespace-nowrap">No Transaksi</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Hari/Tanggal</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Pelanggan</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Kasir</th>
-                  <th className="py-3 px-4 text-right whitespace-nowrap">Total</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Metode Pembayaran</th>
-                  <th className="py-3 px-4 text-center whitespace-nowrap">Status Pembayaran</th>
-                  <th className="py-3 pl-4 text-center whitespace-nowrap">Aksi</th>
+                  <DataTableHead>No Transaksi</DataTableHead>
+                  <DataTableHead>Hari/Tanggal</DataTableHead>
+                  <DataTableHead>Pelanggan</DataTableHead>
+                  <DataTableHead>Kasir</DataTableHead>
+                  <DataTableHead align="right">Total</DataTableHead>
+                  <DataTableHead>Metode Pembayaran</DataTableHead>
+                  <DataTableHead align="center">Status Pembayaran</DataTableHead>
+                  <DataTableHead align="center">Aksi</DataTableHead>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+              </DataTableHeader>
+              <DataTableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-400">
-                      Memuat riwayat transaksi...
-                    </td>
-                  </tr>
+                  <DataTableEmpty colSpan={8} className="py-8">
+                    Memuat riwayat transaksi...
+                  </DataTableEmpty>
                 ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-400">
-                      Tidak ada transaksi ditemukan.
-                    </td>
-                  </tr>
+                  <DataTableEmpty colSpan={8} className="py-8">
+                    Tidak ada transaksi ditemukan.
+                  </DataTableEmpty>
                 ) : (
                   paginated.map((t) => {
                     const isVoid = t.status === "BATAL";
@@ -403,8 +400,8 @@ export function RiwayatPesananModal({ isOpen, onClose }: RiwayatPesananModalProp
                     );
                   })
                 )}
-              </tbody>
-            </table>
+              </DataTableBody>
+            </DataTable>
           </div>
 
           {filtered.length > 0 && (

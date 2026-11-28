@@ -7,6 +7,7 @@ import { TableSkeletonRows } from "@/components/shared/Skeleton";
 import { Pagination } from "@/components/shared/Pagination";
 import { Dropdown } from "@/components/shared/Dropdown";
 import { PopupAlert } from "@/components/shared/ToastProvider";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface TopProductItem {
   rank: number;
@@ -264,28 +265,26 @@ export default function ProdukTerlarisPage() {
       </div>
 
       {/* Tabel Peringkat (Scrollable Internal, Sticky Header) */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-          <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      <DataTableContainer>
+        <DataTable>
+          <DataTableHeader>
             <tr>
-              <th className="py-3 pr-3 w-12">No.</th>
-              <th className="py-3 px-4">Nama produk</th>
-              <th className="py-3 px-4">Kategori</th>
-              <th className="py-3 px-4 text-right">Stok saat ini</th>
-              <th className="py-3 px-4 text-right">Terjual</th>
-              <th className="py-3 px-4 text-right">Omzet</th>
-              <th className="py-3 pl-4 w-36 text-right">Kontribusi</th>
+              <DataTableHead className="pr-3 w-12">No.</DataTableHead>
+              <DataTableHead>Nama produk</DataTableHead>
+              <DataTableHead>Kategori</DataTableHead>
+              <DataTableHead align="right">Stok saat ini</DataTableHead>
+              <DataTableHead align="right">Terjual</DataTableHead>
+              <DataTableHead align="right">Omzet</DataTableHead>
+              <DataTableHead align="right" className="w-36">Kontribusi</DataTableHead>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
+          </DataTableHeader>
+          <DataTableBody className="text-xs">
             {loading ? (
               <TableSkeletonRows rows={8} cols={7} />
             ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-12 text-slate-400">
-                  Belum ada data penjualan produk pada periode ini.
-                </td>
-              </tr>
+              <DataTableEmpty colSpan={7} className="py-12">
+                Belum ada data penjualan produk pada periode ini.
+              </DataTableEmpty>
             ) : (
               paginated.map((p) => (
                 <tr
@@ -345,9 +344,9 @@ export default function ProdukTerlarisPage() {
                 </tr>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </DataTableBody>
+        </DataTable>
+      </DataTableContainer>
 
       {filteredItems.length > 0 && (
         <div className="shrink-0">

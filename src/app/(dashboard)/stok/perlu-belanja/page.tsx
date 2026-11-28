@@ -5,6 +5,7 @@ import { AlertTriangle, Printer, RefreshCw, XCircle, AlertCircle } from "lucide-
 import { formatDecimal, formatRupiah, formatDateTime } from "@/lib/formatters";
 import { CardListSkeleton } from "@/components/shared/Skeleton";
 import { PopupAlert } from "@/components/shared/ToastProvider";
+import { DataTable, DataTableHeader, DataTableHead, DataTableBody } from "@/components/shared/DataTable";
 
 interface LowStockItem {
   id: string;
@@ -113,19 +114,19 @@ export default function PerluBelanjaPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400 print:bg-transparent">
+            <DataTable>
+              <DataTableHeader className="print:bg-transparent">
                 <tr>
-                  <th className="py-3 pr-3">Status</th>
-                  <th className="py-3 px-3">Nama produk</th>
-                  <th className="py-3 px-3">Kategori</th>
-                  <th className="py-3 px-3 text-center">Stok saat ini</th>
-                  <th className="py-3 px-3 text-center">Stok min</th>
-                  <th className="py-3 px-3 text-center">Saran belanja</th>
-                  <th className="py-3 pl-3 text-right">Est. harga beli</th>
+                  <DataTableHead>Status</DataTableHead>
+                  <DataTableHead>Nama produk</DataTableHead>
+                  <DataTableHead>Kategori</DataTableHead>
+                  <DataTableHead align="center">Stok saat ini</DataTableHead>
+                  <DataTableHead align="center">Stok min</DataTableHead>
+                  <DataTableHead align="center">Saran belanja</DataTableHead>
+                  <DataTableHead align="right">Est. harga beli</DataTableHead>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans">
+              </DataTableHeader>
+              <DataTableBody>
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-100/80 dark:hover:bg-zinc-800/70 transition-colors duration-150">
                     <td className="py-3.5 pr-3">
@@ -157,7 +158,7 @@ export default function PerluBelanjaPage() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
+              </DataTableBody>
               <tfoot className="border-t border-slate-200 dark:border-zinc-800 font-sans text-xs">
                 <tr>
                   <td colSpan={5} className="py-4 px-3 font-semibold text-slate-700 dark:text-zinc-300 text-right">
@@ -168,7 +169,7 @@ export default function PerluBelanjaPage() {
                   </td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
         )}
       </div>

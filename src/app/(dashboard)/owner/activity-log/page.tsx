@@ -5,6 +5,7 @@ import { RefreshCw, Eye, X } from "lucide-react";
 import { formatDateTime, formatRupiah } from "@/lib/formatters";
 import { Pagination } from "@/components/shared/Pagination";
 import { TableSkeletonRows } from "@/components/shared/Skeleton";
+import { DataTable, DataTableContainer, DataTableHeader, DataTableHead, DataTableBody, DataTableEmpty } from "@/components/shared/DataTable";
 
 interface ActivityLogItem {
   id: string;
@@ -198,29 +199,29 @@ function ReadableValue({ fieldKey, value }: { fieldKey: string; value: unknown }
         new Set(value.flatMap((row) => Object.keys(row as Record<string, unknown>)))
       );
       return (
-        <div className="border border-slate-200 dark:border-zinc-700 rounded-lg overflow-x-auto mt-1">
-          <table className="w-full text-left text-[11px]">
-            <thead className="bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-700">
+        <div className="overflow-x-auto mt-1">
+          <DataTable className="text-[11px]">
+            <DataTableHeader sticky={false}>
               <tr>
                 {cols.map((col) => (
-                  <th key={col} className="py-1.5 px-2.5 font-medium whitespace-nowrap">
+                  <DataTableHead key={col} className="py-2 px-2.5">
                     {formatFieldLabel(col)}
-                  </th>
+                  </DataTableHead>
                 ))}
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            </DataTableHeader>
+            <DataTableBody>
               {value.map((row, idx) => (
-                <tr key={idx}>
+                <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors">
                   {cols.map((col) => (
-                    <td key={col} className="py-1.5 px-2.5 text-slate-700 dark:text-zinc-200 whitespace-nowrap">
+                    <td key={col} className="py-2 px-2.5 first:pl-0 last:pr-0 text-slate-700 dark:text-zinc-200 whitespace-nowrap">
                       {formatPrimitiveValue(col, (row as Record<string, unknown>)[col])}
                     </td>
                   ))}
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         </div>
       );
     }
@@ -300,16 +301,16 @@ function LogDetailsView({
   if (sebelum && sesudah) {
     const allKeys = Array.from(new Set([...Object.keys(sebelum), ...Object.keys(sesudah)]));
     return (
-      <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-x-auto">
-        <table className="w-full table-fixed text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-zinc-800/70 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800">
+      <div className="overflow-x-auto">
+        <DataTable className="table-fixed">
+          <DataTableHeader sticky={false}>
             <tr>
-              <th className="py-2.5 px-3 font-medium w-[28%]">Data</th>
-              <th className="py-2.5 px-3 font-medium text-rose-600 dark:text-rose-400 w-[36%]">Sebelum</th>
-              <th className="py-2.5 px-3 font-medium text-emerald-600 dark:text-emerald-400 w-[36%]">Sesudah</th>
+              <DataTableHead className="py-2.5 px-3 w-[28%]">Data</DataTableHead>
+              <DataTableHead className="py-2.5 px-3 text-rose-600 dark:text-rose-400 w-[36%]">Sebelum</DataTableHead>
+              <DataTableHead className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 w-[36%]">Sesudah</DataTableHead>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+          </DataTableHeader>
+          <DataTableBody>
             {allKeys.map((key) => {
               const prevVal = sebelum[key];
               const nextVal = sesudah[key];
@@ -317,22 +318,22 @@ function LogDetailsView({
               return (
                 <tr
                   key={key}
-                  className={changed ? "bg-amber-50/40 dark:bg-amber-950/15" : ""}
+                  className={changed ? "bg-amber-50/40 dark:bg-amber-950/15" : "hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors"}
                 >
-                  <td className="py-2.5 px-3 font-medium text-slate-600 dark:text-zinc-400 align-top break-words">
+                  <td className="py-2.5 px-3 first:pl-0 font-medium text-slate-600 dark:text-zinc-400 align-top break-words">
                     {formatFieldLabel(key)}
                   </td>
                   <td className="py-2.5 px-3 text-slate-700 dark:text-zinc-300 align-top break-words [overflow-wrap:anywhere]">
                     <ReadableValue fieldKey={key} value={prevVal} />
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-zinc-100 align-top break-words [overflow-wrap:anywhere]">
+                  <td className="py-2.5 px-3 last:pr-0 font-semibold text-slate-900 dark:text-zinc-100 align-top break-words [overflow-wrap:anywhere]">
                     <ReadableValue fieldKey={key} value={nextVal} />
                   </td>
                 </tr>
               );
             })}
-          </tbody>
-        </table>
+          </DataTableBody>
+        </DataTable>
       </div>
     );
   }
@@ -500,26 +501,24 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Log Table Minimalist (Scrollable Internal, Sticky Header) */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-500 dark:text-zinc-400">
+      <DataTableContainer>
+        <DataTable>
+            <DataTableHeader>
               <tr>
-                <th className="py-3 pr-4">Waktu</th>
-                <th className="py-3 px-4">Pengguna</th>
-                <th className="py-3 px-4">Aksi</th>
-                <th className="py-3 px-4">Entitas</th>
-                <th className="py-3 pl-4 text-center">Rincian perubahan</th>
+                <DataTableHead>Waktu</DataTableHead>
+                <DataTableHead>Pengguna</DataTableHead>
+                <DataTableHead>Aksi</DataTableHead>
+                <DataTableHead>Entitas</DataTableHead>
+                <DataTableHead align="center">Rincian perubahan</DataTableHead>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-sans text-xs">
+            </DataTableHeader>
+            <DataTableBody className="text-xs">
               {loading ? (
                 <TableSkeletonRows rows={6} cols={5} />
               ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-slate-400">
-                    Belum ada log yang sesuai filter.
-                  </td>
-                </tr>
+                <DataTableEmpty colSpan={5} className="py-12">
+                  Belum ada log yang sesuai filter.
+                </DataTableEmpty>
               ) : (
                 logs.map((log) => {
                   const catMeta = getLogCategoryMeta(log.aksi, log.entitas);
@@ -569,9 +568,9 @@ export default function ActivityLogPage() {
                   );
                 })
               )}
-            </tbody>
-          </table>
-      </div>
+            </DataTableBody>
+          </DataTable>
+      </DataTableContainer>
 
       {total > 0 && (
         <div className="shrink-0">
