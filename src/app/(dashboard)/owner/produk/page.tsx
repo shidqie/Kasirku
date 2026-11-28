@@ -366,8 +366,8 @@ function TabProduk() {
     <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
       {/* Header & Filter Fixed at Top */}
       <div className="shrink-0">
-        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="pb-6 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
               Daftar Produk &amp; Harga
             </h2>
@@ -376,7 +376,7 @@ function TabProduk() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="relative">
               <button
                 type="button"
@@ -456,17 +456,18 @@ function TabProduk() {
                 setScannerTarget("SEARCH");
                 setIsScannerOpen(true);
               }}
-              className="h-10 px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              className="h-10 w-10 sm:w-auto sm:px-3.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 active:scale-95 font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs cursor-pointer"
               title="Scan barcode produk untuk mencari barang"
             >
-              <Barcode className="w-4 h-4" />
-              <span>Scan barcode</span>
+              <Barcode className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Scan barcode</span>
             </button>
             <button
               onClick={openCreateModal}
-              className="h-10 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
             >
-              <span>Tambah produk</span>
+              <span className="hidden sm:inline">Tambah produk</span>
+              <span className="sm:hidden">Tambah</span>
             </button>
           </div>
         </div>
