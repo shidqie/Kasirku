@@ -22,15 +22,24 @@ export type BarcodeFormat =
   | "ean_13"
   | "ean_8"
   | "upc_a"
+  | "upc_e"
   | "code_128"
-  | "qr_code";
+  | "code_39"
+  | "code_93"
+  | "codabar"
+  | "itf"
+  | "qr_code"
+  | "data_matrix"
+  | "pdf417"
+  | "aztec"
+  | "unknown";
 
 export interface BarcodeScannerProps {
   /** Callback saat barcode berhasil terbaca */
   onScan: (code: string, format: string) => void;
   /** Daftar format barcode yang dideteksi */
   formats?: BarcodeFormat[];
-  /** Tambahkan dukungan QR Code (opsional) */
+  /** @deprecated Sudah tidak diperlukan — QR Code & 2D formats aktif secara default */
   enableQr?: boolean;
   /** Jeda anti-duplikat untuk kode yang sama dalam milidetik (default: 1500ms) */
   cooldownMs?: number;
@@ -48,7 +57,22 @@ export interface BarcodeScannerHandle {
   toggleTorch: () => Promise<void>;
 }
 
-const DEFAULT_FORMATS: BarcodeFormat[] = ["ean_13", "ean_8", "upc_a", "code_128"];
+// Semua format didukung: 1D linier + 2D matrix
+const DEFAULT_FORMATS: BarcodeFormat[] = [
+  "ean_13",
+  "ean_8",
+  "upc_a",
+  "upc_e",
+  "code_128",
+  "code_39",
+  "code_93",
+  "codabar",
+  "itf",
+  "qr_code",
+  "data_matrix",
+  "pdf417",
+  "aztec",
+];
 
 export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerProps>(
   function BarcodeScanner(
@@ -86,12 +110,15 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
     const [showManual, setShowManual] = useState<boolean>(false);
     const [engineLabel, setEngineLabel] = useState<string>("");
 
-    // Format aktif (gabungkan formats + qr_code bila enableQr = true)
+    // Format aktif (seluruh DEFAULT_FORMATS sudah termasuk qr_code & 2D)
     const activeFormats = React.useMemo(() => {
       const set = new Set<BarcodeFormat>(formats);
-      if (enableQr) set.add("qr_code");
+      // Selalu sertakan QR Code & format 2D utama
+      (["qr_code", "data_matrix", "pdf417", "aztec"] as BarcodeFormat[]).forEach((f) =>
+        set.add(f)
+      );
       return Array.from(set);
-    }, [formats, enableQr]);
+    }, [formats]);
 
     // Umpan balik audio beep singkat via WebAudio API
     const playBeep = useCallback(() => {
@@ -156,18 +183,24 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
       }
     }, []);
 
-    // Inisialisasi BarcodeDetector (Native dulu, fallback ke ZXing WASM ponyfill)
+    // Inisialisasi BarcodeDetector: gunakan format yang didukung native,
+    // fallback ke ZXing WASM ponyfill untuk format yang tidak didukung
     const initDetector = useCallback(async () => {
       if (detectorRef.current) return detectorRef.current;
 
       const NativeDetector = (window as unknown as { BarcodeDetector?: any }).BarcodeDetector;
       if (NativeDetector) {
         try {
-          const supported: string[] = await NativeDetector.getSupportedFormats?.();
-          const allSupported =
-            !supported || activeFormats.every((f) => supported.includes(f));
-          if (allSupported) {
-            detectorRef.current = new NativeDetector({ formats: activeFormats });
+          // Ambil format yang benar-benar didukung native
+          const supported: string[] = (await NativeDetector.getSupportedFormats?.()) ?? [];
+          // Filter hanya format yang ada di supported list
+          const nativeFormats =
+            supported.length > 0
+              ? activeFormats.filter((f) => supported.includes(f))
+              : activeFormats;
+
+          if (nativeFormats.length > 0) {
+            detectorRef.current = new NativeDetector({ formats: nativeFormats });
             if (mountedRef.current) setEngineLabel("Native");
             return detectorRef.current;
           }
@@ -177,6 +210,7 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
       }
 
       // Fallback untuk Safari/iOS & Firefox: ZXing WASM ponyfill
+      // Ponyfill mendukung semua format 1D & 2D
       const { BarcodeDetector: PonyfillDetector } = await import("barcode-detector/ponyfill");
       detectorRef.current = new PonyfillDetector({ formats: activeFormats });
       if (mountedRef.current) setEngineLabel("WASM");
@@ -203,11 +237,16 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
         ) {
           busyRef.current = true;
           try {
-            // Crop 72% lebar x 42% tinggi di tengah frame untuk kecepatan maksimal
+            // Untuk 2D barcode (QR, Data Matrix, dll) gunakan area crop persegi yang lebih besar
+            // Untuk 1D (EAN/UPC/Code128) crop lebar x pendek sudah cukup
+            const has2D = activeFormats.some((f) =>
+              ["qr_code", "data_matrix", "pdf417", "aztec"].includes(f)
+            );
             const vw = video.videoWidth;
             const vh = video.videoHeight;
-            const cropW = Math.round(vw * 0.72);
-            const cropH = Math.round(vh * 0.42);
+            // 2D: 85% × 85% area persegi; 1D: 92% lebar × 45% tinggi
+            const cropW = has2D ? Math.round(Math.min(vw, vh) * 0.85) : Math.round(vw * 0.92);
+            const cropH = has2D ? Math.round(Math.min(vw, vh) * 0.85) : Math.round(vh * 0.45);
             const sx = Math.round((vw - cropW) / 2);
             const sy = Math.round((vh - cropH) / 2);
 
@@ -216,8 +255,9 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
               canvas = document.createElement("canvas");
               canvasRef.current = canvas;
             }
-            // Skala turun ke max lebar 640px agar ponyfill WASM tetap super cepat
-            const scale = Math.min(1, 640 / cropW);
+            // 2D butuh resolusi lebih tinggi; 1D cukup 640px untuk kecepatan
+            const maxPx = has2D ? 1024 : 640;
+            const scale = Math.min(1, maxPx / cropW);
             const targetW = Math.max(160, Math.round(cropW * scale));
             const targetH = Math.max(100, Math.round(cropH * scale));
             if (canvas.width !== targetW || canvas.height !== targetH) {
@@ -461,12 +501,12 @@ export const BarcodeScanner = forwardRef<BarcodeScannerHandle, BarcodeScannerPro
             className="w-full h-full object-cover"
           />
 
-          {/* Overlay area bidik tengah */}
+          {/* Overlay area bidik tengah — kotak persegi untuk 2D & 1D */}
           {status === "scanning" && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              {/* Mask gelap di sekeliling kotak bidik */}
+              {/* Kotak bidik — persegi agar cocok untuk QR Code & Data Matrix */}
               <div
-                className={`relative w-[74%] h-[44%] rounded-2xl transition-colors duration-200 border-2 ${
+                className={`relative w-[72%] aspect-square rounded-2xl transition-colors duration-200 border-2 ${
                   flashHit
                     ? "border-emerald-400 bg-emerald-400/15 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
                     : "border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"

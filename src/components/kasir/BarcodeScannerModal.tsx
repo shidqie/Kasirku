@@ -72,7 +72,7 @@ export function BarcodeScannerModal({
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-[11px] text-slate-400">
-              Mendukung EAN-13, EAN-8, UPC-A, &amp; Code-128.
+              Mendukung QR Code, Data Matrix, PDF417, EAN-13, EAN-8, UPC &amp; Code-128.
             </p>
             <button
               onClick={onClose}
