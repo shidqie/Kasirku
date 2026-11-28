@@ -857,7 +857,8 @@ function StokOpnameContent() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeTab = searchParams.get("tab") || "hitung";
+  const rawTab = searchParams.get("tab");
+  const activeTab = rawTab || "hitung";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -865,6 +866,13 @@ function StokOpnameContent() {
       .then((d) => setUserRole(d.user?.role || null))
       .catch(() => {});
   }, []);
+
+  // Default ke tab Persetujuan untuk KEPALA_TOKO jika belum ada tab di URL
+  useEffect(() => {
+    if (userRole === "KEPALA_TOKO" && !rawTab) {
+      router.replace("/stok/opname?tab=persetujuan");
+    }
+  }, [userRole, rawTab, router]);
 
   return (
     <div className="w-full flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden select-none">
