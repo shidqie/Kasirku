@@ -912,15 +912,15 @@ function TabProduk() {
                 </div>
 
                 {/* 2. Info List Properti Produk */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div className="divide-y divide-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Kategori</span>
                     {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs">
+                      <span className="font-medium text-slate-900 text-xs text-right">
                         {p.kategori?.nama || "Umum"}
                       </span>
                     ) : (
-                      <div className="w-44">
+                      <div className="flex justify-end">
                         <Dropdown
                           variant="underline"
                           ariaLabel="Pilih kategori produk"
@@ -929,6 +929,7 @@ function TabProduk() {
                           placeholder="-- Pilih Kategori --"
                           searchPlaceholder="Cari kategori..."
                           align="right"
+                          className="!w-auto"
                           options={[
                             { value: "", label: "-- Pilih Kategori --" },
                             ...categories.map((c) => ({ value: c.id, label: c.nama })),
@@ -938,19 +939,19 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan</span>
-                    <span className="font-medium text-slate-900 text-xs capitalize">
+                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
                       {!isDrawerEditing
                         ? defaultUnit?.namaSatuan || p.satuanDasar
                         : satuanList[0]?.namaSatuan || satuanDasar}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan dasar</span>
                     {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs capitalize">
+                      <span className="font-medium text-slate-900 text-xs capitalize text-right">
                         {p.satuanDasar}
                       </span>
                     ) : (
@@ -961,25 +962,25 @@ function TabProduk() {
                         value={satuanDasar}
                         onChange={(e) => setSatuanDasar(e.target.value)}
                         placeholder="Satuan dasar"
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
                       />
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Barcode</span>
                     {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs font-mono">
+                      <span className="font-medium text-slate-900 text-xs font-mono text-right">
                         {p.barcode || "-"}
                       </span>
                     ) : (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-end gap-2">
                         <input
                           type="text"
                           value={barcode}
                           onChange={(e) => setBarcode(e.target.value)}
                           placeholder="Opsional"
-                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-32 text-right focus:outline-none focus:border-slate-900"
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
                         />
                         <button
                           type="button"
@@ -987,7 +988,7 @@ function TabProduk() {
                             setScannerTarget("FORM");
                             setIsScannerOpen(true);
                           }}
-                          className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
                           title="Scan kamera"
                         >
                           <Camera className="w-3.5 h-3.5" />
@@ -996,17 +997,17 @@ function TabProduk() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Stok saat ini</span>
-                    <span className="font-semibold text-slate-900 text-xs">
+                    <span className="font-semibold text-slate-900 text-xs text-right">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Stok minimum</span>
                     {!isDrawerEditing ? (
-                      <span className="font-medium text-slate-900 text-xs">
+                      <span className="font-medium text-slate-900 text-xs text-right">
                         {formatDecimal(min)}
                       </span>
                     ) : (
@@ -1015,14 +1016,14 @@ function TabProduk() {
                         emptyFallback={0}
                         value={stokMinimum}
                         onChange={setStokMinimum}
-                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-16 text-right focus:outline-none focus:border-slate-900"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
                       />
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Status stok</span>
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>
+                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${statusColor}`}>
                       {statusStok}
                     </span>
                   </div>
@@ -1202,10 +1203,10 @@ function TabProduk() {
               </div>
 
               {/* 2. Info List Properti Produk */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+              <div className="divide-y divide-slate-100">
+                <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Kategori</span>
-                  <div className="w-44">
+                  <div className="flex justify-end">
                     <Dropdown
                       variant="underline"
                       ariaLabel="Pilih kategori produk"
@@ -1214,6 +1215,7 @@ function TabProduk() {
                       placeholder="-- Pilih Kategori --"
                       searchPlaceholder="Cari kategori..."
                       align="right"
+                      className="!w-auto"
                       options={[
                         { value: "", label: "-- Pilih Kategori --" },
                         ...categories.map((c) => ({ value: c.id, label: c.nama })),
@@ -1222,14 +1224,14 @@ function TabProduk() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Satuan</span>
-                  <span className="font-medium text-slate-900 text-xs capitalize">
+                  <span className="font-medium text-slate-900 text-xs capitalize text-right">
                     {satuanList[0]?.namaSatuan || satuanDasar}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Satuan dasar</span>
                   <input
                     type="text"
@@ -1238,19 +1240,19 @@ function TabProduk() {
                     value={satuanDasar}
                     onChange={(e) => setSatuanDasar(e.target.value)}
                     placeholder="Satuan dasar"
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-24 text-right focus:outline-none focus:border-slate-900"
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-28 text-right focus:outline-none focus:border-slate-900"
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Barcode</span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-end gap-2">
                     <input
                       type="text"
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="Opsional"
-                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-32 text-right focus:outline-none focus:border-slate-900"
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
                     />
                     <button
                       type="button"
@@ -1258,7 +1260,7 @@ function TabProduk() {
                         setScannerTarget("FORM");
                         setIsScannerOpen(true);
                       }}
-                      className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
                       title="Scan kamera"
                     >
                       <Camera className="w-3.5 h-3.5" />
@@ -1266,14 +1268,14 @@ function TabProduk() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Stok minimum</span>
                   <NumberInput
                     min={0}
                     emptyFallback={0}
                     value={stokMinimum}
                     onChange={setStokMinimum}
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-16 text-right focus:outline-none focus:border-slate-900"
+                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
                   />
                 </div>
               </div>
