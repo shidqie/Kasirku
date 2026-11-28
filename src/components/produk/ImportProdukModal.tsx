@@ -386,8 +386,17 @@ export function ImportProdukModal({
       }
 
       const headers = rows[0].map(normalizeHeader);
-      const findCol = (candidates: string[]) =>
-        headers.findIndex((h) => candidates.some((c) => h.includes(c)));
+      const findCol = (candidates: string[]) => {
+        for (const c of candidates) {
+          const exact = headers.findIndex((h) => h === c);
+          if (exact !== -1) return exact;
+        }
+        for (const c of candidates) {
+          const partial = headers.findIndex((h) => h.includes(c));
+          if (partial !== -1) return partial;
+        }
+        return -1;
+      };
 
       const idxNama = findCol(["namaproduk", "nama"]);
       const idxKategori = findCol(["kategori"]);
