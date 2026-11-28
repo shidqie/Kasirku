@@ -9,7 +9,7 @@ import { logActivity } from "@/services/activity-log.service";
 const importSatuanSchema = z.object({
   namaSatuan: z.string().trim().min(1, "Nama satuan wajib diisi"),
   faktorKeDasar: z.number().positive("Isi/faktor harus lebih dari 0").default(1),
-  hargaBeli: z.number().int().min(0).default(0),
+  hargaBeli: z.number().int().min(0, "Harga beli tidak boleh negatif").default(0),
   hargaJual: z.number().int().min(0, "Harga jual tidak boleh negatif"),
   isDefault: z.boolean().optional(),
 });
@@ -19,15 +19,28 @@ const importItemSchema = z.object({
   kategori: z.string().trim().optional().nullable(),
   barcode: z.string().trim().optional().nullable(),
   satuanDasar: z.string().trim().min(1).default("pcs"),
-  stok: z.number().min(0).default(0),
-  stokMinimum: z.number().min(0).default(0),
+  stok: z.number().min(0, "Stok tidak boleh negatif").default(0),
+  stokMinimum: z.number().min(0, "Stok minimum tidak boleh negatif").default(0),
   satuanList: z.array(importSatuanSchema).min(1, "Minimal 1 satuan wajib diisi"),
 });
 
 const importPayloadSchema = z.object({
   mode: z.enum(["skip", "update"]).default("skip"),
-  items: z.array(importItemSchema).min(1, "Minimal 1 produk untuk diimport").max(1000, "Maksimal 1000 produk per import"),
+  allowCreateCategory: z.boolean().default(true),
+  items: z
+    .array(importItemSchema)
+    .min(1, "Minimal 1 produk untuk diimport")
+    .max(1000, "Maksimal 1000 produk per import"),
 });
+
+export interface ImportReportEntry {
+  no: number;
+  nama: string;
+  barcode: string;
+  kategori: string;
+  status: "DITAMBAHKAN" | "DIPERBARUI" | "DUPLIKAT" | "GAGAL";
+  keterangan: string;
+}
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -45,81 +58,142 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { mode, items } = parsed.data;
+    const { mode, allowCreateCategory, items } = parsed.data;
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
 
-    // Cache kategori yang sudah ada (case-insensitive map)
-    const existingCategories = await prisma.kategori.findMany();
-    const categoryMap = new Map<string, string>();
-    for (const c of existingCategories) {
-      categoryMap.set(c.nama.trim().toLowerCase(), c.id);
+    // Deteksi duplikasi barcode di dalam file yang sama
+    const seenBarcodes = new Map<string, string>();
+    for (const item of items) {
+      const bc = item.barcode?.trim();
+      if (bc) {
+        const prevOwner = seenBarcodes.get(bc);
+        if (prevOwner && prevOwner.toLowerCase() !== item.nama.toLowerCase()) {
+          return NextResponse.json(
+            {
+              error: `Barcode '${bc}' ganda di dalam file (dipakai oleh '${prevOwner}' dan '${item.nama}'). Perbaiki file CSV terlebih dahulu.`,
+            },
+            { status: 400 }
+          );
+        }
+        seenBarcodes.set(bc, item.nama);
+      }
     }
 
-    const getOrCreateCategoryId = async (kategoriNama?: string | null): Promise<string | null> => {
-      const clean = kategoriNama?.trim();
-      if (!clean) return null;
-      const key = clean.toLowerCase();
-      const cached = categoryMap.get(key);
-      if (cached) return cached;
-
-      const created = await prisma.kategori.create({
-        data: { nama: clean },
-      });
-      categoryMap.set(key, created.id);
-      return created.id;
-    };
-
-    let createdCount = 0;
-    let updatedCount = 0;
-    let skippedCount = 0;
-    const errors: { index: number; nama: string; reason: string }[] = [];
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      try {
-        const cleanBarcode = item.barcode?.trim() || null;
-
-        // Cari produk existing berdasarkan barcode atau nama (case-insensitive)
-        let existing = cleanBarcode
-          ? await prisma.produk.findUnique({ where: { barcode: cleanBarcode } })
-          : null;
-
-        if (!existing) {
-          existing = await prisma.produk.findFirst({
-            where: { nama: { equals: item.nama, mode: "insensitive" } },
-          });
+    // Jalankan seluruh import dalam 1 transaksi atomik agar konsisten (all-or-nothing)
+    const outcome = await prisma.$transaction(
+      async (tx) => {
+        const existingCategories = await tx.kategori.findMany();
+        const categoryMap = new Map<string, string>();
+        for (const c of existingCategories) {
+          categoryMap.set(c.nama.trim().toLowerCase(), c.id);
         }
 
-        if (existing) {
-          if (mode === "skip") {
-            skippedCount++;
-            continue;
+        const resolveCategoryId = async (
+          kategoriNama?: string | null
+        ): Promise<{ id: string | null; missingError?: string }> => {
+          const clean = kategoriNama?.trim();
+          if (!clean) return { id: null };
+          const key = clean.toLowerCase();
+          const cached = categoryMap.get(key);
+          if (cached) return { id: cached };
+
+          if (!allowCreateCategory) {
+            return {
+              id: null,
+              missingError: `Kategori '${clean}' belum terdaftar dan pembuatan kategori baru tidak disetujui`,
+            };
           }
 
-          // Mode update: cek konflik barcode dengan produk lain
-          if (cleanBarcode && cleanBarcode !== existing.barcode) {
-            const barcodeConflict = await prisma.produk.findUnique({
-              where: { barcode: cleanBarcode },
+          const created = await tx.kategori.create({
+            data: { nama: clean },
+          });
+          categoryMap.set(key, created.id);
+          return { id: created.id };
+        };
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+        const errors: { index: number; nama: string; reason: string }[] = [];
+        const duplicates: { index: number; nama: string; barcode: string }[] = [];
+        const reportEntries: ImportReportEntry[] = [];
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const cleanBarcode = item.barcode?.trim() || null;
+
+          // Identifikasi utama berdasarkan barcode, lalu nama (case-insensitive) jika tanpa barcode
+          let existing = cleanBarcode
+            ? await tx.produk.findUnique({ where: { barcode: cleanBarcode } })
+            : null;
+
+          if (!existing) {
+            existing = await tx.produk.findFirst({
+              where: { nama: { equals: item.nama, mode: "insensitive" } },
             });
-            if (barcodeConflict && barcodeConflict.id !== existing.id) {
-              errors.push({
+          }
+
+          if (existing) {
+            if (mode === "skip") {
+              skippedCount++;
+              duplicates.push({
                 index: i + 1,
                 nama: item.nama,
-                reason: `Barcode '${cleanBarcode}' sudah dipakai produk lain (${barcodeConflict.nama})`,
+                barcode: cleanBarcode || "-",
+              });
+              reportEntries.push({
+                no: i + 1,
+                nama: item.nama,
+                barcode: cleanBarcode || "",
+                kategori: item.kategori || "",
+                status: "DUPLIKAT",
+                keterangan: "Produk sudah terdaftar (dilewati)",
               });
               continue;
             }
-          }
 
-          const kategoriId = await getOrCreateCategoryId(item.kategori);
-          const hasDefault = item.satuanList.some((s) => s.isDefault);
+            // Mode update: cek konflik barcode dengan produk lain
+            if (cleanBarcode && cleanBarcode !== existing.barcode) {
+              const barcodeConflict = await tx.produk.findUnique({
+                where: { barcode: cleanBarcode },
+              });
+              if (barcodeConflict && barcodeConflict.id !== existing.id) {
+                const reason = `Barcode '${cleanBarcode}' sudah dipakai produk lain (${barcodeConflict.nama})`;
+                errors.push({ index: i + 1, nama: item.nama, reason });
+                reportEntries.push({
+                  no: i + 1,
+                  nama: item.nama,
+                  barcode: cleanBarcode || "",
+                  kategori: item.kategori || "",
+                  status: "GAGAL",
+                  keterangan: reason,
+                });
+                continue;
+              }
+            }
 
-          await prisma.$transaction(async (tx) => {
+            const catResolved = await resolveCategoryId(item.kategori);
+            if (catResolved.missingError) {
+              errors.push({ index: i + 1, nama: item.nama, reason: catResolved.missingError });
+              reportEntries.push({
+                no: i + 1,
+                nama: item.nama,
+                barcode: cleanBarcode || "",
+                kategori: item.kategori || "",
+                status: "GAGAL",
+                keterangan: catResolved.missingError,
+              });
+              continue;
+            }
+
+            const hasDefault = item.satuanList.some((s) => s.isDefault);
+
+            // Jangan mengubah ID produk dan jangan mengubah stok berjalan (stokCache)
             await tx.produk.update({
               where: { id: existing.id },
               data: {
                 nama: item.nama,
-                kategoriId: kategoriId ?? existing.kategoriId,
+                kategoriId: catResolved.id ?? existing.kategoriId,
                 barcode: cleanBarcode ?? existing.barcode,
                 satuanDasar: item.satuanDasar,
                 stokMinimum: new Prisma.Decimal(item.stokMinimum),
@@ -127,7 +201,6 @@ export async function POST(req: NextRequest) {
               },
             });
 
-            // Perbarui atau tambah satuan berdasarkan namaSatuan
             for (let idx = 0; idx < item.satuanList.length; idx++) {
               const u = item.satuanList[idx];
               const isDef = hasDefault ? !!u.isDefault : idx === 0;
@@ -154,28 +227,47 @@ export async function POST(req: NextRequest) {
                 },
               });
             }
-          });
 
-          updatedCount++;
-          continue;
-        }
+            updatedCount++;
+            reportEntries.push({
+              no: i + 1,
+              nama: item.nama,
+              barcode: cleanBarcode || existing.barcode || "",
+              kategori: item.kategori || "",
+              status: "DIPERBARUI",
+              keterangan: "Data & harga diperbarui (stok berjalan tetap)",
+            });
+            continue;
+          }
 
-        // Produk baru
-        const kategoriId = await getOrCreateCategoryId(item.kategori);
-        const hasDefault = item.satuanList.some((s) => s.isDefault);
-        const unitsToCreate = item.satuanList.map((u, idx) => ({
-          namaSatuan: u.namaSatuan,
-          faktorKeDasar: new Prisma.Decimal(u.faktorKeDasar),
-          hargaBeli: u.hargaBeli,
-          hargaJual: u.hargaJual,
-          isDefault: hasDefault ? !!u.isDefault : idx === 0,
-        }));
+          // Produk baru
+          const catResolved = await resolveCategoryId(item.kategori);
+          if (catResolved.missingError) {
+            errors.push({ index: i + 1, nama: item.nama, reason: catResolved.missingError });
+            reportEntries.push({
+              no: i + 1,
+              nama: item.nama,
+              barcode: cleanBarcode || "",
+              kategori: item.kategori || "",
+              status: "GAGAL",
+              keterangan: catResolved.missingError,
+            });
+            continue;
+          }
 
-        await prisma.$transaction(async (tx) => {
+          const hasDefault = item.satuanList.some((s) => s.isDefault);
+          const unitsToCreate = item.satuanList.map((u, idx) => ({
+            namaSatuan: u.namaSatuan,
+            faktorKeDasar: new Prisma.Decimal(u.faktorKeDasar),
+            hargaBeli: u.hargaBeli,
+            hargaJual: u.hargaJual,
+            isDefault: hasDefault ? !!u.isDefault : idx === 0,
+          }));
+
           const created = await tx.produk.create({
             data: {
               nama: item.nama,
-              kategoriId,
+              kategoriId: catResolved.id,
               barcode: cleanBarcode,
               satuanDasar: item.satuanDasar,
               stokMinimum: new Prisma.Decimal(item.stokMinimum),
@@ -199,17 +291,30 @@ export async function POST(req: NextRequest) {
               },
             });
           }
-        });
 
-        createdCount++;
-      } catch (err: any) {
-        errors.push({
-          index: i + 1,
-          nama: item.nama,
-          reason: err?.message || "Gagal menyimpan produk",
-        });
-      }
-    }
+          createdCount++;
+          reportEntries.push({
+            no: i + 1,
+            nama: item.nama,
+            barcode: cleanBarcode || "",
+            kategori: item.kategori || "",
+            status: "DITAMBAHKAN",
+            keterangan: "Produk baru berhasil ditambahkan",
+          });
+        }
+
+        return {
+          totalProcessed: items.length,
+          created: createdCount,
+          updated: updatedCount,
+          skipped: skippedCount,
+          errors,
+          duplicates,
+          reportEntries,
+        };
+      },
+      { timeout: 30000 }
+    );
 
     await logActivity({
       userId: session.userId,
@@ -218,22 +323,19 @@ export async function POST(req: NextRequest) {
       entitas: "Produk",
       entitasId: null,
       sesudahJson: {
-        mode,
-        totalDikirim: items.length,
-        ditambahkan: createdCount,
-        diperbarui: updatedCount,
-        dilewati: skippedCount,
-        gagal: errors.length,
+        mode: mode === "skip" ? "Import Produk Baru" : "Import & Update Produk",
+        totalDikirim: outcome.totalProcessed,
+        ditambahkan: outcome.created,
+        diperbarui: outcome.updated,
+        dilewati: outcome.skipped,
+        gagal: outcome.errors.length,
       },
       ip,
     });
 
     return NextResponse.json({
       message: "Proses import selesai",
-      created: createdCount,
-      updated: updatedCount,
-      skipped: skippedCount,
-      errors,
+      ...outcome,
     });
   } catch (error: any) {
     return NextResponse.json(
