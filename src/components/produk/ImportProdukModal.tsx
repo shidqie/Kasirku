@@ -25,7 +25,7 @@ interface ExistingProductRef {
     namaSatuan: string;
     faktorKeDasar: string | number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
   }[];
 }
 
@@ -276,7 +276,7 @@ export function ImportProdukModal({
               `Jual (${u.namaSatuan}): ${formatRupiah(oldUnit.hargaJual)} → ${formatRupiah(u.hargaJual)}`
             );
           }
-          if (oldUnit.hargaBeli !== u.hargaBeli) {
+          if (typeof oldUnit.hargaBeli === "number" && oldUnit.hargaBeli !== u.hargaBeli) {
             changes.push(
               `Beli (${u.namaSatuan}): ${formatRupiah(oldUnit.hargaBeli)} → ${formatRupiah(u.hargaBeli)}`
             );

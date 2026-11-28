@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { moveProductToGroup } from "@/services/product-group.service";
 import { moveProductToGroupSchema } from "@/lib/validations/product-group.schema";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function POST(
   req: NextRequest,
@@ -24,6 +26,7 @@ export async function POST(
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const product = await moveProductToGroup(
       id,
@@ -32,7 +35,10 @@ export async function POST(
       session.userId,
       ip
     );
-    return NextResponse.json({ message: "Produk dipindahkan ke grup", product });
+    return NextResponse.json({
+      message: "Produk dipindahkan ke grup",
+      product: sanitizeProductCost(product, costCtx.showCost),
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Gagal memindahkan produk ke grup" },

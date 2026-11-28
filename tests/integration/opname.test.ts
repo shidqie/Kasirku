@@ -82,7 +82,11 @@ describe("Tahap 6: Stok Opname dengan Persetujuan Integration Tests", () => {
 
   it("User Story E6: Owner menyetujui opname, mutasi OPNAME ditulis, dan stok cache menyesuaikan", async () => {
     const opnameMenunggu = await prisma.stokOpname.findFirst({
-      where: { status: "MENUNGGU" },
+      where: {
+        status: "MENUNGGU",
+        items: { some: { produkId: testProductId } },
+      },
+      orderBy: { createdAt: "desc" },
     });
     expect(opnameMenunggu).toBeDefined();
 

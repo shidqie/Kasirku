@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { logActivity } from "@/services/activity-log.service";
+import { generateUniqueSku } from "@/services/product.service";
+import { recordPriceChanges } from "@/services/price-history.service";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
 
 const importSatuanSchema = z.object({
   namaSatuan: z.string().trim().min(1, "Nama satuan wajib diisi"),
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
 
     const { mode, allowCreateCategory, items } = parsed.data;
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
+    const costCtx = await getCostAccessContext(session);
 
     // Deteksi duplikasi barcode di dalam file yang sama
     const seenBarcodes = new Map<string, string>();
@@ -220,9 +224,15 @@ export async function POST(req: NextRequest) {
             );
 
             // Jangan mengubah ID produk dan jangan mengubah stok berjalan (stokCache)
+            const prevUnits = await tx.satuanProduk.findMany({
+              where: { produkId: existing.id },
+            });
+            const ensuredSku = existing.sku || (await generateUniqueSku(tx, catResolved.id ?? existing.kategoriId));
+
             await tx.produk.update({
               where: { id: existing.id },
               data: {
+                sku: ensuredSku,
                 nama: item.nama,
                 kategoriId: catResolved.id ?? existing.kategoriId,
                 ...(resolvedGroupId ? { groupId: resolvedGroupId } : {}),
@@ -234,9 +244,15 @@ export async function POST(req: NextRequest) {
               },
             });
 
+            const afterUnits: { namaSatuan: string; hargaJual: number; hargaBeli: number }[] = [];
             for (let idx = 0; idx < item.satuanList.length; idx++) {
               const u = item.satuanList[idx];
               const isDef = hasDefault ? !!u.isDefault : idx === 0;
+              const prevSatuan = prevUnits.find(
+                (ps) => ps.namaSatuan.trim().toLowerCase() === u.namaSatuan.trim().toLowerCase()
+              );
+              const nextHargaBeli = costCtx.showCost ? u.hargaBeli : (prevSatuan?.hargaBeli ?? 0);
+
               await tx.satuanProduk.upsert({
                 where: {
                   produkId_namaSatuan: {
@@ -246,7 +262,7 @@ export async function POST(req: NextRequest) {
                 },
                 update: {
                   faktorKeDasar: new Prisma.Decimal(u.faktorKeDasar),
-                  hargaBeli: u.hargaBeli,
+                  ...(costCtx.showCost ? { hargaBeli: u.hargaBeli } : {}),
                   hargaJual: u.hargaJual,
                   isDefault: isDef,
                 },
@@ -254,12 +270,31 @@ export async function POST(req: NextRequest) {
                   produkId: existing.id,
                   namaSatuan: u.namaSatuan,
                   faktorKeDasar: new Prisma.Decimal(u.faktorKeDasar),
-                  hargaBeli: u.hargaBeli,
+                  hargaBeli: nextHargaBeli,
                   hargaJual: u.hargaJual,
                   isDefault: isDef,
                 },
               });
+              afterUnits.push({
+                namaSatuan: u.namaSatuan,
+                hargaJual: u.hargaJual,
+                hargaBeli: nextHargaBeli,
+              });
             }
+
+            await recordPriceChanges({
+              tx,
+              produkId: existing.id,
+              namaProduk: item.nama,
+              beforeUnits: prevUnits.map((s) => ({
+                namaSatuan: s.namaSatuan,
+                hargaJual: s.hargaJual,
+                hargaBeli: s.hargaBeli,
+              })),
+              afterUnits,
+              userId: session.userId,
+              keterangan: "Import CSV produk",
+            });
 
             updatedCount++;
             reportEntries.push({
@@ -292,14 +327,16 @@ export async function POST(req: NextRequest) {
           const unitsToCreate = item.satuanList.map((u, idx) => ({
             namaSatuan: u.namaSatuan,
             faktorKeDasar: new Prisma.Decimal(u.faktorKeDasar),
-            hargaBeli: u.hargaBeli,
+            hargaBeli: costCtx.showCost ? u.hargaBeli : 0,
             hargaJual: u.hargaJual,
             isDefault: hasDefault ? !!u.isDefault : idx === 0,
           }));
 
           const resolvedGroupId = await resolveGroupId(item.groupName, catResolved.id);
+          const newSku = await generateUniqueSku(tx, catResolved.id);
           const created = await tx.produk.create({
             data: {
+              sku: newSku,
               nama: item.nama,
               kategoriId: catResolved.id,
               groupId: resolvedGroupId,
@@ -311,6 +348,13 @@ export async function POST(req: NextRequest) {
               satuanProduk: {
                 create: unitsToCreate,
               },
+              ...(cleanBarcode
+                ? {
+                    barcodes: {
+                      create: { code: cleanBarcode, source: "manual" },
+                    },
+                  }
+                : {}),
             },
           });
 

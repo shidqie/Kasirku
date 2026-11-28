@@ -5,6 +5,7 @@ import { formatProductCode } from "@/lib/codification";
 
 export interface PriceListProduct {
   id: string;
+  sku?: string | null;
   nama: string;
   barcode: string | null;
   satuanDasar: string;
@@ -15,7 +16,7 @@ export interface PriceListProduct {
     namaSatuan: string;
     faktorKeDasar: string | number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault: boolean;
   }[];
 }
@@ -193,20 +194,23 @@ export async function downloadPriceListPdf(
   doc.save(`daftar-harga-per-kategori-${fileDate}.pdf`);
 }
 
-export function downloadPriceListCsv(products: PriceListProduct[]): void {
+export function downloadPriceListCsv(
+  products: PriceListProduct[],
+  includeHargaBeli = true
+): void {
   const escapeCsv = (val: string | number) => {
     const str = String(val ?? "");
     return `"${str.replace(/"/g, '""')}"`;
   };
 
   const headers = [
-    "Kode",
+    "SKU / Kode",
     "Nama Produk",
     "Kategori",
     "Barcode",
     "Satuan",
     "Isi",
-    "Harga Beli",
+    ...(includeHargaBeli ? ["Harga Beli"] : []),
     "Harga Jual",
     "Stok",
   ];
@@ -217,7 +221,7 @@ export function downloadPriceListCsv(products: PriceListProduct[]): void {
   for (const p of products) {
     const catName = p.kategori?.nama || "Umum";
     categoryCounters[catName] = (categoryCounters[catName] || 0) + 1;
-    const code = formatProductCode(catName, categoryCounters[catName]);
+    const code = p.sku || formatProductCode(catName, categoryCounters[catName]);
 
     const units =
       p.satuanProduk.length > 0
@@ -242,7 +246,7 @@ export function downloadPriceListCsv(products: PriceListProduct[]): void {
           p.barcode || "",
           u.namaSatuan,
           Number(u.faktorKeDasar) || 1,
-          u.hargaBeli,
+          ...(includeHargaBeli ? [u.hargaBeli ?? 0] : []),
           u.hargaJual,
           Number(p.stokCache) || 0,
         ]

@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useState } from "react";
 import { X, Printer, Ban, ExternalLink, FileImage, Loader2, ZoomIn, CheckCircle2 } from "lucide-react";

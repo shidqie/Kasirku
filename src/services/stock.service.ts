@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { logActivity } from "./activity-log.service";
 import { verifyOwnerPin } from "./pin.service";
 import { Prisma } from "@prisma/client";
+import { getSettings } from "./settings.service";
+import { recordPriceChanges } from "./price-history.service";
 
 export interface BarangMasukItemInput {
   produkId: string;
@@ -46,6 +48,8 @@ export async function catatBarangMasuk(input: BarangMasukInput, userId: string, 
   if (!input.items || input.items.length === 0) {
     throw new Error("Daftar barang masuk tidak boleh kosong");
   }
+
+  const settings = await getSettings();
 
   const result = await prisma.$transaction(async (tx) => {
     const nomor = await generateDocNumber("BM", tx);
@@ -98,23 +102,48 @@ export async function catatBarangMasuk(input: BarangMasukInput, userId: string, 
       });
 
       // Update cache stok di tabel produk dalam transaksi yang sama
-      await tx.produk.update({
+      const updatedProd = await tx.produk.update({
         where: { id: item.produkId },
         data: {
           stokCache: { increment: qtyDasar },
         },
+        select: { id: true, nama: true },
       });
 
-      // Update juga harga beli di satuan produk jika berubah
-      await tx.satuanProduk.updateMany({
-        where: {
-          produkId: item.produkId,
-          namaSatuan: item.namaSatuan,
-        },
-        data: {
-          hargaBeli: item.hargaBeliPerSatuan,
-        },
-      });
+      // Update harga beli satuan hanya jika fitur harga beli aktif dan nominal > 0
+      if (settings.aktifkanHargaBeli && item.hargaBeliPerSatuan > 0) {
+        const existingUnits = await tx.satuanProduk.findMany({
+          where: { produkId: item.produkId, namaSatuan: item.namaSatuan },
+        });
+        await tx.satuanProduk.updateMany({
+          where: {
+            produkId: item.produkId,
+            namaSatuan: item.namaSatuan,
+          },
+          data: {
+            hargaBeli: item.hargaBeliPerSatuan,
+          },
+        });
+        if (existingUnits.length > 0) {
+          await recordPriceChanges({
+            tx,
+            produkId: item.produkId,
+            namaProduk: updatedProd.nama,
+            beforeUnits: existingUnits.map((u) => ({
+              namaSatuan: u.namaSatuan,
+              hargaJual: u.hargaJual,
+              hargaBeli: u.hargaBeli,
+            })),
+            afterUnits: existingUnits.map((u) => ({
+              namaSatuan: u.namaSatuan,
+              hargaJual: u.hargaJual,
+              hargaBeli: item.hargaBeliPerSatuan,
+            })),
+            userId,
+            keterangan: `Barang Masuk No: ${nomor}`,
+          });
+        }
+      }
     }
 
     return { bm, items: createdItems };

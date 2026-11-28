@@ -8,6 +8,7 @@ export interface ProductGroupMeta {
 
 export interface GroupableProduct {
   id: string;
+  sku?: string | null;
   nama: string;
   barcode?: string | null;
   groupId?: string | null;
@@ -21,7 +22,7 @@ export interface GroupableProduct {
     namaSatuan: string;
     faktorKeDasar: string | number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault?: boolean;
   }[];
 }

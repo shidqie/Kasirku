@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductCost } from "@/lib/product-visibility";
 
 function validateBarcodeValue(raw: unknown): { code?: string; error?: string } {
   const clean = String(raw || "").trim();
@@ -112,8 +114,14 @@ export async function POST(
       return { entry, barcodes: allBarcodes, product: updatedProduct };
     });
 
+    const costCtx = await getCostAccessContext(session);
     return NextResponse.json(
-      { message: `Kode ${code} ditambahkan ke "${product.nama}"`, ...result },
+      {
+        message: `Kode ${code} ditambahkan ke "${product.nama}"`,
+        entry: result.entry,
+        barcodes: result.barcodes,
+        product: result.product ? sanitizeProductCost(result.product, costCtx.showCost) : result.product,
+      },
       { status: 201 }
     );
   } catch (err: any) {
@@ -153,9 +161,10 @@ export async function PATCH(
       },
     });
 
+    const costCtx = await getCostAccessContext(session);
     return NextResponse.json({
       message: `Kode ${target.code} dijadikan barcode utama`,
-      product: updated,
+      product: sanitizeProductCost(updated, costCtx.showCost),
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -218,9 +227,10 @@ export async function DELETE(
       });
     });
 
+    const costCtx = await getCostAccessContext(session);
     return NextResponse.json({
       message: `Kode ${target.code} dihapus`,
-      product: updated,
+      product: updated ? sanitizeProductCost(updated, costCtx.showCost) : updated,
     });
   } catch (err: any) {
     return NextResponse.json(

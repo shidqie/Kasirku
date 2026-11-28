@@ -9,11 +9,12 @@ export const satuanProdukSchema = z.object({
   namaSatuan: z.string().min(1, "Nama satuan wajib diisi"), // misal: "kg", "karung 25kg", "dus"
   faktorKeDasar: z.number().positive("Faktor konversi harus lebih dari 0"), // misal: 25 untuk karung 25kg
   hargaJual: z.number().int().nonnegative("Harga jual tidak boleh negatif"),
-  hargaBeli: z.number().int().nonnegative("Harga beli tidak boleh negatif"),
+  hargaBeli: z.number().int().nonnegative("Harga beli tidak boleh negatif").optional(),
   isDefault: z.boolean().default(false),
 });
 
 export const createProductSchema = z.object({
+  sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   nama: z.string().min(2, "Nama produk minimal 2 karakter"),
   kategoriId: z.string().nullable().optional(),
   groupId: z.string().nullable().optional(),
@@ -27,6 +28,7 @@ export const createProductSchema = z.object({
 });
 
 export const updateProductSchema = z.object({
+  sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   nama: z.string().min(2, "Nama produk minimal 2 karakter").optional(),
   kategoriId: z.string().nullable().optional(),
   groupId: z.string().nullable().optional(),

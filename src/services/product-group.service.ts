@@ -3,8 +3,11 @@ import { Prisma } from "@prisma/client";
 import { logActivity } from "./activity-log.service";
 import { buildVariantFullName } from "@/lib/product-grouping";
 import { isRefillProduct } from "@/lib/refill";
+import { generateUniqueSku } from "./product.service";
+import { getSettings } from "./settings.service";
 
 export interface VariantItemInput {
+  sku?: string | null;
   variantName: string;
   barcode?: string | null;
   satuanDasar: string;
@@ -15,7 +18,7 @@ export interface VariantItemInput {
     namaSatuan: string;
     faktorKeDasar: number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault?: boolean;
   }[];
 }
@@ -48,17 +51,32 @@ export async function getProductGroups() {
 
 async function assertUniqueBarcodes(barcodes: string[], excludeIds: string[] = []) {
   if (barcodes.length === 0) return;
-  const existing = await prisma.produk.findMany({
-    where: {
-      barcode: { in: barcodes },
-      ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
-    },
-    select: { id: true, nama: true, barcode: true },
-  });
+  const [existing, existingExtra] = await Promise.all([
+    prisma.produk.findMany({
+      where: {
+        barcode: { in: barcodes },
+        ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
+      },
+      select: { id: true, nama: true, barcode: true },
+    }),
+    prisma.productBarcode.findMany({
+      where: {
+        code: { in: barcodes },
+        ...(excludeIds.length > 0 ? { productId: { notIn: excludeIds } } : {}),
+      },
+      include: { product: { select: { nama: true } } },
+    }),
+  ]);
   if (existing.length > 0) {
     const first = existing[0];
     throw new Error(
       `Barcode '${first.barcode}' sudah digunakan oleh produk '${first.nama}'`
+    );
+  }
+  if (existingExtra.length > 0) {
+    const first = existingExtra[0];
+    throw new Error(
+      `Barcode '${first.code}' sudah digunakan oleh produk '${first.product.nama}'`
     );
   }
 }
@@ -66,12 +84,16 @@ async function assertUniqueBarcodes(barcodes: string[], excludeIds: string[] = [
 export async function createProductGroupWithVariants(
   input: CreateProductGroupInput,
   userId: string,
-  ip?: string
+  ip?: string,
+  options?: { allowEditHargaBeli?: boolean }
 ) {
   const barcodes = input.variants
     .map((v) => v.barcode?.trim())
     .filter((b): b is string => Boolean(b));
   await assertUniqueBarcodes(barcodes);
+
+  const settings = await getSettings();
+  const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
 
   const created = await prisma.$transaction(async (tx) => {
     const group = await tx.productGroup.create({
@@ -87,14 +109,17 @@ export async function createProductGroupWithVariants(
       const fullName = buildVariantFullName(group.nama, v.variantName);
       const hasDefault = v.satuanList.some((s) => s.isDefault);
       const stokAwal = Number(v.stokAwal ?? 0);
+      const cleanBarcode = v.barcode?.trim() || null;
+      const sku = v.sku?.trim() || (await generateUniqueSku(tx, input.kategoriId));
 
       const p = await tx.produk.create({
         data: {
+          sku,
           nama: fullName,
           kategoriId: input.kategoriId || null,
           groupId: group.id,
           variantName: v.variantName.trim(),
-          barcode: v.barcode?.trim() || null,
+          barcode: cleanBarcode,
           satuanDasar: v.satuanDasar.trim(),
           stokMinimum: new Prisma.Decimal(v.stokMinimum ?? 0),
           stokCache: new Prisma.Decimal(stokAwal),
@@ -105,15 +130,23 @@ export async function createProductGroupWithVariants(
               namaSatuan: s.namaSatuan,
               faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
               hargaJual: s.hargaJual,
-              hargaBeli: s.hargaBeli,
+              hargaBeli: canEditCost ? (s.hargaBeli ?? 0) : 0,
               isDefault: hasDefault ? !!s.isDefault : idx === 0,
             })),
           },
+          ...(cleanBarcode
+            ? {
+                barcodes: {
+                  create: { code: cleanBarcode, source: "manual" },
+                },
+              }
+            : {}),
         },
         include: {
           satuanProduk: true,
           kategori: true,
           group: true,
+          barcodes: { orderBy: { createdAt: "asc" } },
         },
       });
 
@@ -158,7 +191,8 @@ export async function addVariantToGroup(
   groupId: string,
   v: VariantItemInput,
   userId: string,
-  ip?: string
+  ip?: string,
+  options?: { allowEditHargaBeli?: boolean }
 ) {
   const group = await prisma.productGroup.findUnique({ where: { id: groupId } });
   if (!group) throw new Error("Grup produk tidak ditemukan");
@@ -168,13 +202,18 @@ export async function addVariantToGroup(
     await assertUniqueBarcodes([cleanBarcode]);
   }
 
+  const settings = await getSettings();
+  const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
+
   const fullName = buildVariantFullName(group.nama, v.variantName);
   const hasDefault = v.satuanList.some((s) => s.isDefault);
   const stokAwal = Number(v.stokAwal ?? 0);
 
   const variant = await prisma.$transaction(async (tx) => {
+    const sku = v.sku?.trim() || (await generateUniqueSku(tx, group.kategoriId));
     const p = await tx.produk.create({
       data: {
+        sku,
         nama: fullName,
         kategoriId: group.kategoriId || null,
         groupId: group.id,
@@ -190,15 +229,23 @@ export async function addVariantToGroup(
             namaSatuan: s.namaSatuan,
             faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
             hargaJual: s.hargaJual,
-            hargaBeli: s.hargaBeli,
+            hargaBeli: canEditCost ? (s.hargaBeli ?? 0) : 0,
             isDefault: hasDefault ? !!s.isDefault : idx === 0,
           })),
         },
+        ...(cleanBarcode
+          ? {
+              barcodes: {
+                create: { code: cleanBarcode, source: "manual" },
+              },
+            }
+          : {}),
       },
       include: {
         satuanProduk: true,
         kategori: true,
         group: true,
+        barcodes: { orderBy: { createdAt: "asc" } },
       },
     });
 
@@ -334,6 +381,7 @@ export interface SplitProductInput {
   brand?: string | null;
   kategoriId?: string | null;
   variants: {
+    sku?: string | null;
     variantName: string;
     barcode?: string | null;
     stokAwal: number;
@@ -351,7 +399,8 @@ export async function splitProductIntoVariants(
   sourceProdukId: string,
   input: SplitProductInput,
   userId: string,
-  ip?: string
+  ip?: string,
+  options?: { allowEditHargaBeli?: boolean }
 ) {
   const source = await prisma.produk.findUnique({
     where: { id: sourceProdukId },
@@ -364,6 +413,9 @@ export async function splitProductIntoVariants(
     .map((v) => v.barcode?.trim())
     .filter((b): b is string => Boolean(b));
   await assertUniqueBarcodes(barcodes, [sourceProdukId]);
+
+  const settings = await getSettings();
+  const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
 
   const result = await prisma.$transaction(async (tx) => {
     const group = await tx.productGroup.create({
@@ -381,6 +433,8 @@ export async function splitProductIntoVariants(
     for (const v of input.variants) {
       const fullName = buildVariantFullName(group.nama, v.variantName);
       const stokAwal = Number(v.stokAwal ?? 0);
+      const sku = v.sku?.trim() || (await generateUniqueSku(tx, group.kategoriId));
+      const cleanBarcode = v.barcode?.trim() || null;
 
       const unitsToCreate =
         source.satuanProduk.length > 0
@@ -392,7 +446,7 @@ export async function splitProductIntoVariants(
                   ? v.hargaJual
                   : s.hargaJual,
               hargaBeli:
-                s.id === sourceDefaultSatuan?.id && typeof v.hargaBeli === "number"
+                canEditCost && s.id === sourceDefaultSatuan?.id && typeof v.hargaBeli === "number"
                   ? v.hargaBeli
                   : s.hargaBeli,
               isDefault: s.isDefault,
@@ -402,18 +456,19 @@ export async function splitProductIntoVariants(
                 namaSatuan: source.satuanDasar,
                 faktorKeDasar: new Prisma.Decimal(1),
                 hargaJual: v.hargaJual ?? 0,
-                hargaBeli: v.hargaBeli ?? 0,
+                hargaBeli: canEditCost ? (v.hargaBeli ?? 0) : 0,
                 isDefault: true,
               },
             ];
 
       const p = await tx.produk.create({
         data: {
+          sku,
           nama: fullName,
           kategoriId: group.kategoriId,
           groupId: group.id,
           variantName: v.variantName.trim(),
-          barcode: v.barcode?.trim() || null,
+          barcode: cleanBarcode,
           satuanDasar: source.satuanDasar,
           stokMinimum: source.stokMinimum,
           stokCache: new Prisma.Decimal(stokAwal),
@@ -422,6 +477,13 @@ export async function splitProductIntoVariants(
           satuanProduk: {
             create: unitsToCreate,
           },
+          ...(cleanBarcode
+            ? {
+                barcodes: {
+                  create: { code: cleanBarcode, source: "manual" },
+                },
+              }
+            : {}),
         },
         include: {
           satuanProduk: true,

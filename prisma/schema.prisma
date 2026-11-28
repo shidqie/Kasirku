@@ -79,6 +79,7 @@ model User {
   transaksiBatal     Transaksi[]         @relation("TransaksiDibatalkan")
   activityLogs       ActivityLog[]
   kasbonPembayaran   KasbonPembayaran[]
+  riwayatHarga       RiwayatHarga[]
 
   @@map("user")
 }
@@ -102,6 +103,7 @@ model PengaturanToko {
   pinLockedUntil      DateTime?  @map("pin_locked_until")
   ambangUtangLamaHari Int        @default(30) @map("ambang_utang_lama_hari")
   bolehJualStokNol    Boolean    @default(false) @map("boleh_jual_stok_nol")
+  aktifkanHargaBeli   Boolean    @default(true) @map("aktifkan_harga_beli")
   qrisModeDefault     String     @default("DINAMIS") @map("qris_mode_default")
   qrisPayload         String?    @map("qris_payload")
   qrisStaticImage     String?    @map("qris_static_image")
@@ -146,6 +148,7 @@ model ProductGroup {
 // 4. Master Produk & Satuan
 model Produk {
   id           String         @id @default(cuid())
+  sku          String?        @unique
   nama         String
   kategoriId   String?        @map("kategori_id")
   groupId      String?        @map("group_id")
@@ -170,11 +173,35 @@ model Produk {
   transaksiItem   TransaksiItem[]
   promoTargets    PromoRule[]       @relation("PromoTargetProduk")
   promoBonuses    PromoRule[]       @relation("PromoBonusProduk")
+  riwayatHarga    RiwayatHarga[]
 
+  @@index([sku])
   @@index([nama])
   @@index([barcode])
   @@index([groupId])
   @@map("produk")
+}
+
+// 4c. Riwayat Perubahan Harga (Audit harga jual & harga beli permanen)
+model RiwayatHarga {
+  id             String   @id @default(cuid())
+  produkId       String?  @map("produk_id")
+  namaProduk     String   @map("nama_produk")
+  namaSatuan     String   @map("nama_satuan")
+  jenisPerubahan String   @map("jenis_perubahan") // "HARGA_JUAL" | "HARGA_BELI"
+  hargaLama      Int      @map("harga_lama")
+  hargaBaru      Int      @map("harga_baru")
+  userId         String?  @map("user_id")
+  namaPengguna   String?  @map("nama_pengguna")
+  keterangan     String?
+  dibuatPada     DateTime @default(now()) @map("dibuat_pada")
+
+  produk Produk? @relation(fields: [produkId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([produkId, dibuatPada])
+  @@index([dibuatPada])
+  @@map("riwayat_harga")
 }
 
 model SatuanProduk {

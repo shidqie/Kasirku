@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { bulkRaisePrices } from "@/services/product.service";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
 
 const bulkPriceSchema = z.object({
   scope: z.enum(["SINGLE", "CATEGORY", "ALL"]),
@@ -33,9 +34,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const result = await bulkRaisePrices(
-      { ...parsed.data, role: session.role },
+      {
+        ...parsed.data,
+        allowEditHargaBeli: costCtx.canViewHargaBeli,
+        role: session.role,
+      },
       session.userId,
       ip
     );

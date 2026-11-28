@@ -16,6 +16,7 @@ export interface UpdateSettingsInput {
   batasDiskonStaff: number;
   ambangUtangLamaHari: number;
   bolehJualStokNol: boolean;
+  aktifkanHargaBeli?: boolean;
   qrisModeDefault?: string;
   qrisPayload?: string | null;
   qrisStaticImage?: string | null;
@@ -42,6 +43,7 @@ export async function getSettings() {
         pinOwnerHash: "$2a$10$eO1k5s2f.gYf0W5gN9k1me7y3E0q2b8f5/8d/w.9m5j2.", // Default hash fallback
         ambangUtangLamaHari: 30,
         bolehJualStokNol: false,
+        aktifkanHargaBeli: true,
       },
     });
   }
@@ -83,6 +85,7 @@ export async function updateSettings(
       batasDiskonStaff: input.batasDiskonStaff,
       ambangUtangLamaHari: input.ambangUtangLamaHari,
       bolehJualStokNol: input.bolehJualStokNol,
+      ...(input.aktifkanHargaBeli !== undefined ? { aktifkanHargaBeli: input.aktifkanHargaBeli } : {}),
       ...(input.qrisModeDefault !== undefined ? { qrisModeDefault: input.qrisModeDefault } : {}),
       ...(input.qrisPayload !== undefined ? { qrisPayload: input.qrisPayload } : {}),
       ...(input.qrisStaticImage !== undefined ? { qrisStaticImage: input.qrisStaticImage } : {}),
@@ -101,12 +104,14 @@ export async function updateSettings(
       pembulatan: sebelum.pembulatan,
       batasDiskonStaff: sebelum.batasDiskonStaff,
       bolehJualStokNol: sebelum.bolehJualStokNol,
+      aktifkanHargaBeli: sebelum.aktifkanHargaBeli,
     },
     sesudahJson: {
       namaToko: sesudah.namaToko,
       pembulatan: sesudah.pembulatan,
       batasDiskonStaff: sesudah.batasDiskonStaff,
       bolehJualStokNol: sesudah.bolehJualStokNol,
+      aktifkanHargaBeli: sesudah.aktifkanHargaBeli,
     },
     ip,
   });

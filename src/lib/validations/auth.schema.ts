@@ -58,6 +58,7 @@ export const updateSettingsSchema = z.object({
   batasDiskonStaff: z.number().int().min(0, "Batas diskon tidak boleh negatif"),
   ambangUtangLamaHari: z.number().int().min(1, "Ambang utang minimal 1 hari"),
   bolehJualStokNol: z.boolean(),
+  aktifkanHargaBeli: z.boolean().optional(),
   qrisModeDefault: z.enum(["DINAMIS", "STATIS"]).optional(),
   qrisPayload: z.string().nullable().optional(),
   qrisStaticImage: safeImageSchema,

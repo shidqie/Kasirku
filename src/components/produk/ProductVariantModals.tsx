@@ -33,11 +33,13 @@ export function VariantGroupFormModal({
   isOpen,
   onClose,
   categories,
+  showHargaBeli = true,
   onSuccess,
 }: {
   isOpen: boolean;
   onClose: () => void;
   categories: CategoryOption[];
+  showHargaBeli?: boolean;
   onSuccess: (message: string) => void;
 }) {
   const [namaInduk, setNamaInduk] = useState("");
@@ -138,7 +140,7 @@ export function VariantGroupFormModal({
                 namaSatuan: satuanDasar.trim() || "pcs",
                 faktorKeDasar: 1,
                 hargaJual: Math.round(r.hargaJual || 0),
-                hargaBeli: Math.round(r.hargaBeli || 0),
+                ...(showHargaBeli ? { hargaBeli: Math.round(r.hargaBeli || 0) } : {}),
                 isDefault: true,
               },
             ],
@@ -303,7 +305,7 @@ export function VariantGroupFormModal({
                       <th className="py-2.5 px-3">Nama Varian / Rasa *</th>
                       <th className="py-2.5 px-3">Barcode</th>
                       <th className="py-2.5 px-3 text-right">Harga Jual</th>
-                      <th className="py-2.5 px-3 text-right">Harga Beli</th>
+                      {showHargaBeli && <th className="py-2.5 px-3 text-right">Harga Beli</th>}
                       <th className="py-2.5 px-3 text-right">Stok Awal</th>
                       <th className="py-2.5 px-3 text-center w-20">Aksi</th>
                     </tr>
@@ -354,16 +356,18 @@ export function VariantGroupFormModal({
                             className="w-28 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-right tabular-nums"
                           />
                         </td>
-                        <td className="p-2">
-                          <NumberInput
-                            rupiah
-                            min={0}
-                            emptyFallback={0}
-                            value={r.hargaBeli}
-                            onChange={(val) => updateRow(idx, { hargaBeli: val })}
-                            className="w-28 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-right tabular-nums"
-                          />
-                        </td>
+                        {showHargaBeli && (
+                          <td className="p-2">
+                            <NumberInput
+                              rupiah
+                              min={0}
+                              emptyFallback={0}
+                              value={r.hargaBeli}
+                              onChange={(val) => updateRow(idx, { hargaBeli: val })}
+                              className="w-28 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-right tabular-nums"
+                            />
+                          </td>
+                        )}
                         <td className="p-2">
                           <NumberInput
                             min={0}
@@ -437,6 +441,7 @@ export function VariantGroupFormModal({
 export function SplitProductModal({
   product,
   categories,
+  showHargaBeli = true,
   onClose,
   onSuccess,
 }: {
@@ -446,9 +451,10 @@ export function SplitProductModal({
     stokCache: string | number;
     satuanDasar: string;
     kategori?: { id: string; nama: string } | null;
-    satuanProduk: { hargaJual: number; hargaBeli: number; isDefault?: boolean }[];
+    satuanProduk: { hargaJual: number; hargaBeli?: number; isDefault?: boolean }[];
   } | null;
   categories: CategoryOption[];
+  showHargaBeli?: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
 }) {
@@ -533,7 +539,7 @@ export function SplitProductModal({
             barcode: v.barcode.trim() || null,
             stokAwal: Number(v.stokAwal) || 0,
             hargaJual: Math.round(v.hargaJual || 0),
-            hargaBeli: Math.round(v.hargaBeli || 0),
+            ...(showHargaBeli ? { hargaBeli: Math.round(v.hargaBeli || 0) } : {}),
           })),
         }),
       });

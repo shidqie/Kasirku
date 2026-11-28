@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { getProductById, updateProduct, deleteProduct } from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validations/product.schema";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function GET(
   _req: NextRequest,
@@ -18,7 +20,11 @@ export async function GET(
     return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
   }
 
-  return NextResponse.json({ product });
+  const costCtx = await getCostAccessContext(session);
+  return NextResponse.json({
+    product: sanitizeProductCost(product, costCtx.showCost),
+    meta: costCtx,
+  });
 }
 
 export async function PATCH(
@@ -40,10 +46,17 @@ export async function PATCH(
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
-    const product = await updateProduct(params.id, validated.data, session.userId, ip);
+    const product = await updateProduct(params.id, validated.data, session.userId, ip, {
+      allowEditHargaBeli: costCtx.canViewHargaBeli,
+      userRole: session.role,
+    });
 
-    return NextResponse.json({ message: "Produk berhasil diperbarui", product });
+    return NextResponse.json({
+      message: "Produk berhasil diperbarui",
+      product: product ? sanitizeProductCost(product, costCtx.showCost) : product,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Gagal memperbarui produk" },

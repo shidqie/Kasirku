@@ -2,8 +2,54 @@ import { prisma } from "@/lib/db";
 import { logActivity } from "./activity-log.service";
 import { Prisma } from "@prisma/client";
 import { isRefillProduct } from "@/lib/refill";
+import { getCategoryPrefix } from "@/lib/codification";
+import { getSettings } from "./settings.service";
+import { recordPriceChanges } from "./price-history.service";
+
+export async function generateUniqueSku(
+  tx: Prisma.TransactionClient,
+  kategoriId?: string | null,
+  categoryNameHint?: string | null
+): Promise<string> {
+  let categoryName = categoryNameHint ?? null;
+  if (!categoryName && kategoriId) {
+    const cat = await tx.kategori.findUnique({
+      where: { id: kategoriId },
+      select: { nama: true },
+    });
+    categoryName = cat?.nama ?? null;
+  }
+
+  const prefix = getCategoryPrefix(categoryName);
+  const base = `PRD-${prefix}-`;
+  const existing = await tx.produk.findMany({
+    where: { sku: { startsWith: base } },
+    select: { sku: true },
+  });
+
+  const used = new Set<string>();
+  let maxSeq = 0;
+  for (const row of existing) {
+    if (!row.sku) continue;
+    used.add(row.sku.toUpperCase());
+    const match = /^PRD-[A-Z0-9]{3}-(\d+)$/i.exec(row.sku);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > maxSeq) maxSeq = n;
+    }
+  }
+
+  let seq = maxSeq + 1;
+  let candidate = `${base}${String(seq).padStart(3, "0")}`;
+  while (used.has(candidate.toUpperCase())) {
+    seq++;
+    candidate = `${base}${String(seq).padStart(3, "0")}`;
+  }
+  return candidate;
+}
 
 export interface CreateProductInput {
+  sku?: string | null;
   nama: string;
   kategoriId?: string | null;
   groupId?: string | null;
@@ -17,12 +63,13 @@ export interface CreateProductInput {
     namaSatuan: string;
     faktorKeDasar: number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault?: boolean;
   }[];
 }
 
 export interface UpdateProductInput {
+  sku?: string | null;
   nama?: string;
   kategoriId?: string | null;
   groupId?: string | null;
@@ -38,7 +85,7 @@ export interface UpdateProductInput {
     namaSatuan: string;
     faktorKeDasar: number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault?: boolean;
   }[];
 }
@@ -133,6 +180,7 @@ export async function getProducts(params?: {
     const q = params.search.trim();
     where.OR = [
       { nama: { contains: q, mode: "insensitive" } },
+      { sku: { contains: q, mode: "insensitive" } },
       { barcode: { contains: q, mode: "insensitive" } },
       { barcodes: { some: { code: { contains: q, mode: "insensitive" } } } },
       { variantName: { contains: q, mode: "insensitive" } },
@@ -233,15 +281,36 @@ export async function getProductById(id: string) {
   });
 }
 
-export async function createProduct(input: CreateProductInput, userId: string, ip?: string) {
-  if (input.barcode) {
-    const existingBarcode = await prisma.produk.findUnique({
-      where: { barcode: input.barcode },
-    });
-    if (existingBarcode) {
-      throw new Error(`Barcode '${input.barcode}' sudah digunakan oleh produk lain`);
+export async function createProduct(
+  input: CreateProductInput,
+  userId: string,
+  ip?: string,
+  options?: { allowEditHargaBeli?: boolean; userRole?: string }
+) {
+  const cleanBarcode = input.barcode?.trim() || null;
+  if (cleanBarcode) {
+    const [existingBarcode, existingExtra] = await Promise.all([
+      prisma.produk.findUnique({ where: { barcode: cleanBarcode } }),
+      prisma.productBarcode.findUnique({ where: { code: cleanBarcode } }),
+    ]);
+    if (existingBarcode || existingExtra) {
+      throw new Error(`Barcode '${cleanBarcode}' sudah digunakan oleh produk lain`);
     }
   }
+
+  const cleanSkuInput = input.sku?.trim() || null;
+  if (cleanSkuInput) {
+    const existingSku = await prisma.produk.findUnique({
+      where: { sku: cleanSkuInput },
+      select: { id: true, nama: true },
+    });
+    if (existingSku) {
+      throw new Error(`SKU '${cleanSkuInput}' sudah digunakan oleh produk '${existingSku.nama}'`);
+    }
+  }
+
+  const settings = await getSettings();
+  const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
 
   // Pastikan setidaknya satu satuan adalah default
   const hasDefault = input.satuanList.some((s) => s.isDefault);
@@ -249,18 +318,20 @@ export async function createProduct(input: CreateProductInput, userId: string, i
     namaSatuan: s.namaSatuan,
     faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
     hargaJual: s.hargaJual,
-    hargaBeli: s.hargaBeli,
+    hargaBeli: canEditCost ? (s.hargaBeli ?? 0) : 0,
     isDefault: hasDefault ? !!s.isDefault : idx === 0,
   }));
 
   const product = await prisma.$transaction(async (tx) => {
+    const finalSku = cleanSkuInput || (await generateUniqueSku(tx, input.kategoriId));
     const p = await tx.produk.create({
       data: {
+        sku: finalSku,
         nama: input.nama,
         kategoriId: input.kategoriId || null,
         groupId: input.groupId || null,
         variantName: input.variantName ? input.variantName.trim() : null,
-        barcode: input.barcode ? input.barcode.trim() : null,
+        barcode: cleanBarcode,
         satuanDasar: input.satuanDasar,
         stokMinimum: new Prisma.Decimal(input.stokMinimum),
         stokCache: new Prisma.Decimal(0),
@@ -269,10 +340,10 @@ export async function createProduct(input: CreateProductInput, userId: string, i
         satuanProduk: {
           create: unitsToCreate,
         },
-        ...(input.barcode?.trim()
+        ...(cleanBarcode
           ? {
               barcodes: {
-                create: { code: input.barcode.trim(), source: "manual" },
+                create: { code: cleanBarcode, source: "manual" },
               },
             }
           : {}),
@@ -280,6 +351,7 @@ export async function createProduct(input: CreateProductInput, userId: string, i
       include: {
         satuanProduk: true,
         kategori: true,
+        barcodes: { orderBy: { createdAt: "asc" } },
       },
     });
 
@@ -288,11 +360,12 @@ export async function createProduct(input: CreateProductInput, userId: string, i
 
   await logActivity({
     userId,
-    role: "OWNER",
+    role: options?.userRole || "OWNER",
     aksi: "BUAT_PRODUK",
     entitas: "Produk",
     entitasId: product.id,
     sesudahJson: {
+      sku: product.sku,
       nama: product.nama,
       barcode: product.barcode,
       satuanDasar: product.satuanDasar,
@@ -308,31 +381,55 @@ export async function updateProduct(
   id: string,
   input: UpdateProductInput,
   userId: string,
-  ip?: string
+  ip?: string,
+  options?: { allowEditHargaBeli?: boolean; userRole?: string }
 ) {
   const sebelum = await prisma.produk.findUnique({
     where: { id },
-    include: { satuanProduk: true },
+    include: { satuanProduk: true, kategori: true },
   });
 
   if (!sebelum) throw new Error("Produk tidak ditemukan");
 
-  if (input.barcode && input.barcode !== sebelum.barcode) {
-    const existing = await prisma.produk.findUnique({
-      where: { barcode: input.barcode },
-    });
-    if (existing && existing.id !== id) {
-      throw new Error(`Barcode '${input.barcode}' sudah digunakan oleh produk lain`);
+  const nextBarcode =
+    input.barcode !== undefined ? (input.barcode ? input.barcode.trim() : null) : undefined;
+  if (nextBarcode && nextBarcode !== sebelum.barcode) {
+    const [existing, existingExtra] = await Promise.all([
+      prisma.produk.findUnique({ where: { barcode: nextBarcode } }),
+      prisma.productBarcode.findFirst({ where: { code: nextBarcode, productId: { not: id } } }),
+    ]);
+    if ((existing && existing.id !== id) || existingExtra) {
+      throw new Error(`Barcode '${nextBarcode}' sudah digunakan oleh produk lain`);
     }
   }
 
+  const cleanSkuInput = input.sku !== undefined ? (input.sku?.trim() || null) : undefined;
+  if (cleanSkuInput && cleanSkuInput !== sebelum.sku) {
+    const existingSku = await prisma.produk.findUnique({
+      where: { sku: cleanSkuInput },
+      select: { id: true, nama: true },
+    });
+    if (existingSku && existingSku.id !== id) {
+      throw new Error(`SKU '${cleanSkuInput}' sudah digunakan oleh produk '${existingSku.nama}'`);
+    }
+  }
+
+  const settings = await getSettings();
+  const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
+
   const updated = await prisma.$transaction(async (tx) => {
+    const targetKategoriId =
+      input.kategoriId !== undefined ? input.kategoriId : sebelum.kategoriId;
+    const ensuredSku =
+      cleanSkuInput !== undefined
+        ? cleanSkuInput || sebelum.sku || (await generateUniqueSku(tx, targetKategoriId))
+        : sebelum.sku || (await generateUniqueSku(tx, targetKategoriId));
+
     // 1. Update data pokok produk
-    const nextBarcode =
-      input.barcode !== undefined ? (input.barcode ? input.barcode.trim() : null) : undefined;
     await tx.produk.update({
       where: { id },
       data: {
+        sku: ensuredSku,
         ...(input.nama ? { nama: input.nama } : {}),
         ...(input.kategoriId !== undefined ? { kategoriId: input.kategoriId } : {}),
         ...(input.groupId !== undefined ? { groupId: input.groupId || null } : {}),
@@ -354,21 +451,54 @@ export async function updateProduct(
       });
     }
 
-    // 2. Update satuan & harga jika disertakan
+    // 2. Update satuan & harga jika disertakan (lindungi hargaBeli lama saat fitur nonaktif / tanpa izin)
     if (input.satuanList && input.satuanList.length > 0) {
-      // Hapus satuan lama lalu ganti dengan yang baru
       await tx.satuanProduk.deleteMany({ where: { produkId: id } });
 
       const hasDefault = input.satuanList.some((s) => s.isDefault);
-      await tx.satuanProduk.createMany({
-        data: input.satuanList.map((s, idx) => ({
+      const defaultPrev =
+        sebelum.satuanProduk.find((prev) => prev.isDefault) || sebelum.satuanProduk[0];
+
+      const unitsToCreate = input.satuanList.map((s, idx) => {
+        const matchedPrev =
+          (s.id ? sebelum.satuanProduk.find((prev) => prev.id === s.id) : undefined) ||
+          sebelum.satuanProduk.find(
+            (prev) => prev.namaSatuan.trim().toLowerCase() === s.namaSatuan.trim().toLowerCase()
+          ) ||
+          (input.satuanList!.length === 1 && sebelum.satuanProduk.length === 1 ? defaultPrev : undefined);
+
+        const preservedHargaBeli = matchedPrev?.hargaBeli ?? 0;
+        const nextHargaBeli =
+          canEditCost && typeof s.hargaBeli === "number" ? s.hargaBeli : preservedHargaBeli;
+
+        return {
           produkId: id,
           namaSatuan: s.namaSatuan,
           faktorKeDasar: new Prisma.Decimal(s.faktorKeDasar),
           hargaJual: s.hargaJual,
-          hargaBeli: s.hargaBeli,
+          hargaBeli: nextHargaBeli,
           isDefault: hasDefault ? !!s.isDefault : idx === 0,
+        };
+      });
+
+      await tx.satuanProduk.createMany({ data: unitsToCreate });
+
+      await recordPriceChanges({
+        tx,
+        produkId: id,
+        namaProduk: input.nama || sebelum.nama,
+        beforeUnits: sebelum.satuanProduk.map((s) => ({
+          namaSatuan: s.namaSatuan,
+          hargaJual: s.hargaJual,
+          hargaBeli: s.hargaBeli,
         })),
+        afterUnits: unitsToCreate.map((s) => ({
+          namaSatuan: s.namaSatuan,
+          hargaJual: s.hargaJual,
+          hargaBeli: s.hargaBeli,
+        })),
+        userId,
+        keterangan: "Edit harga produk",
       });
     }
 
@@ -376,6 +506,7 @@ export async function updateProduct(
       where: { id },
       include: {
         kategori: true,
+        barcodes: { orderBy: { createdAt: "asc" } },
         satuanProduk: {
           orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
         },
@@ -383,14 +514,15 @@ export async function updateProduct(
     });
   });
 
-  // Catat riwayat perubahan harga ke log (User Story B5)
+  // Catat riwayat perubahan harga ke log
   await logActivity({
     userId,
-    role: "OWNER",
+    role: options?.userRole || "OWNER",
     aksi: "UBAH_PRODUK",
     entitas: "Produk",
     entitasId: id,
     sebelumJson: {
+      sku: sebelum.sku,
       nama: sebelum.nama,
       barcode: sebelum.barcode,
       satuanList: sebelum.satuanProduk.map((s) => ({
@@ -400,6 +532,7 @@ export async function updateProduct(
       })),
     },
     sesudahJson: {
+      sku: updated?.sku,
       nama: updated?.nama,
       barcode: updated?.barcode,
       satuanList: updated?.satuanProduk.map((s) => ({
@@ -414,6 +547,82 @@ export async function updateProduct(
   return updated;
 }
 
+export async function duplicateProduct(
+  sourceId: string,
+  userId: string,
+  ip?: string,
+  userRole?: string
+) {
+  const source = await prisma.produk.findUnique({
+    where: { id: sourceId },
+    include: { satuanProduk: true, kategori: true },
+  });
+
+  if (!source) throw new Error("Produk sumber tidak ditemukan");
+
+  const duplicated = await prisma.$transaction(async (tx) => {
+    const newSku = await generateUniqueSku(tx, source.kategoriId, source.kategori?.nama);
+    const hasDefault = source.satuanProduk.some((s) => s.isDefault);
+    const unitsToCreate =
+      source.satuanProduk.length > 0
+        ? source.satuanProduk.map((s, idx) => ({
+            namaSatuan: s.namaSatuan,
+            faktorKeDasar: s.faktorKeDasar,
+            hargaJual: s.hargaJual,
+            hargaBeli: s.hargaBeli,
+            isDefault: hasDefault ? s.isDefault : idx === 0,
+          }))
+        : [
+            {
+              namaSatuan: source.satuanDasar || "pcs",
+              faktorKeDasar: new Prisma.Decimal(1),
+              hargaJual: 0,
+              hargaBeli: 0,
+              isDefault: true,
+            },
+          ];
+
+    return tx.produk.create({
+      data: {
+        sku: newSku,
+        nama: `${source.nama} (Salinan)`,
+        kategoriId: source.kategoriId,
+        groupId: source.groupId,
+        variantName: source.variantName,
+        barcode: null,
+        satuanDasar: source.satuanDasar,
+        stokMinimum: source.stokMinimum,
+        stokCache: new Prisma.Decimal(0),
+        stokKosong: new Prisma.Decimal(0),
+        isRefill: source.isRefill,
+        satuanProduk: {
+          create: unitsToCreate,
+        },
+      },
+      include: {
+        kategori: true,
+        barcodes: { orderBy: { createdAt: "asc" } },
+        satuanProduk: {
+          orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
+        },
+      },
+    });
+  });
+
+  await logActivity({
+    userId,
+    role: userRole || "OWNER",
+    aksi: "DUPLIKAT_PRODUK",
+    entitas: "Produk",
+    entitasId: duplicated.id,
+    sebelumJson: { sourceId: source.id, sourceSku: source.sku, sourceNama: source.nama },
+    sesudahJson: { sku: duplicated.sku, nama: duplicated.nama },
+    ip,
+  });
+
+  return duplicated;
+}
+
 export interface BulkRaisePriceInput {
   scope: "SINGLE" | "CATEGORY" | "ALL";
   produkId?: string;
@@ -422,6 +631,7 @@ export interface BulkRaisePriceInput {
   amount: number;
   roundTo?: 0 | 100 | 500;
   includeHargaBeli?: boolean;
+  allowEditHargaBeli?: boolean;
   role?: string;
 }
 
@@ -466,11 +676,24 @@ export async function bulkRaisePrices(
     throw new Error("Tidak ada produk yang cocok untuk dinaikkan harganya");
   }
 
+  const settings = await getSettings();
+  const canUpdateCost =
+    Boolean(input.includeHargaBeli) &&
+    settings.aktifkanHargaBeli &&
+    input.allowEditHargaBeli !== false;
+
   const roundTo = input.roundTo ?? 0;
   let updatedUnits = 0;
 
   await prisma.$transaction(async (tx) => {
     for (const p of products) {
+      const beforeUnits = p.satuanProduk.map((s) => ({
+        namaSatuan: s.namaSatuan,
+        hargaJual: s.hargaJual,
+        hargaBeli: s.hargaBeli,
+      }));
+      const afterUnits: { namaSatuan: string; hargaJual: number; hargaBeli: number }[] = [];
+
       for (const s of p.satuanProduk) {
         const faktor = Number(s.faktorKeDasar) || 1;
         const newJual = calculateRaisedPrice(
@@ -480,7 +703,7 @@ export async function bulkRaisePrices(
           input.amount,
           roundTo
         );
-        const newBeli = input.includeHargaBeli
+        const newBeli = canUpdateCost
           ? calculateRaisedPrice(
               s.hargaBeli,
               faktor,
@@ -494,11 +717,26 @@ export async function bulkRaisePrices(
           where: { id: s.id },
           data: {
             hargaJual: newJual,
-            ...(input.includeHargaBeli ? { hargaBeli: newBeli } : {}),
+            ...(canUpdateCost ? { hargaBeli: newBeli } : {}),
           },
+        });
+        afterUnits.push({
+          namaSatuan: s.namaSatuan,
+          hargaJual: newJual,
+          hargaBeli: newBeli,
         });
         updatedUnits += 1;
       }
+
+      await recordPriceChanges({
+        tx,
+        produkId: p.id,
+        namaProduk: p.nama,
+        beforeUnits,
+        afterUnits,
+        userId,
+        keterangan: `Kenaikan harga (${input.mode === "PERCENT" ? `${input.amount}%` : `Rp ${input.amount}`})`,
+      });
     }
   });
 
@@ -551,12 +789,14 @@ export async function checkPrice(query: string) {
   const q = query.trim();
   if (!q) return [];
 
-  // Cari berdasarkan barcode persis atau nama produk
+  // Cari berdasarkan SKU, barcode persis, atau nama produk
   const products = await prisma.produk.findMany({
     where: {
       aktif: true,
       OR: [
+        { sku: { equals: q, mode: "insensitive" } },
         { barcode: q },
+        { barcodes: { some: { code: q } } },
         { nama: { contains: q, mode: "insensitive" } },
       ],
     },
@@ -592,6 +832,7 @@ export async function checkPrice(query: string) {
 
     return {
       id: p.id,
+      sku: p.sku,
       nama: p.nama,
       barcode: p.barcode,
       kategori: p.kategori?.nama || "Tanpa Kategori",

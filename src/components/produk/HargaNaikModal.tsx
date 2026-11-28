@@ -11,7 +11,7 @@ interface SatuanLite {
   namaSatuan: string;
   faktorKeDasar: number | string;
   hargaJual: number;
-  hargaBeli: number;
+  hargaBeli?: number;
   isDefault: boolean;
 }
 
@@ -34,6 +34,7 @@ interface HargaNaikModalProps {
   onClose: () => void;
   products: HargaNaikProductItem[];
   categories: KategoriLite[];
+  showHargaBeli?: boolean;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }
@@ -60,6 +61,7 @@ export function HargaNaikModal({
   onClose,
   products,
   categories,
+  showHargaBeli = true,
   onSuccess,
   onError,
 }: HargaNaikModalProps) {
@@ -137,7 +139,7 @@ export function HargaNaikModal({
           mode,
           amount: effectiveAmount,
           roundTo: mode === "PERCENT" ? roundTo : 0,
-          includeHargaBeli,
+          includeHargaBeli: showHargaBeli ? includeHargaBeli : false,
         }),
       });
       const data = await res.json();
@@ -373,15 +375,17 @@ export function HargaNaikModal({
           </div>
 
           {/* Opsi Harga Beli */}
-          <label className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-zinc-400 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={includeHargaBeli}
-              onChange={(e) => setIncludeHargaBeli(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-0"
-            />
-            <span>Naikkan harga beli (modal) juga</span>
-          </label>
+          {showHargaBeli && (
+            <label className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-zinc-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeHargaBeli}
+                onChange={(e) => setIncludeHargaBeli(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-0"
+              />
+              <span>Naikkan harga beli (modal) juga</span>
+            </label>
+          )}
 
           {/* 3. Pratinjau Minimalis */}
           {previewItems.length > 0 && (

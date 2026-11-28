@@ -6,6 +6,8 @@ import {
   getProductGroups,
 } from "@/services/product-group.service";
 import { createProductGroupSchema } from "@/lib/validations/product-group.schema";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductsCost } from "@/lib/product-visibility";
 
 export async function GET() {
   const session = await getSession();
@@ -13,8 +15,15 @@ export async function GET() {
     return NextResponse.json({ error: "Sesi tidak valid" }, { status: 401 });
   }
 
-  const groups = await getProductGroups();
-  return NextResponse.json({ groups });
+  const [groups, costCtx] = await Promise.all([
+    getProductGroups(),
+    getCostAccessContext(session),
+  ]);
+  const sanitized = groups.map((g) => ({
+    ...g,
+    produk: sanitizeProductsCost(g.produk, costCtx.showCost),
+  }));
+  return NextResponse.json({ groups: sanitized, meta: costCtx });
 }
 
 export async function POST(req: NextRequest) {
@@ -33,17 +42,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
     const result = await createProductGroupWithVariants(
       validated.data,
       session.userId,
-      ip
+      ip,
+      { allowEditHargaBeli: costCtx.canViewHargaBeli }
     );
 
     return NextResponse.json(
       {
         message: `Grup "${result.group.nama}" dengan ${result.variants.length} varian berhasil dibuat`,
-        ...result,
+        group: result.group,
+        variants: sanitizeProductsCost(result.variants, costCtx.showCost),
       },
       { status: 201 }
     );

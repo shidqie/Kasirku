@@ -56,6 +56,7 @@ interface SettingsData {
   batasDiskonStaff: number;
   ambangUtangLamaHari: number;
   bolehJualStokNol: boolean;
+  aktifkanHargaBeli?: boolean;
   qrisModeDefault?: "DINAMIS" | "STATIS";
   qrisPayload?: string | null;
   qrisStaticImage?: string | null;
@@ -368,7 +369,7 @@ function TabToko() {
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-2.5">
             <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors">
               <input
                 type="checkbox"
@@ -382,6 +383,23 @@ function TabToko() {
                 </span>
                 <span className="text-xs text-slate-500">
                   Default tidak boleh. Jika diaktifkan, kasir tetap dapat checkout barang meskipun stok sistem sudah habis.
+                </span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={settings.aktifkanHargaBeli ?? true}
+                onChange={(e) => setSettings({ ...settings, aktifkanHargaBeli: e.target.checked })}
+                className="w-5 h-5 text-[#F0090F] rounded-md border-slate-300 focus:ring-red-500"
+              />
+              <div>
+                <span className="text-sm font-bold text-slate-800 block">
+                  Aktifkan Pencatatan Harga Beli &amp; Margin Keuntungan
+                </span>
+                <span className="text-xs text-slate-500">
+                  Menampilkan kolom modal, input harga beli, dan margin keuntungan bagi pemilik atau staf berizin khusus. Jika dinonaktifkan, data harga beli lama tetap aman tersimpan di database.
                 </span>
               </div>
             </label>

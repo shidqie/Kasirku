@@ -30,11 +30,14 @@ import {
   Layers,
   Split,
   Copy,
+  History,
 } from "lucide-react";
 import { groupProductsForDisplay, formatPriceRange } from "@/lib/product-grouping";
 import { parseScan } from "@/lib/barcode";
+import { calculateMargin } from "@/lib/product-visibility";
+import { hasPermission, hasAnyPermission } from "@/lib/auth/permissions";
 import { VariantGroupFormModal, SplitProductModal } from "@/components/produk/ProductVariantModals";
-import { formatRupiah, formatDecimal } from "@/lib/formatters";
+import { formatRupiah, formatDecimal, formatDateTime } from "@/lib/formatters";
 import { isRefillProduct } from "@/lib/refill";
 import { formatProductCode } from "@/lib/codification";
 import { downloadPriceListPdf, downloadPriceListCsv } from "@/lib/pdf-price-list";
@@ -53,12 +56,13 @@ interface SatuanInput {
   namaSatuan: string;
   faktorKeDasar: number;
   hargaJual: number;
-  hargaBeli: number;
+  hargaBeli?: number;
   isDefault: boolean;
 }
 
 interface ProductItem {
   id: string;
+  sku?: string | null;
   nama: string;
   groupId?: string | null;
   variantName?: string | null;
@@ -81,9 +85,21 @@ interface ProductItem {
     namaSatuan: string;
     faktorKeDasar: string | number;
     hargaJual: number;
-    hargaBeli: number;
+    hargaBeli?: number;
     isDefault: boolean;
   }[];
+}
+
+interface PriceHistoryItem {
+  id: string;
+  namaProduk: string;
+  namaSatuan: string;
+  jenisPerubahan: "HARGA_JUAL" | "HARGA_BELI" | string;
+  hargaLama: number;
+  hargaBaru: number;
+  namaPengguna: string | null;
+  keterangan: string | null;
+  dibuatPada: string;
 }
 
 interface CategoryOption {
@@ -169,12 +185,21 @@ function TabProduk() {
   const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM" | "EXTRA_BARCODE" | "VARIANT_ROW">("FORM");
   const [isMultiVariant, setIsMultiVariant] = useState(false);
   const [variantRows, setVariantRows] = useState<
-    Array<{ nama: string; barcode: string; hargaJual: number; stokAwal: number }>
+    Array<{ nama: string; barcode: string; hargaJual: number; hargaBeli: number; stokAwal: number }>
   >([
-    { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
-    { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+    { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
+    { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
   ]);
   const [variantScanIdx, setVariantScanIdx] = useState<number | null>(null);
+  const [userAccess, setUserAccess] = useState<{ role: string; permissions?: string[] } | null>(null);
+  const [costMeta, setCostMeta] = useState<{
+    hargaBeliAktif: boolean;
+    canViewHargaBeli: boolean;
+    showCost: boolean;
+  }>({ hargaBeliAktif: false, canViewHargaBeli: false, showCost: false });
+  const [togglingHargaBeli, setTogglingHargaBeli] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([]);
+  const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [newExtraBarcode, setNewExtraBarcode] = useState("");
   const [addingExtraBarcode, setAddingExtraBarcode] = useState(false);
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
@@ -196,6 +221,7 @@ function TabProduk() {
   const [isDrawerEditing, setIsDrawerEditing] = useState(false);
   const [savingInDrawer, setSavingInDrawer] = useState(false);
   const [nama, setNama] = useState("");
+  const [sku, setSku] = useState("");
   const [kategoriId, setKategoriId] = useState<string>("");
   const [barcode, setBarcode] = useState("");
   const [satuanDasar, setSatuanDasar] = useState("kg");
@@ -232,12 +258,66 @@ function TabProduk() {
       const pData = await pRes.json();
       const cData = await cRes.json();
 
-      if (pRes.ok) setProducts(pData.products || []);
+      if (pRes.ok) {
+        setProducts(pData.products || []);
+        if (pData.meta) setCostMeta(pData.meta);
+      }
       if (cRes.ok) setCategories(cData.categories || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) setUserAccess(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!detailProduct?.product?.id) {
+      setPriceHistory([]);
+      return;
+    }
+    setLoadingPriceHistory(true);
+    fetch(`/api/products/${detailProduct.product.id}/price-history`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data?.history)) {
+          setPriceHistory(data.history);
+        } else {
+          setPriceHistory([]);
+        }
+      })
+      .catch(() => setPriceHistory([]))
+      .finally(() => setLoadingPriceHistory(false));
+  }, [detailProduct?.product?.id, costMeta.showCost]);
+
+  const handleToggleHargaBeli = async () => {
+    if (togglingHargaBeli) return;
+    setTogglingHargaBeli(true);
+    setError(null);
+    try {
+      const next = !costMeta.hargaBeliAktif;
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aktifkanHargaBeli: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah pengaturan harga beli");
+      setSuccess(data.message);
+      setIsDownloadMenuOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      setError(err.message || "Gagal mengubah pengaturan harga beli");
+    } finally {
+      setTogglingHargaBeli(false);
     }
   };
 
@@ -250,11 +330,12 @@ function TabProduk() {
     setEditingProductId(null);
     setIsMultiVariant(false);
     setVariantRows([
-      { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
-      { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+      { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
+      { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
     ]);
     setVariantScanIdx(null);
     setNama("");
+    setSku("");
     setKategoriId("");
     setBarcode("");
     setSatuanDasar("kg");
@@ -269,6 +350,7 @@ function TabProduk() {
   const openEditInDrawer = (p: ProductItem) => {
     setEditingProductId(p.id);
     setNama(p.nama);
+    setSku(p.sku || "");
     setKategoriId(p.kategori?.id || "");
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
@@ -281,7 +363,7 @@ function TabProduk() {
         namaSatuan: s.namaSatuan,
         faktorKeDasar: Number(s.faktorKeDasar),
         hargaJual: s.hargaJual,
-        hargaBeli: s.hargaBeli,
+        hargaBeli: s.hargaBeli ?? 0,
         isDefault: s.isDefault,
       }))
     );
@@ -320,13 +402,21 @@ function TabProduk() {
     try {
       const payload = {
         nama: nama.trim(),
+        ...(sku.trim() ? { sku: sku.trim() } : {}),
         kategoriId: kategoriId || null,
         barcode: barcode.trim() || null,
         satuanDasar: satuanDasar.trim(),
         stokMinimum: Number(stokMinimum) || 0,
         isRefill,
         ...(isRefill ? { stokKosong: Number(stokKosong) || 0 } : {}),
-        satuanList,
+        satuanList: satuanList.map((s) => ({
+          ...(s.id ? { id: s.id } : {}),
+          namaSatuan: s.namaSatuan,
+          faktorKeDasar: Number(s.faktorKeDasar),
+          hargaJual: Number(s.hargaJual) || 0,
+          ...(costMeta.showCost ? { hargaBeli: Number(s.hargaBeli) || 0 } : {}),
+          isDefault: Boolean(s.isDefault),
+        })),
       };
 
       const res = await fetch(`/api/products/${p.id}`, {
@@ -341,7 +431,7 @@ function TabProduk() {
       setSuccess(`Produk "${nama}" berhasil diperbarui`);
       setIsDrawerEditing(false);
       if (data.product) {
-        setDetailProduct({ product: data.product, idBarang: detailProduct.idBarang });
+        setDetailProduct({ product: data.product, idBarang: data.product.sku || detailProduct.idBarang });
       }
       fetchData();
     } catch (err: any) {
@@ -354,6 +444,7 @@ function TabProduk() {
   const openEditModal = (p: ProductItem) => {
     setEditingProductId(p.id);
     setNama(p.nama);
+    setSku(p.sku || "");
     setKategoriId(p.kategori?.id || "");
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
@@ -366,7 +457,7 @@ function TabProduk() {
         namaSatuan: s.namaSatuan,
         faktorKeDasar: Number(s.faktorKeDasar),
         hargaJual: s.hargaJual,
-        hargaBeli: s.hargaBeli,
+        hargaBeli: s.hargaBeli ?? 0,
         isDefault: s.isDefault,
       }))
     );
@@ -439,6 +530,128 @@ function TabProduk() {
         );
       })}
     </div>
+  );
+
+  const renderEditableUnitTable = () => (
+    <table className="w-full text-left text-xs border-collapse">
+      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+        <tr className="divide-x divide-slate-200">
+          <th className="py-2 px-2.5 font-semibold">Satuan</th>
+          <th className="py-2 px-1.5 font-semibold text-center w-16">
+            Isi ({satuanDasar || "pcs"})
+          </th>
+          {costMeta.showCost && (
+            <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
+          )}
+          <th className="py-2 px-2.5 font-semibold text-right">Jual</th>
+          <th className="py-2 px-2 font-semibold text-right whitespace-nowrap">
+            {costMeta.showCost ? "Margin" : `Per ${satuanDasar || "pcs"}`}
+          </th>
+          {satuanList.length > 1 && <th className="py-2 px-1 w-7"></th>}
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-200 text-slate-600">
+        {satuanList.map((s, idx) => {
+          const faktor = Number(s.faktorKeDasar) || 1;
+          const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
+          const margin = calculateMargin(Number(s.hargaJual) || 0, Number(s.hargaBeli ?? 0));
+          return (
+            <tr key={idx} className="divide-x divide-slate-200">
+              <td className="p-0">
+                <input
+                  type="text"
+                  required
+                  list="preset-multi-satuan"
+                  value={s.namaSatuan}
+                  onChange={(e) => {
+                    const updated = [...satuanList];
+                    updated[idx].namaSatuan = e.target.value;
+                    setSatuanList(updated);
+                  }}
+                  placeholder="pcs, dus..."
+                  className="w-full h-9 px-2 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                />
+              </td>
+              <td className="p-0">
+                <NumberInput
+                  min={0.001}
+                  emptyFallback={1}
+                  required
+                  value={s.faktorKeDasar}
+                  onChange={(val) => {
+                    const updated = [...satuanList];
+                    updated[idx].faktorKeDasar = val;
+                    setSatuanList(updated);
+                  }}
+                  className="w-full h-9 text-center px-1.5 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
+                />
+              </td>
+              {costMeta.showCost && (
+                <td className="p-0">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={s.hargaBeli ? s.hargaBeli.toLocaleString("id-ID") : ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      const updated = [...satuanList];
+                      updated[idx].hargaBeli = digits ? parseInt(digits, 10) : 0;
+                      setSatuanList(updated);
+                    }}
+                    className="w-full h-9 px-2 bg-transparent text-xs font-medium text-right text-slate-700 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                  />
+                </td>
+              )}
+              <td className="p-0">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  placeholder="0"
+                  value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    const updated = [...satuanList];
+                    updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
+                    setSatuanList(updated);
+                  }}
+                  className="w-full h-9 px-2 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                />
+              </td>
+              <td className="py-2 px-2 text-right text-[11px] whitespace-nowrap tabular-nums">
+                {costMeta.showCost ? (
+                  <span
+                    className={`font-semibold ${
+                      margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
+                    }`}
+                  >
+                    {margin.percent !== null ? `${margin.percent}%` : formatRupiah(margin.nominal)}
+                  </span>
+                ) : (
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>/
+                    {satuanDasar || "pcs"}
+                  </span>
+                )}
+              </td>
+              {satuanList.length > 1 && (
+                <td className="p-0 text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSatuanRow(idx)}
+                    className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer focus:outline-none"
+                    title="Hapus baris satuan ini"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              )}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 
   const handleRemoveSatuanRow = (index: number) => {
@@ -514,7 +727,7 @@ function TabProduk() {
                   namaSatuan: cleanSatuan,
                   faktorKeDasar: 1,
                   hargaJual: Number(r.hargaJual) || 0,
-                  hargaBeli: 0,
+                  ...(costMeta.showCost ? { hargaBeli: Number(r.hargaBeli) || 0 } : {}),
                   isDefault: true,
                 },
               ],
@@ -551,12 +764,20 @@ function TabProduk() {
 
     try {
       const payload = {
+        ...(sku.trim() ? { sku: sku.trim() } : {}),
         nama,
         kategoriId: kategoriId || null,
         barcode: barcode.trim() || null,
         satuanDasar,
         stokMinimum: Number(stokMinimum),
-        satuanList,
+        satuanList: satuanList.map((s) => ({
+          ...(s.id ? { id: s.id } : {}),
+          namaSatuan: s.namaSatuan,
+          faktorKeDasar: Number(s.faktorKeDasar),
+          hargaJual: Number(s.hargaJual) || 0,
+          ...(costMeta.showCost ? { hargaBeli: Number(s.hargaBeli) || 0 } : {}),
+          isDefault: Boolean(s.isDefault),
+        })),
       };
 
       const url = editingProductId ? `/api/products/${editingProductId}` : "/api/products";
@@ -586,46 +807,13 @@ function TabProduk() {
     setDuplicatingId(p.id);
     setError("");
     try {
-      const satuanListPayload =
-        p.satuanProduk && p.satuanProduk.length > 0
-          ? p.satuanProduk.map((s) => ({
-              namaSatuan: s.namaSatuan,
-              faktorKeDasar: Number(s.faktorKeDasar) || 1,
-              hargaJual: Number(s.hargaJual) || 0,
-              hargaBeli: Number(s.hargaBeli) || 0,
-              isDefault: Boolean(s.isDefault),
-            }))
-          : [
-              {
-                namaSatuan: p.satuanDasar || "pcs",
-                faktorKeDasar: 1,
-                hargaJual: 0,
-                hargaBeli: 0,
-                isDefault: true,
-              },
-            ];
-
-      const payload = {
-        nama: `${p.nama} (Salinan)`,
-        kategoriId: p.kategori?.id || null,
-        groupId: p.groupId || null,
-        variantName: p.variantName || null,
-        barcode: null,
-        satuanDasar: p.satuanDasar,
-        stokMinimum: Number(p.stokMinimum) || 0,
-        isRefill: Boolean(p.isRefill),
-        satuanList: satuanListPayload,
-      };
-
-      const res = await fetch("/api/products", {
+      const res = await fetch(`/api/products/${p.id}/duplicate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal menduplikat produk");
 
-      setSuccess(`Produk "${p.nama}" berhasil diduplikat dengan ID baru`);
+      setSuccess(data.message || `Produk "${p.nama}" berhasil diduplikat dengan SKU baru`);
       await fetchData();
     } catch (err: any) {
       setError(err.message || "Gagal menduplikat produk");
@@ -665,10 +853,27 @@ function TabProduk() {
   const penyesuaianHargaCount = products.filter((p) => p.penyesuaianHarga).length;
   const updatedOrNewCount = products.filter((p) => p.isBaru || p.isDiperbarui).length;
 
+  const canManageProduct = !userAccess || hasPermission(userAccess, "produk:manage");
+  const canEditPrice =
+    !userAccess || hasAnyPermission(userAccess, ["produk:manage", "produk:price", "satuan:manage"]);
+  const canToggleCost =
+    userAccess?.role === "OWNER" || (userAccess ? hasPermission(userAccess, "settings:manage") : false);
+
   const filteredProducts = products.filter((p) => {
     if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
     if (selectedKategori === "__PENYESUAIAN_HARGA__" && !p.penyesuaianHarga) return false;
     if (selectedKategori === "__UPDATED__" && !p.isBaru && !p.isDiperbarui) return false;
+    const qLower = searchQuery.trim().toLowerCase();
+    if (qLower) {
+      const matchName = p.nama.toLowerCase().includes(qLower);
+      const matchSku = (p.sku || "").toLowerCase().includes(qLower);
+      const matchBarcode =
+        (p.barcode || "").toLowerCase().includes(qLower) ||
+        Boolean(p.barcodes?.some((b) => b.code.toLowerCase().includes(qLower)));
+      const matchVariant = (p.variantName || "").toLowerCase().includes(qLower);
+      const matchGroup = (p.group?.nama || "").toLowerCase().includes(qLower);
+      if (!matchName && !matchSku && !matchBarcode && !matchVariant && !matchGroup) return false;
+    }
     const stok = Number(p.stokCache);
     const min = Number(p.stokMinimum);
     if (filterStok === "HABIS") return stok <= 0;
@@ -694,18 +899,22 @@ function TabProduk() {
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-              Kelola produk sembako, multi-satuan, harga jual/beli, dan stok minimum.
+              {costMeta.showCost
+                ? "Kelola produk sembako, SKU, multi-satuan, harga jual/beli, dan stok minimum."
+                : "Kelola produk sembako, SKU, multi-satuan, harga jual, dan ketersediaan stok."}
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={openCreateModal}
-              className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
-            >
-              <span className="hidden sm:inline">Tambah produk</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
+            {canManageProduct && (
+              <button
+                onClick={openCreateModal}
+                className="h-10 px-3.5 sm:px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 active:scale-95 text-white dark:text-zinc-900 font-semibold rounded-xl transition-all flex items-center gap-1.5 text-xs cursor-pointer"
+              >
+                <span className="hidden sm:inline">Tambah produk</span>
+                <span className="sm:hidden">Tambah</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 setScannerTarget("SEARCH");
@@ -722,7 +931,7 @@ function TabProduk() {
                 type="button"
                 onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
                 className="h-10 w-10 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 active:scale-95 rounded-xl transition-all flex items-center justify-center cursor-pointer"
-                title="Menu lainnya (Varian, Import, Download Harga, Harga Naik)"
+                title="Menu lainnya"
                 aria-label="Menu lainnya"
               >
                 <MoreHorizontal className="w-4 h-4" />
@@ -734,29 +943,33 @@ function TabProduk() {
                     className="fixed inset-0 z-30"
                     onClick={() => setIsDownloadMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-1.5 w-56 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDownloadMenuOpen(false);
-                        setIsVariantGroupOpen(true);
-                      }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-violet-600" />
-                      <span>Tambah Produk Bervarian</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDownloadMenuOpen(false);
-                        setIsImportOpen(true);
-                      }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Import Data (.csv)</span>
-                    </button>
+                  <div className="absolute right-0 mt-1.5 w-60 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 shadow-lg py-1.5 z-40">
+                    {canManageProduct && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDownloadMenuOpen(false);
+                            setIsVariantGroupOpen(true);
+                          }}
+                          className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Layers className="w-3.5 h-3.5 text-violet-600" />
+                          <span>Tambah Produk Bervarian</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDownloadMenuOpen(false);
+                            setIsImportOpen(true);
+                          }}
+                          className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Import Data (.csv)</span>
+                        </button>
+                      </>
+                    )}
                     <button
                       type="button"
                       disabled={downloadingPriceList || products.length === 0}
@@ -779,25 +992,48 @@ function TabProduk() {
                       disabled={products.length === 0}
                       onClick={() => {
                         setIsDownloadMenuOpen(false);
-                        downloadPriceListCsv(products);
+                        downloadPriceListCsv(products, costMeta.showCost);
                       }}
                       className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-2.5 cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Download Excel (.csv)</span>
                     </button>
-                    <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDownloadMenuOpen(false);
-                        setIsHargaNaikOpen(true);
-                      }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-50/70 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>Harga Naik</span>
-                    </button>
+                    {(canManageProduct || canToggleCost) && (
+                      <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+                    )}
+                    {canManageProduct && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDownloadMenuOpen(false);
+                          setIsHargaNaikOpen(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-50/70 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Harga Naik</span>
+                      </button>
+                    )}
+                    {canToggleCost && (
+                      <button
+                        type="button"
+                        disabled={togglingHargaBeli}
+                        onClick={handleToggleHargaBeli}
+                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <span>Pencatatan Harga Beli</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            costMeta.hargaBeliAktif
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {togglingHargaBeli ? "..." : costMeta.hargaBeliAktif ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -811,7 +1047,7 @@ function TabProduk() {
             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Cari nama atau barcode"
+              placeholder="Cari nama, SKU, atau barcode"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -978,9 +1214,10 @@ function TabProduk() {
         <DataTable>
             <DataTableHeader>
               <tr>
-                <DataTableHead>ID</DataTableHead>
+                <DataTableHead>SKU</DataTableHead>
                 <DataTableHead>Nama Produk</DataTableHead>
                 <DataTableHead>Kategori</DataTableHead>
+                {costMeta.showCost && <DataTableHead align="right">Harga Beli</DataTableHead>}
                 <DataTableHead align="right">Harga Jual</DataTableHead>
                 <DataTableHead align="right">Stok</DataTableHead>
                 <DataTableHead align="center">Aksi</DataTableHead>
@@ -988,9 +1225,9 @@ function TabProduk() {
             </DataTableHeader>
             <DataTableBody>
               {loading ? (
-                <TableSkeletonRows rows={8} cols={6} />
+                <TableSkeletonRows rows={8} cols={costMeta.showCost ? 7 : 6} />
               ) : filteredProducts.length === 0 ? (
-                <DataTableEmpty colSpan={6}>
+                <DataTableEmpty colSpan={costMeta.showCost ? 7 : 6}>
                   Tidak ada produk yang cocok.
                 </DataTableEmpty>
               ) : (
@@ -1017,9 +1254,12 @@ function TabProduk() {
                         )
                       : null;
                     const hargaEceran = satuanEceran?.hargaJual || 0;
+                    const hargaBeliEceran = satuanEceran?.hargaBeli;
+                    const margin = calculateMargin(hargaEceran, hargaBeliEceran);
                     const konversiStokDisplay = satuanGrosir && Number(satuanGrosir.faktorKeDasar) > 1
                       ? Math.floor(stok / Number(satuanGrosir.faktorKeDasar))
                       : null;
+                    const displaySku = p.sku || idBarang;
 
                     return (
                       <tr
@@ -1032,7 +1272,7 @@ function TabProduk() {
                       >
                         <td className="py-3.5 pr-4 whitespace-nowrap">
                           <span className={`text-xs font-mono text-slate-500 dark:text-zinc-400 ${isVariantChild ? "pl-4" : ""}`}>
-                            {idBarang}
+                            {displaySku}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 min-w-[180px]">
@@ -1078,10 +1318,37 @@ function TabProduk() {
                             {p.kategori?.nama || <span className="text-slate-400 italic">Umum</span>}
                           </span>
                         </td>
+                        {costMeta.showCost && (
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-medium text-slate-700 dark:text-zinc-300 tabular-nums">
+                                {typeof hargaBeliEceran === "number" ? formatRupiah(hargaBeliEceran) : "-"}
+                              </span>
+                              {typeof hargaBeliEceran === "number" && hargaBeliEceran > 0 && (
+                                <span
+                                  className={`text-[10px] font-semibold tabular-nums ${
+                                    margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
+                                  }`}
+                                >
+                                  {margin.nominal >= 0 ? "+" : ""}
+                                  {formatRupiah(margin.nominal)}
+                                  {margin.percent !== null ? ` (${margin.percent}%)` : ""}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        )}
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
-                            {formatRupiah(hargaEceran)}
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
+                              {formatRupiah(hargaEceran)}
+                            </span>
+                            {satuanGrosir && (
+                              <span className="text-[10px] text-slate-400 tabular-nums">
+                                {satuanGrosir.namaSatuan}: {formatRupiah(satuanGrosir.hargaJual)}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center justify-end gap-1.5">
@@ -1118,41 +1385,47 @@ function TabProduk() {
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           <div className="inline-flex items-center justify-center gap-0.5">
                             <button
-                              onClick={() => setDetailProduct({ product: p, idBarang })}
+                              onClick={() => setDetailProduct({ product: p, idBarang: displaySku })}
                               className="w-7 h-7 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
                               title="Detail produk"
                               aria-label="Detail produk"
                             >
                               <FileText className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => {
-                                setDetailProduct({ product: p, idBarang });
-                                openEditInDrawer(p);
-                              }}
-                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
-                              title="Edit produk & harga"
-                              aria-label="Edit produk"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDuplicate(p)}
-                              disabled={duplicatingId === p.id}
-                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer disabled:opacity-40"
-                              title="Duplikat produk dengan ID baru"
-                              aria-label="Duplikat produk"
-                            >
-                              <Copy className={`w-3.5 h-3.5 ${duplicatingId === p.id ? "animate-pulse" : ""}`} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(p)}
-                              className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
-                              title="Hapus produk"
-                              aria-label="Hapus produk"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {canEditPrice && (
+                              <button
+                                onClick={() => {
+                                  setDetailProduct({ product: p, idBarang: displaySku });
+                                  openEditInDrawer(p);
+                                }}
+                                className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                                title="Edit produk & harga"
+                                aria-label="Edit produk"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canManageProduct && (
+                              <>
+                                <button
+                                  onClick={() => handleDuplicate(p)}
+                                  disabled={duplicatingId === p.id}
+                                  className="w-7 h-7 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer disabled:opacity-40"
+                                  title="Duplikat produk dengan SKU baru"
+                                  aria-label="Duplikat produk"
+                                >
+                                  <Copy className={`w-3.5 h-3.5 ${duplicatingId === p.id ? "animate-pulse" : ""}`} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(p)}
+                                  className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                                  title="Hapus produk"
+                                  aria-label="Hapus produk"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1231,6 +1504,22 @@ function TabProduk() {
                         <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                           {catName}
                         </td>
+                        {costMeta.showCost && (() => {
+                          const buyPrices = entry.variants
+                            .map((v) => {
+                              const def =
+                                v.satuanProduk.find((s) => s.isDefault) || v.satuanProduk[0];
+                              return def?.hargaBeli;
+                            })
+                            .filter((n): n is number => typeof n === "number");
+                          const minBuy = buyPrices.length ? Math.min(...buyPrices) : 0;
+                          const maxBuy = buyPrices.length ? Math.max(...buyPrices) : 0;
+                          return (
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap text-xs text-slate-600 tabular-nums">
+                              {buyPrices.length > 0 ? formatPriceRange(minBuy, maxBuy) : "-"}
+                            </td>
+                          );
+                        })()}
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <span className="font-bold text-slate-900 dark:text-zinc-100 text-sm tabular-nums">
                             {formatPriceRange(entry.minPrice, entry.maxPrice)}
@@ -1356,7 +1645,19 @@ function TabProduk() {
                 }}
                 className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm"
               >
-                {/* 1. Barcode */}
+                {/* 1. SKU & Barcode */}
+                {isDrawerEditing && (
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">SKU</span>
+                    <input
+                      type="text"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      placeholder="Otomatis (PRD-...)"
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-400 text-xs">Barcode</span>
                   {!isDrawerEditing ? (
@@ -1413,28 +1714,51 @@ function TabProduk() {
                         <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                           <tr className="divide-x divide-slate-200">
                             <th className="py-2 px-3 font-semibold">Satuan</th>
-                            <th className="py-2 px-2.5 font-semibold text-center">Isi</th>
-                            <th className="py-2 px-3 font-semibold text-right">Harga</th>
-                            <th className="py-2 px-3 font-semibold text-right">Per {p.satuanDasar}</th>
+                            <th className="py-2 px-2 font-semibold text-center">Isi</th>
+                            {costMeta.showCost && (
+                              <th className="py-2 px-2.5 font-semibold text-right">Beli</th>
+                            )}
+                            <th className="py-2 px-2.5 font-semibold text-right">Jual</th>
+                            <th className="py-2 px-2.5 font-semibold text-right">
+                              {costMeta.showCost ? "Margin" : `Per ${p.satuanDasar}`}
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 text-slate-600">
                           {p.satuanProduk.map((s) => {
                             const faktor = Number(s.faktorKeDasar) || 1;
                             const hargaPerDasar = Math.round(s.hargaJual / faktor);
+                            const margin = calculateMargin(s.hargaJual, s.hargaBeli);
                             return (
                               <tr key={s.id} className="divide-x divide-slate-200">
                                 <td className="py-2 px-3 font-medium text-slate-900 capitalize">
                                   {s.namaSatuan}
                                 </td>
-                                <td className="py-2 px-2.5 text-center text-slate-600 font-mono">
+                                <td className="py-2 px-2 text-center text-slate-600 font-mono">
                                   {formatDecimal(faktor)}
                                 </td>
-                                <td className="py-2 px-3 text-right font-semibold text-slate-900 whitespace-nowrap">
+                                {costMeta.showCost && (
+                                  <td className="py-2 px-2.5 text-right text-slate-600 whitespace-nowrap tabular-nums">
+                                    {typeof s.hargaBeli === "number" ? formatRupiah(s.hargaBeli) : "-"}
+                                  </td>
+                                )}
+                                <td className="py-2 px-2.5 text-right font-semibold text-slate-900 whitespace-nowrap tabular-nums">
                                   {formatRupiah(s.hargaJual)}
                                 </td>
-                                <td className="py-2 px-3 text-right text-slate-500 whitespace-nowrap">
-                                  {formatRupiah(hargaPerDasar)}
+                                <td className="py-2 px-2.5 text-right whitespace-nowrap tabular-nums">
+                                  {costMeta.showCost ? (
+                                    <span
+                                      className={`font-semibold ${
+                                        margin.nominal >= 0 ? "text-emerald-600" : "text-rose-600"
+                                      }`}
+                                    >
+                                      {margin.percent !== null
+                                        ? `${margin.percent}%`
+                                        : formatRupiah(margin.nominal)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-500">{formatRupiah(hargaPerDasar)}</span>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -1442,97 +1766,7 @@ function TabProduk() {
                         </tbody>
                       </table>
                     ) : (
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                          <tr className="divide-x divide-slate-200">
-                            <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                            <th className="py-2 px-2 font-semibold text-center w-20">
-                              Isi ({satuanDasar || "pcs"})
-                            </th>
-                            <th className="py-2 px-2.5 font-semibold text-right">Harga jual</th>
-                            <th className="py-2 px-2.5 font-semibold text-right">
-                              Per {satuanDasar || "pcs"}
-                            </th>
-                            {satuanList.length > 1 && <th className="py-2 px-1 w-8"></th>}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 text-slate-600">
-                          {satuanList.map((s, idx) => {
-                            const faktor = Number(s.faktorKeDasar) || 1;
-                            const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
-                            return (
-                              <tr key={idx} className="divide-x divide-slate-200">
-                                <td className="p-0">
-                                  <input
-                                    type="text"
-                                    required
-                                    list="preset-multi-satuan"
-                                    value={s.namaSatuan}
-                                    onChange={(e) => {
-                                      const u = [...satuanList];
-                                      u[idx].namaSatuan = e.target.value;
-                                      setSatuanList(u);
-                                    }}
-                                    placeholder="Satuan"
-                                    className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                                  />
-                                </td>
-                                <td className="p-0">
-                                  <NumberInput
-                                    min={0.001}
-                                    emptyFallback={1}
-                                    required
-                                    value={s.faktorKeDasar}
-                                    onChange={(val) => {
-                                      const u = [...satuanList];
-                                      u[idx].faktorKeDasar = val;
-                                      setSatuanList(u);
-                                    }}
-                                    className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                                  />
-                                </td>
-                                <td className="p-0">
-                                  <div className="relative flex items-center h-9 px-2.5">
-                                    <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
-                                      Rp
-                                    </span>
-                                    <input
-                                      type="text"
-                                      inputMode="numeric"
-                                      required
-                                      placeholder="0"
-                                      value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
-                                      onChange={(e) => {
-                                        const digits = e.target.value.replace(/\D/g, "");
-                                        const u = [...satuanList];
-                                        u[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
-                                        setSatuanList(u);
-                                      }}
-                                      className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
-                                    />
-                                  </div>
-                                </td>
-                                <td className="py-2 px-2.5 text-right text-[11px] text-slate-500 whitespace-nowrap tabular-nums">
-                                  <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>
-                                  /{satuanDasar || "pcs"}
-                                </td>
-                                {satuanList.length > 1 && (
-                                  <td className="p-0 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveSatuanRow(idx)}
-                                      className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer focus:outline-none"
-                                      title="Hapus baris satuan ini"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </td>
-                                )}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      renderEditableUnitTable()
                     )}
                   </div>
                 </div>
@@ -1716,7 +1950,7 @@ function TabProduk() {
                               </span>
                             )}
                           </div>
-                          {b.id !== "main" && (
+                          {canManageProduct && b.id !== "main" && (
                             <div className="flex items-center gap-1 shrink-0">
                               {!isPrimary && (
                                 <button
@@ -1769,62 +2003,119 @@ function TabProduk() {
                   </div>
 
                   {/* Tambah kode tambahan (ketik atau scan) */}
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <input
-                      type="text"
-                      value={newExtraBarcode}
-                      onChange={(e) => setNewExtraBarcode(e.target.value)}
-                      placeholder="Tambah kode / barcode lain..."
-                      className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono"
-                    />
-                    <button
-                      type="button"
-                      disabled={addingExtraBarcode || !newExtraBarcode.trim()}
-                      onClick={async () => {
-                        const parsed = parseScan(newExtraBarcode);
-                        const codeToAdd = parsed.type === "product" ? parsed.code : newExtraBarcode.trim();
-                        const srcToAdd = parsed.type === "product" ? parsed.source : "manual";
-                        setAddingExtraBarcode(true);
-                        try {
-                          const res = await fetch(`/api/products/${p.id}/barcodes`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ code: codeToAdd, source: srcToAdd }),
-                          });
-                          const d = await res.json();
-                          if (!res.ok) {
-                            setError(d.error || "Gagal menambahkan kode");
-                            return;
+                  {canManageProduct && (
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <input
+                        type="text"
+                        value={newExtraBarcode}
+                        onChange={(e) => setNewExtraBarcode(e.target.value)}
+                        placeholder="Tambah kode / barcode lain..."
+                        className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-mono"
+                      />
+                      <button
+                        type="button"
+                        disabled={addingExtraBarcode || !newExtraBarcode.trim()}
+                        onClick={async () => {
+                          const parsed = parseScan(newExtraBarcode);
+                          const codeToAdd = parsed.type === "product" ? parsed.code : newExtraBarcode.trim();
+                          const srcToAdd = parsed.type === "product" ? parsed.source : "manual";
+                          setAddingExtraBarcode(true);
+                          try {
+                            const res = await fetch(`/api/products/${p.id}/barcodes`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ code: codeToAdd, source: srcToAdd }),
+                            });
+                            const d = await res.json();
+                            if (!res.ok) {
+                              setError(d.error || "Gagal menambahkan kode");
+                              return;
+                            }
+                            if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
+                            setNewExtraBarcode("");
+                            setSuccess(d.message);
+                            fetchData();
+                          } finally {
+                            setAddingExtraBarcode(false);
                           }
-                          if (d.product) setDetailProduct({ product: d.product, idBarang: detailProduct.idBarang });
-                          setNewExtraBarcode("");
-                          setSuccess(d.message);
-                          fetchData();
-                        } finally {
-                          setAddingExtraBarcode(false);
-                        }
-                      }}
-                      className="h-8 px-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40 cursor-pointer"
-                    >
-                      Tambah
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScannerTarget("EXTRA_BARCODE");
-                        setIsScannerOpen(true);
-                      }}
-                      className="h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
-                      title="Scan kode tambahan"
-                    >
-                      <Barcode className="w-3.5 h-3.5" />
-                      <span>Scan</span>
-                    </button>
-                  </div>
+                        }}
+                        className="h-8 px-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                      >
+                        Tambah
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannerTarget("EXTRA_BARCODE");
+                          setIsScannerOpen(true);
+                        }}
+                        className="h-8 px-2.5 rounded-lg border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                        title="Scan kode tambahan"
+                      >
+                        <Barcode className="w-3.5 h-3.5" />
+                        <span>Scan</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
+                {/* 2c. Riwayat Perubahan Harga */}
+                {!isDrawerEditing && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5" />
+                        <span>Riwayat Perubahan Harga ({priceHistory.length})</span>
+                      </span>
+                    </div>
+                    {loadingPriceHistory ? (
+                      <p className="text-xs text-slate-400">Memuat riwayat harga...</p>
+                    ) : priceHistory.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Belum ada perubahan harga tercatat.</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {priceHistory.map((h) => (
+                          <div
+                            key={h.id}
+                            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                    h.jenisPerubahan === "HARGA_BELI"
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-blue-50 text-blue-700"
+                                  }`}
+                                >
+                                  {h.jenisPerubahan === "HARGA_BELI" ? "Harga Beli" : "Harga Jual"}
+                                </span>
+                                <span className="font-medium text-slate-700 dark:text-zinc-200 capitalize">
+                                  {h.namaSatuan}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                {formatDateTime(h.dibuatPada)}
+                                {h.namaPengguna ? ` · ${h.namaPengguna}` : ""}
+                              </div>
+                            </div>
+                            <div className="text-right whitespace-nowrap shrink-0 tabular-nums">
+                              <span className="text-slate-400 line-through text-[11px] mr-1.5">
+                                {formatRupiah(h.hargaLama)}
+                              </span>
+                              <span className="font-bold text-slate-900 dark:text-zinc-100">
+                                {formatRupiah(h.hargaBaru)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* 3. Tombol Aksi (Detail/Read menampilkan Pecah Varian jika belum berkelompok; Edit menampilkan Batal + Simpan) */}
-                {!isDrawerEditing && !p.groupId && (
+                {!isDrawerEditing && !p.groupId && canManageProduct && (
                   <div className="pt-2">
                     <button
                       type="button"
@@ -1936,7 +2227,7 @@ function TabProduk() {
                       onClick={() =>
                         setVariantRows((prev) => [
                           ...prev,
-                          { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+                          { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
                         ])
                       }
                       className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
@@ -1951,9 +2242,12 @@ function TabProduk() {
                       <thead className="text-slate-500 border-b border-slate-200 bg-slate-50/70">
                         <tr className="divide-x divide-slate-200">
                           <th className="py-2 px-2.5 font-semibold">Nama</th>
-                          <th className="py-2 px-2.5 font-semibold w-32">Barcode</th>
-                          <th className="py-2 px-2.5 font-semibold text-right w-24">Harga</th>
-                          <th className="py-2 px-2.5 font-semibold text-right w-16">Stok</th>
+                          <th className="py-2 px-2.5 font-semibold w-28">Barcode</th>
+                          {costMeta.showCost && (
+                            <th className="py-2 px-2 font-semibold text-right w-20">Beli</th>
+                          )}
+                          <th className="py-2 px-2 font-semibold text-right w-20">Jual</th>
+                          <th className="py-2 px-2 font-semibold text-right w-14">Stok</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-700">
@@ -1990,13 +2284,13 @@ function TabProduk() {
                                       if (idx === variantRows.length - 1) {
                                         setVariantRows((prev) => [
                                           ...prev,
-                                          { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+                                          { nama: "", barcode: "", hargaJual: 0, hargaBeli: 0, stokAwal: 0 },
                                         ]);
                                       }
                                     }
                                   }}
                                   placeholder="scan barcode"
-                                  className="w-full h-full px-2.5 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500/80 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
+                                  className="w-full h-full px-2 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500/80 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
                                 />
                                 <button
                                   type="button"
@@ -2012,6 +2306,24 @@ function TabProduk() {
                                 </button>
                               </div>
                             </td>
+                            {costMeta.showCost && (
+                              <td className="p-0">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  value={row.hargaBeli ? row.hargaBeli.toLocaleString("id-ID") : ""}
+                                  onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, "");
+                                    const num = digits ? parseInt(digits, 10) : 0;
+                                    setVariantRows((prev) =>
+                                      prev.map((r, i) => (i === idx ? { ...r, hargaBeli: num } : r))
+                                    );
+                                  }}
+                                  className="w-full h-9 px-2 bg-transparent text-xs font-medium text-right text-slate-700 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
+                                />
+                              </td>
+                            )}
                             <td className="p-0">
                               <input
                                 type="text"
@@ -2025,7 +2337,7 @@ function TabProduk() {
                                     prev.map((r, i) => (i === idx ? { ...r, hargaJual: num } : r))
                                   );
                                 }}
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
+                                className="w-full h-9 px-2 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/30 tabular-nums"
                               />
                             </td>
                             <td className="p-0 relative">
@@ -2105,104 +2417,26 @@ function TabProduk() {
                 {renderUnitTemplates()}
 
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                      <tr className="divide-x divide-slate-200">
-                        <th className="py-2 px-2.5 font-semibold">Satuan</th>
-                        <th className="py-2 px-2 font-semibold text-center w-20">
-                          Isi ({satuanDasar || "pcs"})
-                        </th>
-                        <th className="py-2 px-2.5 font-semibold text-right">Harga jual</th>
-                        <th className="py-2 px-2.5 font-semibold text-right">
-                          Per {satuanDasar || "pcs"}
-                        </th>
-                        {satuanList.length > 1 && <th className="py-2 px-1 w-8"></th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-600">
-                      {satuanList.map((s, idx) => {
-                        const faktor = Number(s.faktorKeDasar) || 1;
-                        const perDasar = Math.round((Number(s.hargaJual) || 0) / faktor);
-                        return (
-                          <tr key={idx} className="divide-x divide-slate-200">
-                            <td className="p-0">
-                              <input
-                                type="text"
-                                required
-                                list="preset-multi-satuan"
-                                value={s.namaSatuan}
-                                onChange={(e) => {
-                                  const updated = [...satuanList];
-                                  updated[idx].namaSatuan = e.target.value;
-                                  setSatuanList(updated);
-                                }}
-                                placeholder="pcs, dus..."
-                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                              />
-                            </td>
-                            <td className="p-0">
-                              <NumberInput
-                                min={0.001}
-                                emptyFallback={1}
-                                required
-                                value={s.faktorKeDasar}
-                                onChange={(val) => {
-                                  const updated = [...satuanList];
-                                  updated[idx].faktorKeDasar = val;
-                                  setSatuanList(updated);
-                                }}
-                                className="w-full h-9 text-center px-2 bg-transparent text-xs font-mono text-slate-900 focus:outline-none focus:bg-blue-50/40"
-                              />
-                            </td>
-                            <td className="p-0">
-                              <div className="relative flex items-center h-9 px-2.5">
-                                <span className="text-[11px] text-slate-400 pointer-events-none select-none mr-1">
-                                  Rp
-                                </span>
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  required
-                                  placeholder="0"
-                                  value={s.hargaJual ? s.hargaJual.toLocaleString("id-ID") : ""}
-                                  onChange={(e) => {
-                                    const digits = e.target.value.replace(/\D/g, "");
-                                    const updated = [...satuanList];
-                                    updated[idx].hargaJual = digits ? parseInt(digits, 10) : 0;
-                                    setSatuanList(updated);
-                                  }}
-                                  className="w-full h-full bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none"
-                                />
-                              </div>
-                            </td>
-                            <td className="py-2 px-2.5 text-right text-[11px] text-slate-500 whitespace-nowrap tabular-nums">
-                              <span className="font-semibold text-slate-700">{formatRupiah(perDasar)}</span>
-                              /{satuanDasar || "pcs"}
-                            </td>
-                            {satuanList.length > 1 && (
-                              <td className="p-0 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveSatuanRow(idx)}
-                                  className="w-full h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer focus:outline-none"
-                                  title="Hapus baris satuan ini"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  {renderEditableUnitTable()}
                 </div>
               </div>
                 </>
               )}
 
-              {/* 3. Info List Properti Produk (Stok minimum, Satuan, Satuan dasar, Kategori) */}
+              {/* 3. Info List Properti Produk (SKU, Stok minimum, Satuan, Satuan dasar, Kategori) */}
               <div className="divide-y divide-slate-100">
+                {!isMultiVariant && (
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">SKU</span>
+                    <input
+                      type="text"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      placeholder="Otomatis (PRD-...)"
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Stok minimum</span>
                   <NumberInput
@@ -2591,6 +2825,7 @@ function TabProduk() {
         onClose={() => setIsHargaNaikOpen(false)}
         products={products}
         categories={categories}
+        showHargaBeli={costMeta.showCost}
         onSuccess={(msg) => {
           setSuccess(msg);
           fetchData();
@@ -2630,6 +2865,7 @@ function TabProduk() {
         isOpen={isVariantGroupOpen}
         onClose={() => setIsVariantGroupOpen(false)}
         categories={categories}
+        showHargaBeli={costMeta.showCost}
         onSuccess={(msg) => {
           setSuccess(msg);
           fetchData();
@@ -2639,6 +2875,7 @@ function TabProduk() {
       <SplitProductModal
         product={splitTarget}
         categories={categories}
+        showHargaBeli={costMeta.showCost}
         onClose={() => setSplitTarget(null)}
         onSuccess={(msg) => {
           setSuccess(msg);

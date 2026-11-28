@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { addVariantToGroup } from "@/services/product-group.service";
 import { variantItemInputSchema } from "@/lib/validations/product-group.schema";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function POST(
   req: NextRequest,
@@ -24,10 +26,16 @@ export async function POST(
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
-    const variant = await addVariantToGroup(id, validated.data, session.userId, ip);
+    const variant = await addVariantToGroup(id, validated.data, session.userId, ip, {
+      allowEditHargaBeli: costCtx.canViewHargaBeli,
+    });
     return NextResponse.json(
-      { message: `Varian "${variant.nama}" berhasil ditambahkan`, variant },
+      {
+        message: `Varian "${variant.nama}" berhasil ditambahkan`,
+        variant: sanitizeProductCost(variant, costCtx.showCost),
+      },
       { status: 201 }
     );
   } catch (error: any) {

@@ -34,6 +34,7 @@ export type Permission =
   | "produk:view"
   | "produk:manage"
   | "produk:price"
+  | "produk:cost"
   | "satuan:manage"
   | "kategori:manage"
   // Stok & Opname
@@ -85,6 +86,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<AppRole, Permission[]> = {
     "produk:view",
     "produk:manage",
     "produk:price",
+    "produk:cost",
     "satuan:manage",
     "kategori:manage",
     "stok:view",
@@ -176,6 +178,11 @@ export const DELEGATABLE_PERMISSIONS: {
     permission: "produk:price",
     label: "Ubah Harga Jual",
     description: "Mengubah harga jual dan satuan produk.",
+  },
+  {
+    permission: "produk:cost",
+    label: "Lihat & Atur Harga Beli / Margin",
+    description: "Melihat harga beli (modal), margin keuntungan, dan riwayat perubahan harga beli.",
   },
   {
     permission: "kasir:void",

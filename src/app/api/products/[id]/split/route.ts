@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth/session";
 import { hasAnyPermission } from "@/lib/auth/permissions";
 import { splitProductIntoVariants } from "@/services/product-group.service";
 import { splitProductSchema } from "@/lib/validations/product-group.schema";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductsCost } from "@/lib/product-visibility";
 
 export async function POST(
   req: NextRequest,
@@ -24,12 +26,16 @@ export async function POST(
       );
     }
 
+    const costCtx = await getCostAccessContext(session);
     const ip = req.headers.get("x-forwarded-for") || req.ip || undefined;
-    const result = await splitProductIntoVariants(id, validated.data, session.userId, ip);
+    const result = await splitProductIntoVariants(id, validated.data, session.userId, ip, {
+      allowEditHargaBeli: costCtx.canViewHargaBeli,
+    });
     return NextResponse.json(
       {
         message: `Produk berhasil dipecah menjadi ${result.variants.length} varian`,
-        ...result,
+        group: result.group,
+        variants: sanitizeProductsCost(result.variants, costCtx.showCost),
       },
       { status: 201 }
     );

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { satuanProdukSchema } from "./product.schema";
 
 export const variantItemInputSchema = z.object({
+  sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   variantName: z.string().min(1, "Nama varian/rasa wajib diisi"),
   barcode: z.string().nullable().optional(),
   satuanDasar: z.string().min(1, "Satuan dasar wajib diisi").default("pcs"),
@@ -53,6 +54,7 @@ export const moveProductToGroupSchema = z.object({
 });
 
 export const splitProductVariantRowSchema = z.object({
+  sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   variantName: z.string().min(1, "Nama varian wajib diisi"),
   barcode: z.string().nullable().optional(),
   stokAwal: z.number().nonnegative("Stok tidak boleh negatif").default(0),

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { getCostAccessContext } from "@/lib/auth/cost-access";
+import { sanitizeProductCost } from "@/lib/product-visibility";
 
 export async function POST(
   req: NextRequest,
@@ -73,9 +75,10 @@ export async function POST(
       });
     });
 
+    const costCtx = await getCostAccessContext(session);
     return NextResponse.json({
       message: `Barcode berhasil didaftarkan ke produk "${updated.nama}"`,
-      product: updated,
+      product: sanitizeProductCost(updated, costCtx.showCost),
     });
   } catch (err: any) {
     return NextResponse.json(
