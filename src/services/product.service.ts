@@ -5,6 +5,7 @@ import { isRefillProduct } from "@/lib/refill";
 import { getCategoryPrefix } from "@/lib/codification";
 import { getSettings } from "./settings.service";
 import { recordPriceChanges } from "./price-history.service";
+import { detectBrandFromName, resolveProductBrand } from "@/lib/brand-detector";
 
 export async function generateUniqueSku(
   tx: Prisma.TransactionClient,
@@ -51,6 +52,7 @@ export async function generateUniqueSku(
 export interface CreateProductInput {
   sku?: string | null;
   nama: string;
+  merek?: string | null;
   kategoriId?: string | null;
   groupId?: string | null;
   variantName?: string | null;
@@ -71,6 +73,7 @@ export interface CreateProductInput {
 export interface UpdateProductInput {
   sku?: string | null;
   nama?: string;
+  merek?: string | null;
   kategoriId?: string | null;
   groupId?: string | null;
   variantName?: string | null;
@@ -180,6 +183,7 @@ export async function getProducts(params?: {
     const q = params.search.trim();
     where.OR = [
       { nama: { contains: q, mode: "insensitive" } },
+      { merek: { contains: q, mode: "insensitive" } },
       { sku: { contains: q, mode: "insensitive" } },
       { barcode: { contains: q, mode: "insensitive" } },
       { barcodes: { some: { code: { contains: q, mode: "insensitive" } } } },
@@ -311,6 +315,7 @@ export async function createProduct(
 
   const settings = await getSettings();
   const canEditCost = (options?.allowEditHargaBeli ?? true) && settings.aktifkanHargaBeli;
+  const resolvedMerek = resolveProductBrand({ merek: input.merek, nama: input.nama });
 
   // Pastikan setidaknya satu satuan adalah default
   const hasDefault = input.satuanList.some((s) => s.isDefault);
@@ -328,6 +333,7 @@ export async function createProduct(
       data: {
         sku: finalSku,
         nama: input.nama,
+        merek: resolvedMerek,
         kategoriId: input.kategoriId || null,
         groupId: input.groupId || null,
         variantName: input.variantName ? input.variantName.trim() : null,
@@ -367,6 +373,7 @@ export async function createProduct(
     sesudahJson: {
       sku: product.sku,
       nama: product.nama,
+      merek: product.merek,
       barcode: product.barcode,
       satuanDasar: product.satuanDasar,
       satuan: unitsToCreate,
@@ -426,11 +433,19 @@ export async function updateProduct(
         : sebelum.sku || (await generateUniqueSku(tx, targetKategoriId));
 
     // 1. Update data pokok produk
+    const nextMerek =
+      input.merek !== undefined
+        ? input.merek?.trim() || null
+        : !sebelum.merek && input.nama
+        ? detectBrandFromName(input.nama)
+        : undefined;
+
     await tx.produk.update({
       where: { id },
       data: {
         sku: ensuredSku,
         ...(input.nama ? { nama: input.nama } : {}),
+        ...(nextMerek !== undefined ? { merek: nextMerek } : {}),
         ...(input.kategoriId !== undefined ? { kategoriId: input.kategoriId } : {}),
         ...(input.groupId !== undefined ? { groupId: input.groupId || null } : {}),
         ...(input.variantName !== undefined ? { variantName: input.variantName ? input.variantName.trim() : null } : {}),
@@ -586,6 +601,7 @@ export async function duplicateProduct(
       data: {
         sku: newSku,
         nama: `${source.nama} (Salinan)`,
+        merek: source.merek,
         kategoriId: source.kategoriId,
         groupId: source.groupId,
         variantName: source.variantName,

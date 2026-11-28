@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { groupProductsForDisplay, formatPriceRange } from "@/lib/product-grouping";
 import { parseScan } from "@/lib/barcode";
+import { detectBrandFromName } from "@/lib/brand-detector";
 import { calculateMargin } from "@/lib/product-visibility";
 import { hasPermission, hasAnyPermission } from "@/lib/auth/permissions";
 import { VariantGroupFormModal, SplitProductModal } from "@/components/produk/ProductVariantModals";
@@ -72,6 +73,7 @@ interface ProductItem {
   id: string;
   sku?: string | null;
   nama: string;
+  merek?: string | null;
   groupId?: string | null;
   variantName?: string | null;
   group?: { id: string; nama: string; brand?: string | null; kategoriId?: string | null; kategori?: { id: string; nama: string } | null } | null;
@@ -237,6 +239,8 @@ function TabProduk() {
   const [isDrawerEditing, setIsDrawerEditing] = useState(false);
   const [savingInDrawer, setSavingInDrawer] = useState(false);
   const [nama, setNama] = useState("");
+  const [merek, setMerek] = useState("");
+  const [merekTouched, setMerekTouched] = useState(false);
   const [sku, setSku] = useState("");
   const [kategoriId, setKategoriId] = useState<string>("");
   const [barcode, setBarcode] = useState("");
@@ -382,6 +386,8 @@ function TabProduk() {
     ]);
     setVariantScanIdx(null);
     setNama("");
+    setMerek("");
+    setMerekTouched(false);
     setSku("");
     setKategoriId("");
     setBarcode("");
@@ -397,6 +403,8 @@ function TabProduk() {
   const openEditInDrawer = (p: ProductItem) => {
     setEditingProductId(p.id);
     setNama(p.nama);
+    setMerek(p.merek || "");
+    setMerekTouched(true);
     setSku(p.sku || "");
     setKategoriId(p.kategori?.id || "");
     setBarcode(p.barcode || "");
@@ -449,6 +457,7 @@ function TabProduk() {
     try {
       const payload = {
         nama: nama.trim(),
+        merek: merek.trim() || null,
         ...(sku.trim() ? { sku: sku.trim() } : {}),
         kategoriId: kategoriId || null,
         barcode: barcode.trim() || null,
@@ -491,6 +500,8 @@ function TabProduk() {
   const openEditModal = (p: ProductItem) => {
     setEditingProductId(p.id);
     setNama(p.nama);
+    setMerek(p.merek || "");
+    setMerekTouched(true);
     setSku(p.sku || "");
     setKategoriId(p.kategori?.id || "");
     setBarcode(p.barcode || "");
@@ -762,6 +773,7 @@ function TabProduk() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nama: groupName,
+            brand: detectBrandFromName(groupName) || groupName,
             kategoriId: kategoriId || null,
             variants: filledRows.map((r) => ({
               variantName: r.nama.trim(),
@@ -813,6 +825,7 @@ function TabProduk() {
       const payload = {
         ...(sku.trim() ? { sku: sku.trim() } : {}),
         nama,
+        merek: merek.trim() || null,
         kategoriId: kategoriId || null,
         barcode: barcode.trim() || null,
         satuanDasar,
@@ -909,6 +922,14 @@ function TabProduk() {
   const canPropose = Boolean(userAccess && hasPermission(userAccess, "pengajuan:create"));
   const canApproveProposal = Boolean(userAccess && hasPermission(userAccess, "pengajuan:approve"));
 
+  const merekOptions = Array.from(
+    new Set(
+      products
+        .map((p) => (p.merek || p.group?.brand)?.trim())
+        .filter((v): v is string => Boolean(v))
+    )
+  ).sort((a, b) => a.localeCompare(b, "id"));
+
   const filteredProducts = products.filter((p) => {
     if (selectedKategori === "__HARGA_NAIK__" && !p.hargaNaik) return false;
     if (selectedKategori === "__PENYESUAIAN_HARGA__" && !p.penyesuaianHarga) return false;
@@ -916,13 +937,14 @@ function TabProduk() {
     const qLower = searchQuery.trim().toLowerCase();
     if (qLower) {
       const matchName = p.nama.toLowerCase().includes(qLower);
+      const matchBrand = (p.merek || p.group?.brand || "").toLowerCase().includes(qLower);
       const matchSku = (p.sku || "").toLowerCase().includes(qLower);
       const matchBarcode =
         (p.barcode || "").toLowerCase().includes(qLower) ||
         Boolean(p.barcodes?.some((b) => b.code.toLowerCase().includes(qLower)));
       const matchVariant = (p.variantName || "").toLowerCase().includes(qLower);
       const matchGroup = (p.group?.nama || "").toLowerCase().includes(qLower);
-      if (!matchName && !matchSku && !matchBarcode && !matchVariant && !matchGroup) return false;
+      if (!matchName && !matchBrand && !matchSku && !matchBarcode && !matchVariant && !matchGroup) return false;
     }
     const stok = Number(p.stokCache);
     const min = Number(p.stokMinimum);
@@ -1128,7 +1150,7 @@ function TabProduk() {
             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Cari nama, SKU, atau barcode"
+              placeholder="Cari nama, merek, SKU, atau barcode"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -1298,6 +1320,7 @@ function TabProduk() {
               <tr>
                 <DataTableHead>SKU</DataTableHead>
                 <DataTableHead>Nama Produk</DataTableHead>
+                <DataTableHead>Merek</DataTableHead>
                 <DataTableHead>Kategori</DataTableHead>
                 {costMeta.showCost && <DataTableHead align="right">Harga Beli</DataTableHead>}
                 <DataTableHead align="right">Harga Jual</DataTableHead>
@@ -1307,9 +1330,9 @@ function TabProduk() {
             </DataTableHeader>
             <DataTableBody>
               {loading ? (
-                <TableSkeletonRows rows={8} cols={costMeta.showCost ? 7 : 6} />
+                <TableSkeletonRows rows={8} cols={costMeta.showCost ? 8 : 7} />
               ) : filteredProducts.length === 0 ? (
-                <DataTableEmpty colSpan={costMeta.showCost ? 7 : 6}>
+                <DataTableEmpty colSpan={costMeta.showCost ? 8 : 7}>
                   Tidak ada produk yang cocok.
                 </DataTableEmpty>
               ) : (
@@ -1394,6 +1417,15 @@ function TabProduk() {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {(p.merek || p.group?.brand) ? (
+                            <span className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                              {p.merek || p.group?.brand}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300 dark:text-zinc-600">-</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="text-xs text-slate-600 dark:text-zinc-300">
@@ -1597,6 +1629,15 @@ function TabProduk() {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {(entry.group.brand || entry.variants[0]?.merek) ? (
+                            <span className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                              {entry.group.brand || entry.variants[0]?.merek}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300 dark:text-zinc-600">-</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                           {catName}
@@ -1964,6 +2005,39 @@ function TabProduk() {
                   </div>
 
                   <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Merek</span>
+                    {!isDrawerEditing ? (
+                      <span className="font-medium text-slate-900 text-xs text-right">
+                        {p.merek || p.group?.brand || "-"}
+                      </span>
+                    ) : (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <input
+                          type="text"
+                          list="preset-merek-toko"
+                          value={merek}
+                          onChange={(e) => {
+                            setMerek(e.target.value);
+                            setMerekTouched(true);
+                          }}
+                          placeholder="Otomatis / kosong"
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-36 text-right focus:outline-none focus:border-slate-900"
+                        />
+                        {!merek.trim() && detectBrandFromName(nama) && (
+                          <button
+                            type="button"
+                            onClick={() => setMerek(detectBrandFromName(nama) || "")}
+                            className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer"
+                            title={`Isi otomatis: ${detectBrandFromName(nama)}`}
+                          >
+                            Auto
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Satuan dasar</span>
                     {!isDrawerEditing ? (
                       <span className="font-medium text-slate-900 text-xs capitalize text-right">
@@ -2314,7 +2388,13 @@ function TabProduk() {
                   type="text"
                   required
                   value={nama}
-                  onChange={(e) => setNama(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNama(val);
+                    if (!isMultiVariant && !editingProductId && !merekTouched) {
+                      setMerek(detectBrandFromName(val) || "");
+                    }
+                  }}
                   placeholder={isMultiVariant ? "Nama Produk / Merek..." : "Nama Produk..."}
                   className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
                 />
@@ -2537,8 +2617,24 @@ function TabProduk() {
                 </>
               )}
 
-              {/* 3. Info List Properti Produk (SKU, Stok minimum, Satuan, Satuan dasar, Kategori) */}
+              {/* 3. Info List Properti Produk (SKU, Merek, Stok minimum, Satuan, Satuan dasar, Kategori) */}
               <div className="divide-y divide-slate-100">
+                {!isMultiVariant && (
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Merek</span>
+                    <input
+                      type="text"
+                      list="preset-merek-toko"
+                      value={merek}
+                      onChange={(e) => {
+                        setMerek(e.target.value);
+                        setMerekTouched(true);
+                      }}
+                      placeholder="Otomatis dari nama"
+                      className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-36 text-right focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                )}
                 {!isMultiVariant && (
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">SKU</span>
@@ -3021,6 +3117,11 @@ function TabProduk() {
           fetchData();
         }}
       />
+      <datalist id="preset-merek-toko">
+        {merekOptions.map((m) => (
+          <option key={m} value={m} />
+        ))}
+      </datalist>
     </div>
   );
 }

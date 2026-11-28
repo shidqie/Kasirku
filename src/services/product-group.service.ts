@@ -5,6 +5,7 @@ import { buildVariantFullName } from "@/lib/product-grouping";
 import { isRefillProduct } from "@/lib/refill";
 import { generateUniqueSku } from "./product.service";
 import { getSettings } from "./settings.service";
+import { detectBrandFromName } from "@/lib/brand-detector";
 
 export interface VariantItemInput {
   sku?: string | null;
@@ -116,6 +117,7 @@ export async function createProductGroupWithVariants(
         data: {
           sku,
           nama: fullName,
+          merek: detectBrandFromName(fullName, group.brand),
           kategoriId: input.kategoriId || null,
           groupId: group.id,
           variantName: v.variantName.trim(),
@@ -215,6 +217,7 @@ export async function addVariantToGroup(
       data: {
         sku,
         nama: fullName,
+        merek: detectBrandFromName(fullName, group.brand),
         kategoriId: group.kategoriId || null,
         groupId: group.id,
         variantName: v.variantName.trim(),
@@ -465,6 +468,7 @@ export async function splitProductIntoVariants(
         data: {
           sku,
           nama: fullName,
+          merek: detectBrandFromName(fullName, group.brand) || source.merek,
           kategoriId: group.kategoriId,
           groupId: group.id,
           variantName: v.variantName.trim(),

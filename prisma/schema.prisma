@@ -152,6 +152,7 @@ model Produk {
   id           String         @id @default(cuid())
   sku          String?        @unique
   nama         String
+  merek        String?
   kategoriId   String?        @map("kategori_id")
   groupId      String?        @map("group_id")
   variantName  String?        @map("variant_name")
@@ -180,6 +181,7 @@ model Produk {
 
   @@index([sku])
   @@index([nama])
+  @@index([merek])
   @@index([barcode])
   @@index([groupId])
   @@map("produk")

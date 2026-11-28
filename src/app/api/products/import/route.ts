@@ -8,6 +8,7 @@ import { logActivity } from "@/services/activity-log.service";
 import { generateUniqueSku } from "@/services/product.service";
 import { recordPriceChanges } from "@/services/price-history.service";
 import { getCostAccessContext, getLiveUserFromSession } from "@/lib/auth/cost-access";
+import { resolveProductBrand } from "@/lib/brand-detector";
 
 const importSatuanSchema = z.object({
   namaSatuan: z.string().trim().min(1, "Nama satuan wajib diisi"),
@@ -19,6 +20,7 @@ const importSatuanSchema = z.object({
 
 const importItemSchema = z.object({
   nama: z.string().trim().min(1, "Nama produk wajib diisi"),
+  merek: z.string().trim().optional().nullable(),
   groupName: z.string().trim().optional().nullable(),
   variantName: z.string().trim().optional().nullable(),
   kategori: z.string().trim().optional().nullable(),
@@ -242,6 +244,15 @@ export async function POST(req: NextRequest) {
               data: {
                 sku: ensuredSku,
                 nama: item.nama,
+                ...(item.merek !== undefined || !existing.merek
+                  ? {
+                      merek: resolveProductBrand({
+                        merek: item.merek,
+                        nama: item.nama,
+                        groupBrand: item.groupName,
+                      }),
+                    }
+                  : {}),
                 kategoriId: catResolved.id ?? existing.kategoriId,
                 ...(resolvedGroupId ? { groupId: resolvedGroupId } : {}),
                 ...(item.variantName ? { variantName: item.variantName.trim() } : {}),
@@ -346,6 +357,11 @@ export async function POST(req: NextRequest) {
             data: {
               sku: newSku,
               nama: item.nama,
+              merek: resolveProductBrand({
+                merek: item.merek,
+                nama: item.nama,
+                groupBrand: item.groupName,
+              }),
               kategoriId: catResolved.id,
               groupId: resolvedGroupId,
               variantName: item.variantName ? item.variantName.trim() : null,

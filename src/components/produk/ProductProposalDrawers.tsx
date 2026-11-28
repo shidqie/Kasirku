@@ -17,6 +17,7 @@ import { NumberInput } from "@/components/shared/NumberInput";
 import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { parseScan } from "@/lib/barcode";
 import { formatDateTime, formatRupiah } from "@/lib/formatters";
+import { detectBrandFromName } from "@/lib/brand-detector";
 
 export interface ProposalProductTarget {
   id: string;
@@ -67,6 +68,8 @@ export function CreateProposalDrawer({
   onSubmitted,
 }: CreateProposalDrawerProps) {
   const [nama, setNama] = useState("");
+  const [merek, setMerek] = useState("");
+  const [merekTouched, setMerekTouched] = useState(false);
   const [barcode, setBarcode] = useState("");
   const [kategoriId, setKategoriId] = useState("");
   const [satuanDasar, setSatuanDasar] = useState("pcs");
@@ -98,6 +101,8 @@ export function CreateProposalDrawer({
 
     if (mode === "PRODUK_BARU") {
       setNama("");
+      setMerek("");
+      setMerekTouched(false);
       setBarcode(initialBarcode?.trim() || "");
       setKategoriId("");
       setSatuanDasar("pcs");
@@ -141,6 +146,7 @@ export function CreateProposalDrawer({
             catatanPengaju: catatanPengaju.trim() || undefined,
             payload: {
               nama: nama.trim(),
+              merek: merek.trim() || null,
               kategoriId: kategoriId || null,
               barcode: barcode.trim() || null,
               satuanDasar: satuanDasar.trim() || "pcs",
@@ -234,8 +240,30 @@ export function CreateProposalDrawer({
                     type="text"
                     required
                     value={nama}
-                    onChange={(e) => setNama(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNama(val);
+                      if (!merekTouched) {
+                        setMerek(detectBrandFromName(val) || "");
+                      }
+                    }}
                     placeholder="Contoh: Indomie Goreng Spesial"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400">
+                    Merek (terisi otomatis bila dikenali)
+                  </label>
+                  <input
+                    type="text"
+                    value={merek}
+                    onChange={(e) => {
+                      setMerek(e.target.value);
+                      setMerekTouched(true);
+                    }}
+                    placeholder="Otomatis dari nama atau isi manual"
                     className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900"
                   />
                 </div>

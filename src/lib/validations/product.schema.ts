@@ -16,6 +16,7 @@ export const satuanProdukSchema = z.object({
 export const createProductSchema = z.object({
   sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   nama: z.string().min(2, "Nama produk minimal 2 karakter"),
+  merek: z.string().trim().max(80, "Merek maksimal 80 karakter").nullable().optional(),
   kategoriId: z.string().nullable().optional(),
   groupId: z.string().nullable().optional(),
   variantName: z.string().nullable().optional(),
@@ -30,6 +31,7 @@ export const createProductSchema = z.object({
 export const updateProductSchema = z.object({
   sku: z.string().trim().max(50, "SKU maksimal 50 karakter").nullable().optional(),
   nama: z.string().min(2, "Nama produk minimal 2 karakter").optional(),
+  merek: z.string().trim().max(80, "Merek maksimal 80 karakter").nullable().optional(),
   kategoriId: z.string().nullable().optional(),
   groupId: z.string().nullable().optional(),
   variantName: z.string().nullable().optional(),

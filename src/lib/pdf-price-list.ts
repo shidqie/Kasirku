@@ -7,6 +7,7 @@ export interface PriceListProduct {
   id: string;
   sku?: string | null;
   nama: string;
+  merek?: string | null;
   barcode: string | null;
   satuanDasar: string;
   stokCache: string | number;
@@ -206,6 +207,7 @@ export function downloadPriceListCsv(
   const headers = [
     "SKU / Kode",
     "Nama Produk",
+    "Merek",
     "Kategori",
     "Barcode",
     "Satuan",
@@ -242,6 +244,7 @@ export function downloadPriceListCsv(
         [
           code,
           p.nama,
+          p.merek || "",
           catName,
           p.barcode || "",
           u.namaSatuan,

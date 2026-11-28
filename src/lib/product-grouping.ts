@@ -10,6 +10,7 @@ export interface GroupableProduct {
   id: string;
   sku?: string | null;
   nama: string;
+  merek?: string | null;
   barcode?: string | null;
   groupId?: string | null;
   variantName?: string | null;

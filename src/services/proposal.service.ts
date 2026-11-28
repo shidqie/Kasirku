@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { logActivity } from "./activity-log.service";
 import { createProduct, updateProduct } from "./product.service";
+import { resolveProductBrand } from "@/lib/brand-detector";
 import {
   CreateProposalInput,
   createPriceChangeProposalPayloadSchema,
@@ -68,6 +69,7 @@ export async function createProposal(
     namaProduk = input.payload.nama.trim();
     normalizedPayload = {
       nama: namaProduk,
+      merek: resolveProductBrand({ merek: input.payload.merek, nama: namaProduk }),
       kategoriId: input.payload.kategoriId || null,
       barcode: cleanBarcode,
       satuanDasar: input.payload.satuanDasar.trim(),
@@ -204,6 +206,7 @@ export async function approveProposal(
     const createdProduct = await createProduct(
       {
         nama: parsed.data.nama,
+        merek: parsed.data.merek ?? undefined,
         kategoriId: parsed.data.kategoriId ?? null,
         barcode: parsed.data.barcode ?? null,
         satuanDasar: parsed.data.satuanDasar,

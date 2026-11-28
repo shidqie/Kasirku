@@ -10,6 +10,7 @@ export const proposalSatuanItemSchema = z.object({
 
 export const createProductProposalPayloadSchema = z.object({
   nama: z.string().trim().min(2, "Nama produk minimal 2 karakter"),
+  merek: z.string().trim().max(80, "Merek maksimal 80 karakter").nullable().optional(),
   kategoriId: z.string().nullable().optional(),
   barcode: z.string().trim().nullable().optional(),
   satuanDasar: z.string().trim().min(1, "Satuan dasar wajib diisi").default("pcs"),
