@@ -6,6 +6,8 @@ import { isRefillProduct } from "@/lib/refill";
 export interface CreateProductInput {
   nama: string;
   kategoriId?: string | null;
+  groupId?: string | null;
+  variantName?: string | null;
   barcode?: string | null;
   satuanDasar: string;
   stokMinimum: number;
@@ -23,6 +25,8 @@ export interface CreateProductInput {
 export interface UpdateProductInput {
   nama?: string;
   kategoriId?: string | null;
+  groupId?: string | null;
+  variantName?: string | null;
   barcode?: string | null;
   satuanDasar?: string;
   stokMinimum?: number;
@@ -130,6 +134,9 @@ export async function getProducts(params?: {
     where.OR = [
       { nama: { contains: q, mode: "insensitive" } },
       { barcode: { contains: q, mode: "insensitive" } },
+      { variantName: { contains: q, mode: "insensitive" } },
+      { group: { nama: { contains: q, mode: "insensitive" } } },
+      { group: { brand: { contains: q, mode: "insensitive" } } },
     ];
   }
 
@@ -138,6 +145,9 @@ export async function getProducts(params?: {
     orderBy: { nama: "asc" },
     include: {
       kategori: true,
+      group: {
+        include: { kategori: true },
+      },
       satuanProduk: {
         orderBy: [{ isDefault: "desc" }, { faktorKeDasar: "asc" }],
       },
@@ -244,6 +254,8 @@ export async function createProduct(input: CreateProductInput, userId: string, i
       data: {
         nama: input.nama,
         kategoriId: input.kategoriId || null,
+        groupId: input.groupId || null,
+        variantName: input.variantName ? input.variantName.trim() : null,
         barcode: input.barcode ? input.barcode.trim() : null,
         satuanDasar: input.satuanDasar,
         stokMinimum: new Prisma.Decimal(input.stokMinimum),
@@ -310,6 +322,8 @@ export async function updateProduct(
       data: {
         ...(input.nama ? { nama: input.nama } : {}),
         ...(input.kategoriId !== undefined ? { kategoriId: input.kategoriId } : {}),
+        ...(input.groupId !== undefined ? { groupId: input.groupId || null } : {}),
+        ...(input.variantName !== undefined ? { variantName: input.variantName ? input.variantName.trim() : null } : {}),
         ...(input.barcode !== undefined ? { barcode: input.barcode ? input.barcode.trim() : null } : {}),
         ...(input.satuanDasar ? { satuanDasar: input.satuanDasar } : {}),
         ...(input.stokMinimum !== undefined ? { stokMinimum: new Prisma.Decimal(input.stokMinimum) } : {}),

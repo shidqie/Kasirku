@@ -116,14 +116,31 @@ model PengaturanToko {
 
 // 3. Kategori Produk
 model Kategori {
-  id        String      @id @default(cuid())
-  nama      String      @unique
-  produk    Produk[]
-  promo     PromoRule[]
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
+  id            String         @id @default(cuid())
+  nama          String         @unique
+  produk        Produk[]
+  productGroups ProductGroup[]
+  promo         PromoRule[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
 
   @@map("kategori")
+}
+
+// 3b. Grup / Induk Produk Varian (mis. "Cimory Fresh Milk", "Cimory Fruit")
+model ProductGroup {
+  id         String    @id @default(cuid())
+  nama       String
+  brand      String?
+  kategoriId String?   @map("kategori_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  kategori Kategori? @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+  produk   Produk[]
+
+  @@index([nama])
+  @@map("product_group")
 }
 
 // 4. Master Produk & Satuan
@@ -131,6 +148,8 @@ model Produk {
   id           String         @id @default(cuid())
   nama         String
   kategoriId   String?        @map("kategori_id")
+  groupId      String?        @map("group_id")
+  variantName  String?        @map("variant_name")
   barcode      String?        @unique
   satuanDasar  String         @map("satuan_dasar")
   stokMinimum  Decimal        @default(0) @map("stok_minimum") @db.Decimal(12, 3)
@@ -142,6 +161,7 @@ model Produk {
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
   kategori        Kategori?         @relation(fields: [kategoriId], references: [id])
+  group           ProductGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   satuanProduk    SatuanProduk[]
   stokMutasi      StokMutasi[]
   barangMasukItem BarangMasukItem[]
@@ -152,6 +172,7 @@ model Produk {
 
   @@index([nama])
   @@index([barcode])
+  @@index([groupId])
   @@map("produk")
 }
 

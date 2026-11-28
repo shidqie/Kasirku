@@ -45,6 +45,8 @@ interface ParsedSatuan {
 interface ParsedProduct {
   rowNumbers: number[];
   nama: string;
+  groupName?: string;
+  variantName?: string;
   kategori: string;
   barcode: string;
   satuanDasar: string;
@@ -324,10 +326,11 @@ export function ImportProdukModal({
   const handleDownloadTemplate = () => {
     // Susunan 9 kolom sesuai spesifikasi; barcode dikutip sebagai teks agar nol di depan terjaga
     const templateRows = [
-      ["Nama Produk", "Kategori", "Barcode", "Satuan", "Isi", "Harga Beli", "Harga Jual", "Stok", "Stok Minimum"],
-      ["Indomie Goreng", "Makanan", "089686010101", "pcs", "1", "2700", "3200", "40", "10"],
-      ["Indomie Goreng", "Makanan", "089686010101", "dus", "40", "105000", "122000", "40", "10"],
-      ["Aqua 600ml", "Minuman", "8886008101053", "botol", "1", "2500", "3500", "24", "6"],
+      ["Nama Produk", "group_name", "variant_name", "Kategori", "Barcode", "Satuan", "Isi", "Harga Beli", "Harga Jual", "Stok", "Stok Minimum"],
+      ["Indomie Goreng", "", "", "Makanan", "089686010101", "pcs", "1", "2700", "3200", "40", "10"],
+      ["Indomie Goreng", "", "", "Makanan", "089686010101", "dus", "40", "105000", "122000", "40", "10"],
+      ["Cimory Fresh Milk Cokelat", "Cimory Fresh Milk", "Cokelat", "Susu & Olahan Susu", "8993001001", "botol", "1", "5500", "7000", "24", "6"],
+      ["Cimory Fresh Milk Matcha", "Cimory Fresh Milk", "Matcha", "Susu & Olahan Susu", "8993001002", "botol", "1", "5500", "7000", "20", "6"],
     ];
     const csv = templateRows
       .map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))
@@ -400,6 +403,8 @@ export function ImportProdukModal({
       };
 
       const idxNama = findCol(["namaproduk", "nama"]);
+      const idxGroupName = findCol(["groupname", "namagrup", "induk", "group"]);
+      const idxVariantName = findCol(["variantname", "namavarian", "varian", "rasa", "variant"]);
       const idxKategori = findCol(["kategori"]);
       const idxBarcode = findCol(["barcode", "ean"]);
       const idxSatuan = findCol(["satuan", "unit"]);
@@ -419,7 +424,10 @@ export function ImportProdukModal({
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         const rowNum = i + 1;
-        const nama = (r[idxNama] || "").trim();
+        const groupName = idxGroupName >= 0 ? (r[idxGroupName] || "").trim() : "";
+        const variantName = idxVariantName >= 0 ? (r[idxVariantName] || "").trim() : "";
+        const rawNama = (r[idxNama] || "").trim();
+        const nama = rawNama || (groupName && variantName ? `${groupName} ${variantName}` : groupName);
         const kategori = idxKategori >= 0 ? (r[idxKategori] || "").trim() : "";
         // Barcode diperlakukan murni sebagai teks agar angka 0 di depan tidak hilang
         const barcode = idxBarcode >= 0 ? (r[idxBarcode] || "").trim() : "";
@@ -447,6 +455,8 @@ export function ImportProdukModal({
           grouped.set(key, {
             rowNumbers: [rowNum],
             nama: nama || `(Baris ${rowNum} tanpa nama)`,
+            groupName: groupName || undefined,
+            variantName: variantName || undefined,
             kategori,
             barcode,
             satuanDasar: isiParsed.value === 1 && namaSatuan ? namaSatuan : namaSatuan || "pcs",
@@ -520,6 +530,8 @@ export function ImportProdukModal({
           allowCreateCategory,
           items: validRows.map((p) => ({
             nama: p.nama,
+            groupName: p.groupName || null,
+            variantName: p.variantName || null,
             kategori: p.kategori || null,
             barcode: p.barcode || null,
             satuanDasar: p.satuanDasar,

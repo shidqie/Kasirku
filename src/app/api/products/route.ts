@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { getProducts, createProduct, checkPrice } from "@/services/product.service";
 import { createProductSchema } from "@/lib/validations/product.schema";
+import { groupProductsForDisplay } from "@/lib/product-grouping";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") || undefined;
   const kategoriId = searchParams.get("kategoriId") || undefined;
+  const groupBy = searchParams.get("groupBy") || undefined;
   const isCheckPrice = searchParams.get("checkPrice") === "true";
 
   if (isCheckPrice && search) {
@@ -20,6 +22,20 @@ export async function GET(req: NextRequest) {
   }
 
   const products = await getProducts({ search, kategoriId });
+  if (groupBy === "group") {
+    const grouped = groupProductsForDisplay(
+      products.map((p) => ({
+        ...p,
+        stokCache: Number(p.stokCache),
+        stokMinimum: Number(p.stokMinimum),
+        satuanProduk: p.satuanProduk.map((s) => ({
+          ...s,
+          faktorKeDasar: Number(s.faktorKeDasar),
+        })),
+      }))
+    );
+    return NextResponse.json({ products, grouped });
+  }
   return NextResponse.json({ products });
 }
 

@@ -65,6 +65,9 @@ interface SatuanItem {
 interface ProductItem {
   id: string;
   nama: string;
+  groupId?: string | null;
+  variantName?: string | null;
+  group?: { id: string; nama: string; brand?: string | null } | null;
   barcode: string | null;
   satuanDasar: string;
   stokCache: number;
@@ -378,10 +381,14 @@ export default function KasirPOSPage() {
       matchCat = (p as any).kategori?.nama === selectedCategory;
     }
 
+    const q = searchQuery.toLowerCase();
     const matchQuery =
       !searchQuery ||
-      p.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.barcode && p.barcode.includes(searchQuery));
+      p.nama.toLowerCase().includes(q) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q)) ||
+      (p.variantName && p.variantName.toLowerCase().includes(q)) ||
+      (p.group?.nama && p.group.nama.toLowerCase().includes(q)) ||
+      (p.group?.brand && p.group.brand.toLowerCase().includes(q));
     return matchCat && matchQuery;
   });
 
@@ -1174,6 +1181,12 @@ export default function KasirPOSPage() {
                       <p className="text-[13px] font-semibold text-slate-900 dark:text-zinc-100 leading-snug line-clamp-2">
                         {p.nama}
                       </p>
+
+                      {p.variantName && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 text-[9px] font-semibold">
+                          {p.variantName}
+                        </span>
+                      )}
 
                       {(() => {
                         const activePromo = promos.find(

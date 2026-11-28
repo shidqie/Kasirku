@@ -16,6 +16,8 @@ const importSatuanSchema = z.object({
 
 const importItemSchema = z.object({
   nama: z.string().trim().min(1, "Nama produk wajib diisi"),
+  groupName: z.string().trim().optional().nullable(),
+  variantName: z.string().trim().optional().nullable(),
   kategori: z.string().trim().optional().nullable(),
   barcode: z.string().trim().optional().nullable(),
   satuanDasar: z.string().trim().min(1).default("pcs"),
@@ -87,6 +89,31 @@ export async function POST(req: NextRequest) {
         for (const c of existingCategories) {
           categoryMap.set(c.nama.trim().toLowerCase(), c.id);
         }
+
+        const existingGroups = await tx.productGroup.findMany();
+        const groupMap = new Map<string, string>();
+        for (const g of existingGroups) {
+          groupMap.set(g.nama.trim().toLowerCase(), g.id);
+        }
+
+        const resolveGroupId = async (
+          groupName?: string | null,
+          kategoriId?: string | null
+        ): Promise<string | null> => {
+          const clean = groupName?.trim();
+          if (!clean) return null;
+          const key = clean.toLowerCase();
+          const found = groupMap.get(key);
+          if (found) return found;
+          const created = await tx.productGroup.create({
+            data: {
+              nama: clean,
+              kategoriId: kategoriId || null,
+            },
+          });
+          groupMap.set(key, created.id);
+          return created.id;
+        };
 
         const resolveCategoryId = async (
           kategoriNama?: string | null
@@ -187,6 +214,10 @@ export async function POST(req: NextRequest) {
             }
 
             const hasDefault = item.satuanList.some((s) => s.isDefault);
+            const resolvedGroupId = await resolveGroupId(
+              item.groupName,
+              catResolved.id ?? existing.kategoriId
+            );
 
             // Jangan mengubah ID produk dan jangan mengubah stok berjalan (stokCache)
             await tx.produk.update({
@@ -194,6 +225,8 @@ export async function POST(req: NextRequest) {
               data: {
                 nama: item.nama,
                 kategoriId: catResolved.id ?? existing.kategoriId,
+                ...(resolvedGroupId ? { groupId: resolvedGroupId } : {}),
+                ...(item.variantName ? { variantName: item.variantName.trim() } : {}),
                 barcode: cleanBarcode ?? existing.barcode,
                 satuanDasar: item.satuanDasar,
                 stokMinimum: new Prisma.Decimal(item.stokMinimum),
@@ -264,10 +297,13 @@ export async function POST(req: NextRequest) {
             isDefault: hasDefault ? !!u.isDefault : idx === 0,
           }));
 
+          const resolvedGroupId = await resolveGroupId(item.groupName, catResolved.id);
           const created = await tx.produk.create({
             data: {
               nama: item.nama,
               kategoriId: catResolved.id,
+              groupId: resolvedGroupId,
+              variantName: item.variantName ? item.variantName.trim() : null,
               barcode: cleanBarcode,
               satuanDasar: item.satuanDasar,
               stokMinimum: new Prisma.Decimal(item.stokMinimum),

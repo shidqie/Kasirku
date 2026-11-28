@@ -16,6 +16,8 @@ export const satuanProdukSchema = z.object({
 export const createProductSchema = z.object({
   nama: z.string().min(2, "Nama produk minimal 2 karakter"),
   kategoriId: z.string().nullable().optional(),
+  groupId: z.string().nullable().optional(),
+  variantName: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
   satuanDasar: z.string().min(1, "Satuan dasar wajib diisi"), // misal: "kg", "pcs", "butir"
   stokMinimum: z.number().nonnegative("Stok minimum tidak boleh negatif").default(0),
@@ -27,6 +29,8 @@ export const createProductSchema = z.object({
 export const updateProductSchema = z.object({
   nama: z.string().min(2, "Nama produk minimal 2 karakter").optional(),
   kategoriId: z.string().nullable().optional(),
+  groupId: z.string().nullable().optional(),
+  variantName: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
   satuanDasar: z.string().min(1, "Satuan dasar wajib diisi").optional(),
   stokMinimum: z.number().nonnegative("Stok minimum tidak boleh negatif").optional(),
