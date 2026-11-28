@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { updateCategory, deleteCategory } from "@/services/product.service";
 import { categorySchema } from "@/lib/validations/product.schema";
 
@@ -8,8 +9,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasPermission(session, "kategori:manage")) {
+    return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin mengelola kategori." }, { status: 403 });
   }
 
   try {
@@ -39,8 +40,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasPermission(session, "kategori:manage")) {
+    return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin mengelola kategori." }, { status: 403 });
   }
 
   try {

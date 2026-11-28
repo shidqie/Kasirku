@@ -232,6 +232,8 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
         collapsible: true,
         items: [
           { label: "Produk & Harga", href: "/owner/produk", icon: Package },
+          { label: "Satuan & Konversi", href: "/owner/satuan", icon: Boxes },
+          { label: "Kategori Produk", href: "/owner/kategori", icon: Layers },
         ],
       },
     ];

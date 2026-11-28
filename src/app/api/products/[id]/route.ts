@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { hasAnyPermission } from "@/lib/auth/permissions";
 import { getProductById, updateProduct, deleteProduct } from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validations/product.schema";
 
@@ -25,8 +26,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasAnyPermission(session, ["produk:manage", "produk:price", "satuan:manage"])) {
+    return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin mengelola produk." }, { status: 403 });
   }
 
   try {
@@ -56,8 +57,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!session || session.role !== "OWNER") {
-    return NextResponse.json({ error: "Akses ditolak. Hanya untuk Pemilik Toko." }, { status: 403 });
+  if (!session || !hasAnyPermission(session, ["produk:manage"])) {
+    return NextResponse.json({ error: "Akses ditolak. Anda tidak memiliki izin menghapus produk." }, { status: 403 });
   }
 
   try {

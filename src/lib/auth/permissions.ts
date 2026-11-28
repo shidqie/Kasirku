@@ -126,6 +126,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<AppRole, Permission[]> = {
     "piutang:view",
     "produk:view",
     "produk:manage",
+    "produk:price",
+    "satuan:manage",
+    "kategori:manage",
   ],
   STAFF: [
     "kasir:access",
@@ -137,6 +140,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<AppRole, Permission[]> = {
     "piutang:view",
     "produk:view",
     "produk:manage",
+    "produk:price",
+    "satuan:manage",
+    "kategori:manage",
   ],
   STAFF_GUDANG: [
     "produk:view",
