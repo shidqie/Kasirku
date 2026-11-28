@@ -1247,40 +1247,41 @@ function TabProduk() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 shrink-0 pl-4 pb-px">
-            <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-zinc-700 p-0.5 text-[11px] bg-slate-50 dark:bg-zinc-800/50">
+          <div className="flex items-center gap-2.5 shrink-0 pl-3 text-[11px]">
+            <div className="inline-flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => {
                   setViewMode("grouped");
                   setCurrentPage(1);
                 }}
-                className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                className={`py-2.5 transition-colors cursor-pointer whitespace-nowrap focus:outline-none ${
                   viewMode === "grouped"
-                    ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "text-slate-900 dark:text-white font-semibold"
+                    : "text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 font-normal"
                 }`}
               >
                 Dikelompokkan
               </button>
+              <span className="text-slate-300 dark:text-zinc-700 select-none">/</span>
               <button
                 type="button"
                 onClick={() => {
                   setViewMode("flat");
                   setCurrentPage(1);
                 }}
-                className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                className={`py-2.5 transition-colors cursor-pointer whitespace-nowrap focus:outline-none ${
                   viewMode === "flat"
-                    ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "text-slate-900 dark:text-white font-semibold"
+                    : "text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 font-normal"
                 }`}
               >
                 Per varian
               </button>
             </div>
             {!loading && (
-              <span className="hidden sm:inline text-slate-400 dark:text-zinc-500 text-[11px] tabular-nums">
-                {Math.min(currentPage * pageSize, filteredProducts.length)} dari {filteredProducts.length} produk
+              <span className="hidden sm:inline text-slate-400 dark:text-zinc-500 tabular-nums whitespace-nowrap">
+                · {Math.min(currentPage * pageSize, filteredProducts.length)}/{filteredProducts.length}
               </span>
             )}
           </div>
