@@ -28,6 +28,7 @@ export const updateProductSchema = z.object({
   barcode: z.string().nullable().optional(),
   satuanDasar: z.string().min(1, "Satuan dasar wajib diisi").optional(),
   stokMinimum: z.number().nonnegative("Stok minimum tidak boleh negatif").optional(),
+  stokKosong: z.number().nonnegative("Stok kosong tidak boleh negatif").optional(),
   aktif: z.boolean().optional(),
   satuanList: z.array(satuanProdukSchema).min(1, "Minimal harus ada satu satuan dan harga").optional(),
 });

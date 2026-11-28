@@ -23,6 +23,7 @@ export interface UpdateProductInput {
   barcode?: string | null;
   satuanDasar?: string;
   stokMinimum?: number;
+  stokKosong?: number;
   aktif?: boolean;
   satuanList?: {
     id?: string;
@@ -304,6 +305,7 @@ export async function updateProduct(
         ...(input.barcode !== undefined ? { barcode: input.barcode ? input.barcode.trim() : null } : {}),
         ...(input.satuanDasar ? { satuanDasar: input.satuanDasar } : {}),
         ...(input.stokMinimum !== undefined ? { stokMinimum: new Prisma.Decimal(input.stokMinimum) } : {}),
+        ...(input.stokKosong !== undefined ? { stokKosong: new Prisma.Decimal(input.stokKosong) } : {}),
         ...(input.aktif !== undefined ? { aktif: input.aktif } : {}),
       },
     });

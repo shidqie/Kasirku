@@ -65,6 +65,7 @@ interface ProductItem {
   barcode: string | null;
   satuanDasar: string;
   stokCache: number;
+  stokKosong?: number;
   hargaNaik?: boolean;
   kategori?: { id: string; nama: string } | null;
   satuanProduk: SatuanItem[];
@@ -1170,7 +1171,11 @@ export default function KasirPOSPage() {
                                   : "text-slate-400 dark:text-zinc-500"
                               }`}
                             >
-                              {isHabis ? "Stok habis" : `Stok ${formatDecimal(stok)}`}
+                              {(/\b(galon|gas|lpg|elpiji)\b/i.test(p.nama) || Number(p.stokKosong || 0) > 0)
+                                ? `${isHabis ? "Habis" : `Terisi ${formatDecimal(stok)}`} · Kosong ${formatDecimal(Number(p.stokKosong || 0))}`
+                                : isHabis
+                                ? "Stok habis"
+                                : `Stok ${formatDecimal(stok)}`}
                             </span>
 
                             {!isHabis && !isStokPas && (defaultSatuan?.hargaJual || 0) > 0 && (

@@ -135,6 +135,7 @@ model Produk {
   stokMinimum  Decimal        @default(0) @map("stok_minimum") @db.Decimal(12, 3)
   aktif        Boolean        @default(true)
   stokCache    Decimal        @default(0) @map("stok_cache") @db.Decimal(12, 3)
+  stokKosong   Decimal        @default(0) @map("stok_kosong") @db.Decimal(12, 3)
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 

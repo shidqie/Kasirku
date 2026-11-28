@@ -53,6 +53,7 @@ interface ProductItem {
   satuanDasar: string;
   stokMinimum: string | number;
   stokCache: string | number;
+  stokKosong?: string | number;
   aktif: boolean;
   hargaNaik?: boolean;
   isBaru?: boolean;
@@ -108,6 +109,7 @@ function TabProduk() {
   const [barcode, setBarcode] = useState("");
   const [satuanDasar, setSatuanDasar] = useState("kg");
   const [stokMinimum, setStokMinimum] = useState<number>(0);
+  const [stokKosong, setStokKosong] = useState<number>(0);
   const [satuanList, setSatuanList] = useState<SatuanInput[]>([
     { namaSatuan: "kg", faktorKeDasar: 1, hargaJual: 0, hargaBeli: 0, isDefault: true },
   ]);
@@ -169,6 +171,7 @@ function TabProduk() {
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
+    setStokKosong(Number(p.stokKosong || 0));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -218,6 +221,7 @@ function TabProduk() {
         barcode: barcode.trim() || null,
         satuanDasar: satuanDasar.trim(),
         stokMinimum: Number(stokMinimum) || 0,
+        stokKosong: Number(stokKosong) || 0,
         satuanList,
       };
 
@@ -250,6 +254,7 @@ function TabProduk() {
     setBarcode(p.barcode || "");
     setSatuanDasar(p.satuanDasar);
     setStokMinimum(Number(p.stokMinimum));
+    setStokKosong(Number(p.stokKosong || 0));
     setSatuanList(
       p.satuanProduk.map((s) => ({
         id: s.id,
@@ -728,21 +733,33 @@ function TabProduk() {
 
                       {/* Stok */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center justify-end gap-1.5">
-                          {isLowStock && (
-                            <span
-                              className={`inline-block w-2 h-2 rounded-full shrink-0 ${
-                                isHabis ? "bg-rose-500" : "bg-amber-500"
-                              }`}
-                              title={isHabis ? "Stok habis" : "Stok menipis"}
-                            />
-                          )}
-                          <span className={`text-sm font-semibold tabular-nums ${
-                            isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"
-                          }`}>
-                            {formatDecimal(stok)}
-                          </span>
-                        </div>
+                        {(() => {
+                          const isRefill = /\b(galon|gas|lpg|elpiji)\b/i.test(p.nama) || Number(p.stokKosong || 0) > 0;
+                          return (
+                            <>
+                              <div className="inline-flex items-center justify-end gap-1.5">
+                                {isLowStock && (
+                                  <span
+                                    className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                                      isHabis ? "bg-rose-500" : "bg-amber-500"
+                                    }`}
+                                    title={isHabis ? "Stok habis" : "Stok menipis"}
+                                  />
+                                )}
+                                <span className={`text-sm font-semibold tabular-nums ${
+                                  isHabis ? "text-rose-600" : isMenipis ? "text-amber-600" : "text-slate-900 dark:text-zinc-100"
+                                }`}>
+                                  {isRefill ? `Terisi ${formatDecimal(stok)}` : formatDecimal(stok)}
+                                </span>
+                              </div>
+                              {isRefill && (
+                                <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-medium tabular-nums">
+                                  Kosong: {formatDecimal(Number(p.stokKosong || 0))}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                         {konversiStokDisplay !== null && (
                           <div className="text-[10px] text-slate-400 font-normal mt-0.5">
                             ≈ {konversiStokDisplay} {satuanGrosir?.namaSatuan}
@@ -1059,11 +1076,34 @@ function TabProduk() {
                 {/* 3. Info List Properti Produk (Stok saat ini, Stok minimum, Satuan, Satuan dasar, Kategori, Status stok) */}
                 <div className="divide-y divide-slate-100">
                   <div className="flex items-center justify-between py-2.5">
-                    <span className="text-slate-400 text-xs">Stok saat ini</span>
+                    <span className="text-slate-400 text-xs">
+                      {/\b(galon|gas|lpg|elpiji)\b/i.test(p.nama) || Number(p.stokKosong || 0) > 0
+                        ? "Stok terisi"
+                        : "Stok saat ini"}
+                    </span>
                     <span className="font-semibold text-slate-900 text-xs text-right">
                       {formatDecimal(stok)} {p.satuanDasar}
                     </span>
                   </div>
+
+                  {(/\b(galon|gas|lpg|elpiji)\b/i.test(p.nama) || Number(p.stokKosong || 0) > 0) && (
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-slate-400 text-xs">Stok kosong (tabung/galon)</span>
+                      {!isDrawerEditing ? (
+                        <span className="font-semibold text-amber-600 text-xs text-right tabular-nums">
+                          {formatDecimal(Number(p.stokKosong || 0))} {p.satuanDasar}
+                        </span>
+                      ) : (
+                        <NumberInput
+                          min={0}
+                          emptyFallback={0}
+                          value={stokKosong}
+                          onChange={setStokKosong}
+                          className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 w-20 text-right focus:outline-none focus:border-slate-900"
+                        />
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between py-2.5">
                     <span className="text-slate-400 text-xs">Stok minimum</span>

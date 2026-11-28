@@ -267,10 +267,14 @@ export async function checkout(
         },
       });
 
+      const isRefill = /\b(galon|gas|lpg|elpiji)\b/i.test(item.namaSnapshot);
       await tx.produk.update({
         where: { id: item.produkId },
         data: {
           stokCache: { increment: negativeQtyDasar },
+          ...(input.refillDikembalikan === "SUDAH" && isRefill
+            ? { stokKosong: { increment: item.qtyDasar } }
+            : {}),
         },
       });
     }
