@@ -1371,6 +1371,10 @@ export default function MemberDetailPage() {
                         const payInfo = bonPaymentInfoMap[bon.id];
                         const payStatus = payInfo?.status || "BELUM_LUNAS";
 
+                        const bonCode = `BON ${String(bonNumber).padStart(4, "0")}`;
+                        const totalSudahDibayar = (Number(bon.bayarDp) || 0) + (payInfo?.terbayar || 0);
+                        const sisaTagihan = payInfo ? payInfo.sisaBon : bon.sisa;
+
                         return (
                           <div
                             key={bon.id}
@@ -1384,7 +1388,7 @@ export default function MemberDetailPage() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold text-xs text-slate-900 dark:text-zinc-100">
-                                    Bon {bonNumber}
+                                    {bonCode}
                                   </span>
                                   <span className="text-[11px] font-mono text-slate-400">
                                     {cleanLabel}
@@ -1395,7 +1399,7 @@ export default function MemberDetailPage() {
                                     </span>
                                   ) : payStatus === "CICIL" ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80">
-                                      Cicilan{payInfo && payInfo.terbayar > 0 ? ` · Sisa ${formatRupiah(payInfo.sisaBon)}` : ""}
+                                      Cicilan{payInfo && payInfo.terbayar > 0 ? ` · Sisa Tagihan ${formatRupiah(sisaTagihan)}` : ""}
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/80">
@@ -1420,52 +1424,81 @@ export default function MemberDetailPage() {
                             </button>
 
                             {isExpanded && (
-                              <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2.5 bg-slate-50/60 dark:bg-zinc-900/60">
+                              <div className="px-3.5 pb-3.5 pt-2.5 border-t border-slate-100 dark:border-zinc-800 space-y-2.5 bg-slate-50/60 dark:bg-zinc-900/60">
+                                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3 space-y-2 text-xs">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-slate-900 dark:text-zinc-100">{bonCode}</span>
+                                    <span className="text-slate-600 dark:text-zinc-300 font-medium">{formatDayDate(bon.dibuatPada)}</span>
+                                  </div>
+                                </div>
+
                                 {(bon.subEntries || [bon]).map((sub: any, sIdx: number) => {
                                   const subJam = new Date(sub.dibuatPada).toLocaleTimeString("id-ID", {
                                     hour: "2-digit",
                                     minute: "2-digit",
                                   });
+                                  const subCode = String(sub.label || "").replace(/^ID Bon:\s*/i, "");
                                   return (
                                     <div
                                       key={sub.id || sIdx}
                                       className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3 space-y-2 text-xs"
                                     >
-                                      <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] pb-1.5 border-b border-slate-100 dark:border-zinc-800">
-                                        <span>
-                                          Diambil oleh <strong>{sub.pengambil}</strong> · Jam {subJam} WIB
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="font-bold text-slate-900 dark:text-zinc-100">
+                                          Pengambilan {sIdx + 1}
                                         </span>
-                                        <span className="text-slate-400">Dilayani Oleh : {sub.kasir}</span>
+                                        <span className="text-[11px] font-medium text-slate-500 tabular-nums">
+                                          {subJam} WIB
+                                        </span>
                                       </div>
-                                      <div className="space-y-1">
-                                        {(sub.items || []).map((it: any, iIdx: number) => (
-                                          <div key={it.id || iIdx} className="flex justify-between gap-2">
-                                            <span className="text-slate-800 dark:text-zinc-200">
-                                              {it.nama}{" "}
-                                              <span className="text-slate-400">
-                                                ({formatDecimal(it.qty)} {it.satuan})
-                                              </span>
-                                            </span>
-                                            <span className="font-semibold tabular-nums shrink-0">
-                                              {formatRupiah(it.subtotal)}
-                                            </span>
-                                          </div>
-                                        ))}
+                                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 pb-2 border-b border-slate-100 dark:border-zinc-800">
+                                        Diambil oleh {sub.pengambil}
+                                        {subCode ? ` · ${subCode}` : ""}
+                                        {` · Kasir ${sub.kasir}`}
+                                      </p>
+                                      <div className="overflow-x-auto">
+                                        <table className="w-full text-[11px]">
+                                          <thead>
+                                            <tr className="text-slate-400 border-b border-slate-100 dark:border-zinc-800">
+                                              <th className="py-1.5 text-left font-semibold">Barang</th>
+                                              <th className="py-1.5 text-right font-semibold">Qty</th>
+                                              <th className="py-1.5 text-right font-semibold">Harga Satuan</th>
+                                              <th className="py-1.5 text-right font-semibold">Subtotal</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100/80 dark:divide-zinc-800/80">
+                                            {(sub.items || []).map((it: any, iIdx: number) => (
+                                              <tr key={it.id || iIdx}>
+                                                <td className="py-1.5 pr-2 font-medium text-slate-900 dark:text-zinc-100">{it.nama}</td>
+                                                <td className="py-1.5 px-1.5 text-right text-slate-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
+                                                  {formatDecimal(it.qty)} {it.satuan}
+                                                </td>
+                                                <td className="py-1.5 px-1.5 text-right text-slate-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
+                                                  {formatRupiah(it.harga)}
+                                                </td>
+                                                <td className="py-1.5 pl-1.5 text-right font-semibold text-slate-900 dark:text-zinc-100 whitespace-nowrap tabular-nums">
+                                                  {formatRupiah(it.subtotal)}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
                                       </div>
                                     </div>
                                   );
                                 })}
                                 <div className="flex items-center justify-between pt-1">
                                   <div className="text-xs text-slate-500 space-y-0.5">
-                                    {payInfo && payInfo.terbayar > 0 && (
-                                      <div>
-                                        Cicilan terbayar: <strong className="text-emerald-600">{formatRupiah(payInfo.terbayar)}</strong>
-                                      </div>
-                                    )}
                                     <div>
-                                      Sisa:{" "}
-                                      <strong className={ (payInfo ? payInfo.sisaBon : bon.sisa) <= 0 ? "text-emerald-600" : "text-rose-600" }>
-                                        {formatRupiah(payInfo ? payInfo.sisaBon : bon.sisa)}
+                                      Total Bon: <strong className="text-slate-900 dark:text-zinc-100 tabular-nums">{formatRupiah(bon.total)}</strong>
+                                    </div>
+                                    <div>
+                                      Sudah Dibayar: <strong className="text-emerald-600 tabular-nums">{formatRupiah(totalSudahDibayar)}</strong>
+                                    </div>
+                                    <div>
+                                      Sisa Tagihan:{" "}
+                                      <strong className={`tabular-nums ${sisaTagihan <= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                                        {formatRupiah(sisaTagihan)}
                                       </strong>
                                     </div>
                                   </div>
@@ -1509,6 +1542,10 @@ export default function MemberDetailPage() {
                         const payInfo = bonPaymentInfoMap[bon.id];
                         const payStatus = payInfo?.status || "BELUM_LUNAS";
 
+                        const bonCode = `BON ${String(bonNumber).padStart(4, "0")}`;
+                        const totalSudahDibayar = (Number(bon.bayarDp) || 0) + (payInfo?.terbayar || 0);
+                        const sisaTagihan = payInfo ? payInfo.sisaBon : bon.sisa;
+
                         return (
                           <Fragment key={bon.id}>
                             <tr
@@ -1519,7 +1556,7 @@ export default function MemberDetailPage() {
                             >
                               <td className="py-3.5 pr-4">
                                 <span className="font-semibold text-slate-900 dark:text-zinc-100">
-                                  Bon {bonNumber}
+                                  {bonCode}
                                 </span>
                                 <span className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 ml-1.5">
                                   {cleanLabel}
@@ -1535,7 +1572,7 @@ export default function MemberDetailPage() {
                                 <div>{formatRupiah(bon.sisa > 0 ? bon.sisa : bon.total)}</div>
                                 {payStatus === "CICIL" && payInfo && payInfo.terbayar > 0 && (
                                   <div className="text-[10px] font-medium text-amber-600 dark:text-amber-400 mt-0.5">
-                                    Bayar {formatRupiah(payInfo.terbayar)} · Sisa {formatRupiah(payInfo.sisaBon)}
+                                    Sudah Dibayar {formatRupiah(totalSudahDibayar)} · Sisa Tagihan {formatRupiah(sisaTagihan)}
                                   </div>
                                 )}
                               </td>
@@ -1580,9 +1617,38 @@ export default function MemberDetailPage() {
                                     initial={{ opacity: 0, y: -6 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                                    className="space-y-3"
+                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 space-y-4"
                                   >
-                                    <div className="space-y-2.5">
+                                    {/* Header Standar Format Bon */}
+                                    <div className="space-y-2 pb-3 border-b border-slate-200 dark:border-zinc-800">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm font-extrabold text-slate-900 dark:text-zinc-100 tracking-wide">
+                                          {bonCode}
+                                        </span>
+                                        {payStatus === "LUNAS" ? (
+                                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200/80">
+                                            Lunas
+                                          </span>
+                                        ) : payStatus === "CICIL" ? (
+                                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80">
+                                            Cicilan
+                                          </span>
+                                        ) : (
+                                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/80">
+                                            Belum Lunas
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-slate-500 dark:text-zinc-400">Tanggal</span>
+                                        <span className="font-semibold text-slate-900 dark:text-zinc-100">
+                                          {formatDayDate(bon.dibuatPada)}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Daftar Pengambilan */}
+                                    <div className="divide-y divide-slate-200/80 dark:divide-zinc-800">
                                       {(bon.subEntries || [bon]).map((sub: any, sIdx: number) => {
                                         const subJam = new Date(sub.dibuatPada).toLocaleTimeString("id-ID", {
                                           hour: "2-digit",
@@ -1593,84 +1659,83 @@ export default function MemberDetailPage() {
                                         return (
                                           <div
                                             key={sub.id || sIdx}
-                                            className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3.5 space-y-2.5"
+                                            className="py-3.5 first:pt-0 last:pb-0 space-y-2.5"
                                           >
-                                            {/* Header Pengambilan: Pengambil, Jam, Kode & Kasir */}
-                                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800 text-xs">
-                                              <div className="flex flex-wrap items-center gap-2">
-                                                <span className="text-slate-400 text-[11px]">
-                                                  Diambil oleh
-                                                </span>
-                                                <span className="font-semibold text-slate-900 dark:text-zinc-100">
-                                                  {sub.pengambil}
-                                                </span>
-                                                <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-[11px] font-medium text-slate-600 dark:text-zinc-300 tabular-nums">
-                                                  Jam {subJam} WIB
-                                                </span>
-                                              </div>
-                                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400">
-                                                {subCode && (
-                                                  <span className="font-mono text-slate-400 dark:text-zinc-500">
-                                                    {subCode}
-                                                  </span>
-                                                )}
-                                                <span>·</span>
-                                                <span>
-                                                  Dilayani Oleh :{" "}
-                                                  <strong className="font-medium text-slate-700 dark:text-zinc-300">
-                                                    {sub.kasir}
-                                                  </strong>
-                                                </span>
+                                            <div className="flex items-center justify-between gap-2">
+                                              <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                                                Pengambilan {sIdx + 1}
+                                              </span>
+                                              <div className="flex items-center gap-2.5">
                                                 {sub.tipe === "MANUAL" && bon.subEntries && bon.subEntries.length > 1 && (
-                                                  <>
-                                                    <span>·</span>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => handleRequestEditBon(sub)}
-                                                      className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 underline underline-offset-2 cursor-pointer"
-                                                    >
-                                                      <Pencil className="w-3 h-3" />
-                                                      <span>Edit</span>
-                                                    </button>
-                                                  </>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleRequestEditBon(sub)}
+                                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 underline underline-offset-2 cursor-pointer"
+                                                  >
+                                                    <Pencil className="w-3 h-3" />
+                                                    <span>Edit</span>
+                                                  </button>
                                                 )}
+                                                <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 tabular-nums">
+                                                  {subJam} WIB
+                                                </span>
                                               </div>
                                             </div>
 
-                                            {/* List Barang per Pengambilan */}
-                                            <div className="divide-y divide-slate-100/80 dark:divide-zinc-800/80 text-xs">
-                                              {sub.items && sub.items.length > 0 ? (
-                                                sub.items.map((it: any, iIdx: number) => (
-                                                  <div
-                                                    key={it.id || iIdx}
-                                                    className="flex justify-between items-baseline gap-4 py-1.5 first:pt-0 last:pb-0"
-                                                  >
-                                                    <div className="text-slate-900 dark:text-zinc-100 min-w-0">
-                                                      <span className="font-medium">{it.nama}</span>
-                                                      <span className="text-slate-500 dark:text-zinc-400 ml-1.5">
-                                                        {formatDecimal(it.qty)} {it.satuan} @ {formatRupiah(it.harga)}
-                                                      </span>
-                                                    </div>
-                                                    <span className="font-semibold text-slate-900 dark:text-zinc-100 tabular-nums shrink-0">
-                                                      {formatRupiah(it.subtotal)}
-                                                    </span>
-                                                  </div>
-                                                ))
-                                              ) : (
-                                                <p className="text-slate-400 italic text-xs py-1">
-                                                  - Tidak ada rincian item
-                                                </p>
-                                              )}
+                                            <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                                              Diambil oleh {sub.pengambil}
+                                              {subCode ? ` · ${subCode}` : ""}
+                                              {` · Kasir ${sub.kasir}`}
+                                            </p>
+
+                                            {/* Tabel Barang, Qty, Harga Satuan, Subtotal */}
+                                            <div className="overflow-x-auto">
+                                              <table className="w-full text-xs">
+                                                <thead>
+                                                  <tr className="text-slate-500 dark:text-zinc-400 border-b border-slate-100 dark:border-zinc-800">
+                                                    <th className="py-2 text-left font-semibold">Barang</th>
+                                                    <th className="py-2 px-3 text-right font-semibold">Qty</th>
+                                                    <th className="py-2 px-3 text-right font-semibold">Harga Satuan</th>
+                                                    <th className="py-2 pl-3 text-right font-semibold">Subtotal</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100/80 dark:divide-zinc-800/80">
+                                                  {sub.items && sub.items.length > 0 ? (
+                                                    sub.items.map((it: any, iIdx: number) => (
+                                                      <tr key={it.id || iIdx}>
+                                                        <td className="py-2 pr-3 font-medium text-slate-900 dark:text-zinc-100">
+                                                          {it.nama}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right text-slate-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
+                                                          {formatDecimal(it.qty)} {it.satuan}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-right text-slate-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
+                                                          {formatRupiah(it.harga)}
+                                                        </td>
+                                                        <td className="py-2 pl-3 text-right font-semibold text-slate-900 dark:text-zinc-100 whitespace-nowrap tabular-nums">
+                                                          {formatRupiah(it.subtotal)}
+                                                        </td>
+                                                      </tr>
+                                                    ))
+                                                  ) : (
+                                                    <tr>
+                                                      <td colSpan={4} className="py-2 text-slate-400 italic">
+                                                        - Tidak ada rincian item
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                </tbody>
+                                              </table>
                                             </div>
 
                                             {(sub.keterangan || (bon.subEntries?.length > 1)) && (
-                                              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800 text-[11px]">
+                                              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
                                                 <div className="text-slate-500 dark:text-zinc-400 italic">
                                                   {sub.keterangan ? `Catatan: "${sub.keterangan}"` : ""}
                                                 </div>
                                                 {bon.subEntries?.length > 1 && (
                                                   <div className="text-slate-500 dark:text-zinc-400 tabular-nums">
-                                                    Subtotal pengambilan:{" "}
+                                                    Subtotal:{" "}
                                                     <strong className="text-slate-800 dark:text-zinc-200">
                                                       {formatRupiah(sub.sisa > 0 ? sub.sisa : sub.total)}
                                                     </strong>
@@ -1683,8 +1748,8 @@ export default function MemberDetailPage() {
                                       })}
                                     </div>
 
-                                    {/* Ringkasan Perhitungan */}
-                                    <div className="pt-2 space-y-1.5 text-xs max-w-xs ml-auto">
+                                    {/* Ringkasan Perhitungan Konsisten */}
+                                    <div className="pt-3 border-t border-slate-200 dark:border-zinc-800 space-y-1.5 text-xs max-w-xs ml-auto">
                                       <div className="flex justify-between text-slate-500 dark:text-zinc-400">
                                         <span>Subtotal</span>
                                         <span className="font-medium text-slate-800 dark:text-zinc-200 tabular-nums">
@@ -1692,37 +1757,35 @@ export default function MemberDetailPage() {
                                         </span>
                                       </div>
                                       <div className="flex justify-between text-slate-500 dark:text-zinc-400">
-                                        <span>Bayar DP</span>
-                                        <span className="font-medium text-slate-800 dark:text-zinc-200 tabular-nums">
-                                          {formatRupiah(bon.bayarDp)}
+                                        <span>Total Bon</span>
+                                        <span className="font-semibold text-slate-900 dark:text-zinc-100 tabular-nums">
+                                          {formatRupiah(bon.total)}
                                         </span>
                                       </div>
-                                      {payInfo && payInfo.terbayar > 0 && (
-                                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                                          <span>Sudah Dibayar (Cicilan)</span>
-                                          <span className="font-medium tabular-nums">
-                                            -{formatRupiah(payInfo.terbayar)}
-                                          </span>
-                                        </div>
-                                      )}
+                                      <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                                        <span>Sudah Dibayar</span>
+                                        <span className="font-medium tabular-nums">
+                                          {formatRupiah(totalSudahDibayar)}
+                                        </span>
+                                      </div>
                                       <div className="flex justify-between items-baseline pt-2 mt-2 border-t border-slate-200 dark:border-zinc-800">
                                         <span
                                           className={`text-xs font-semibold ${
-                                            (payInfo ? payInfo.sisaBon : bon.sisa) <= 0
+                                            sisaTagihan <= 0
                                               ? "text-emerald-600 dark:text-emerald-400"
                                               : "text-rose-600 dark:text-rose-500"
                                           }`}
                                         >
-                                          Sisa Pembayaran
+                                          Sisa Tagihan
                                         </span>
                                         <span
                                           className={`text-sm font-bold tabular-nums ${
-                                            (payInfo ? payInfo.sisaBon : bon.sisa) <= 0
+                                            sisaTagihan <= 0
                                               ? "text-emerald-600 dark:text-emerald-400"
                                               : "text-rose-600 dark:text-rose-500"
                                           }`}
                                         >
-                                          {formatRupiah(payInfo ? payInfo.sisaBon : bon.sisa)}
+                                          {formatRupiah(sisaTagihan)}
                                         </span>
                                       </div>
                                     </div>
