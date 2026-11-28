@@ -166,7 +166,15 @@ function TabProduk() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM" | "EXTRA_BARCODE">("FORM");
+  const [scannerTarget, setScannerTarget] = useState<"SEARCH" | "FORM" | "EXTRA_BARCODE" | "VARIANT_ROW">("FORM");
+  const [isMultiVariant, setIsMultiVariant] = useState(false);
+  const [variantRows, setVariantRows] = useState<
+    Array<{ nama: string; barcode: string; hargaJual: number; stokAwal: number }>
+  >([
+    { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+    { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+  ]);
+  const [variantScanIdx, setVariantScanIdx] = useState<number | null>(null);
   const [newExtraBarcode, setNewExtraBarcode] = useState("");
   const [addingExtraBarcode, setAddingExtraBarcode] = useState(false);
   const [isHargaNaikOpen, setIsHargaNaikOpen] = useState(false);
@@ -240,6 +248,12 @@ function TabProduk() {
 
   const openCreateModal = () => {
     setEditingProductId(null);
+    setIsMultiVariant(false);
+    setVariantRows([
+      { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+      { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+    ]);
+    setVariantScanIdx(null);
     setNama("");
     setKategoriId("");
     setBarcode("");
@@ -451,6 +465,77 @@ function TabProduk() {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
+
+    if (!editingProductId && isMultiVariant) {
+      const filledRows = variantRows.filter(
+        (r) =>
+          r.nama.trim() !== "" ||
+          r.barcode.trim() !== "" ||
+          r.hargaJual > 0 ||
+          r.stokAwal > 0
+      );
+
+      if (filledRows.length === 0) {
+        setError("Minimal isi 1 baris varian produk");
+        setSubmitting(false);
+        return;
+      }
+
+      for (let i = 0; i < filledRows.length; i++) {
+        if (!filledRows[i].nama.trim()) {
+          setError(`Nama produk pada baris #${i + 1} wajib diisi`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const groupName = nama.trim();
+      if (groupName.length < 2) {
+        setError("Nama induk / merek produk minimal 2 karakter");
+        setSubmitting(false);
+        return;
+      }
+
+      try {
+        const cleanSatuan = satuanDasar.trim() || "pcs";
+        const res = await fetch("/api/product-groups", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nama: groupName,
+            kategoriId: kategoriId || null,
+            variants: filledRows.map((r) => ({
+              variantName: r.nama.trim(),
+              barcode: r.barcode.trim() || null,
+              satuanDasar: cleanSatuan,
+              stokMinimum: Number(stokMinimum) || 0,
+              stokAwal: Number(r.stokAwal) || 0,
+              satuanList: [
+                {
+                  namaSatuan: cleanSatuan,
+                  faktorKeDasar: 1,
+                  hargaJual: Number(r.hargaJual) || 0,
+                  hargaBeli: 0,
+                  isDefault: true,
+                },
+              ],
+            })),
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal menyimpan varian produk");
+
+        setSuccess(data.message || `${filledRows.length} varian "${groupName}" berhasil disimpan`);
+        setIsModalOpen(false);
+        fetchData();
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     for (const s of satuanList) {
       if (!s.namaSatuan) {
@@ -1784,21 +1869,49 @@ function TabProduk() {
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="w-full max-w-md h-full bg-white text-slate-900 shadow-xl flex flex-col border-l border-slate-100 select-text drawer-panel"
+            className={`w-full ${!editingProductId && isMultiVariant ? "max-w-lg" : "max-w-md"} h-full bg-white text-slate-900 shadow-xl flex flex-col border-l border-slate-100 select-text drawer-panel transition-all`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Minimalist */}
             <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 shrink-0">
               <div className="pr-3 flex-1 min-w-0">
-                <span className="text-[11px] font-mono text-slate-400 block tracking-wider">
-                  {editingProductId ? "EDIT PRODUK" : "PRODUK BARU"}
-                </span>
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className="text-[11px] font-mono text-slate-400 tracking-wider">
+                    {editingProductId ? "EDIT PRODUK" : "PRODUK BARU"}
+                  </span>
+                  {!editingProductId && (
+                    <div className="inline-flex items-center rounded-full bg-slate-100 p-0.5 text-[11px] font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setIsMultiVariant(false)}
+                        className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+                          !isMultiVariant
+                            ? "bg-white text-slate-900 shadow-xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        1 Produk
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMultiVariant(true)}
+                        className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+                          isMultiVariant
+                            ? "bg-white text-slate-900 shadow-xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Multi Varian
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
                   value={nama}
                   onChange={(e) => setNama(e.target.value)}
-                  placeholder="Nama Produk..."
+                  placeholder={isMultiVariant ? "Nama Induk / Merek (mis. Cimory)..." : "Nama Produk..."}
                   className="w-full mt-0.5 py-1 font-bold text-lg text-slate-900 bg-transparent border-b border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
                 />
               </div>
@@ -1813,46 +1926,185 @@ function TabProduk() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm">
-              {/* 1. Barcode */}
-              <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-400 text-xs">Barcode</span>
-                <div className="flex items-center justify-end gap-2">
-                  <input
-                    type="text"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    placeholder="Opsional"
-                    className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScannerTarget("FORM");
-                      setIsScannerOpen(true);
-                    }}
-                    className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
-                    title="Scan kamera"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+              {!editingProductId && isMultiVariant ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Daftar Produk
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVariantRows((prev) => [
+                          ...prev,
+                          { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+                        ])
+                      }
+                      className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah baris</span>
+                    </button>
+                  </div>
 
-              {/* 2. Section: Harga Produk */}
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Harga Produk
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={handleAddSatuanRow}
-                    className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Tambah</span>
-                  </button>
+                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                        <tr className="divide-x divide-slate-200">
+                          <th className="py-2 px-2.5 font-semibold">Nama</th>
+                          <th className="py-2 px-2.5 font-semibold w-32">Barcode</th>
+                          <th className="py-2 px-2.5 font-semibold text-right w-24">Harga</th>
+                          <th className="py-2 px-2.5 font-semibold text-right w-16">Stok</th>
+                          {variantRows.length > 1 && <th className="py-2 px-1 w-7"></th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-700">
+                        {variantRows.map((row, idx) => (
+                          <tr key={idx} className="divide-x divide-slate-200">
+                            <td className="p-0">
+                              <input
+                                type="text"
+                                value={row.nama}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setVariantRows((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, nama: val } : r))
+                                  );
+                                }}
+                                placeholder="Nama produk..."
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/40"
+                              />
+                            </td>
+                            <td className="p-0 relative">
+                              <div className="flex items-center h-9">
+                                <input
+                                  type="text"
+                                  value={row.barcode}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setVariantRows((prev) =>
+                                      prev.map((r, i) => (i === idx ? { ...r, barcode: val } : r))
+                                    );
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      if (idx === variantRows.length - 1) {
+                                        setVariantRows((prev) => [
+                                          ...prev,
+                                          { nama: "", barcode: "", hargaJual: 0, stokAwal: 0 },
+                                        ]);
+                                      }
+                                    }
+                                  }}
+                                  placeholder="scan barcode"
+                                  className="w-full h-full pl-2.5 pr-6 bg-transparent text-xs font-mono text-slate-900 placeholder:text-rose-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-rose-500 focus:bg-rose-50/20"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVariantScanIdx(idx);
+                                    setScannerTarget("VARIANT_ROW");
+                                    setIsScannerOpen(true);
+                                  }}
+                                  className="absolute right-1 p-1 text-slate-300 hover:text-slate-600 cursor-pointer"
+                                  title="Scan kamera"
+                                >
+                                  <Camera className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-0">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="0"
+                                value={row.hargaJual ? row.hargaJual.toLocaleString("id-ID") : ""}
+                                onChange={(e) => {
+                                  const digits = e.target.value.replace(/\D/g, "");
+                                  const num = digits ? parseInt(digits, 10) : 0;
+                                  setVariantRows((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, hargaJual: num } : r))
+                                  );
+                                }}
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                              />
+                            </td>
+                            <td className="p-0">
+                              <NumberInput
+                                min={0}
+                                emptyFallback={0}
+                                value={row.stokAwal}
+                                onChange={(val) =>
+                                  setVariantRows((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, stokAwal: val } : r))
+                                  )
+                                }
+                                className="w-full h-9 px-2.5 bg-transparent text-xs font-semibold text-right text-slate-900 focus:outline-none focus:bg-blue-50/40 tabular-nums"
+                              />
+                            </td>
+                            {variantRows.length > 1 && (
+                              <td className="p-0 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setVariantRows((prev) => prev.filter((_, i) => i !== idx))
+                                  }
+                                  className="w-full h-9 flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50/60 transition-colors cursor-pointer"
+                                  title="Hapus baris"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {/* 1. Barcode */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span className="text-slate-400 text-xs">Barcode</span>
+                    <div className="flex items-center justify-end gap-2">
+                      <input
+                        type="text"
+                        value={barcode}
+                        onChange={(e) => setBarcode(e.target.value)}
+                        placeholder="Opsional"
+                        className="text-xs font-medium py-0.5 bg-transparent border-b border-slate-200 text-slate-900 font-mono w-36 text-right focus:outline-none focus:border-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannerTarget("FORM");
+                          setIsScannerOpen(true);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
+                        title="Scan kamera"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Section: Harga Produk */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Harga Produk
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={handleAddSatuanRow}
+                        className="text-xs font-semibold text-[#F0090F] hover:underline flex items-center gap-1 cursor-pointer focus:outline-none"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah</span>
+                      </button>
+                    </div>
 
                 {renderUnitTemplates()}
 
@@ -1950,6 +2202,8 @@ function TabProduk() {
                   </table>
                 </div>
               </div>
+                </>
+              )}
 
               {/* 3. Info List Properti Produk (Stok minimum, Satuan, Satuan dasar, Kategori) */}
               <div className="divide-y divide-slate-100">
@@ -1964,12 +2218,14 @@ function TabProduk() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-slate-400 text-xs">Satuan</span>
-                  <span className="font-medium text-slate-900 text-xs capitalize text-right">
-                    {satuanList[0]?.namaSatuan || satuanDasar}
-                  </span>
-                </div>
+                {!isMultiVariant && (
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-slate-400 text-xs">Satuan</span>
+                    <span className="font-medium text-slate-900 text-xs capitalize text-right">
+                      {satuanList[0]?.namaSatuan || satuanDasar}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between py-2.5">
                   <span className="text-slate-400 text-xs">Satuan dasar</span>
@@ -2020,7 +2276,13 @@ function TabProduk() {
                   style={{ background: "var(--primary)" }}
                 >
                   <Save className="w-4 h-4" />
-                  <span>{submitting ? "Menyimpan..." : "Simpan Produk"}</span>
+                  <span>
+                    {submitting
+                      ? "Menyimpan..."
+                      : !editingProductId && isMultiVariant
+                      ? `Simpan ${variantRows.filter((r) => r.nama.trim()).length || variantRows.length} Varian`
+                      : "Simpan Produk"}
+                  </span>
                 </button>
               </div>
             </form>
@@ -2078,6 +2340,14 @@ function TabProduk() {
             } catch (err: any) {
               setError(err?.message || "Gagal menambahkan kode");
             }
+          } else if (scannerTarget === "VARIANT_ROW" && variantScanIdx !== null) {
+            const parsed = parseScan(cleanCode);
+            const finalCode = parsed.type === "product" ? parsed.code : cleanCode;
+            setVariantRows((prev) =>
+              prev.map((r, i) => (i === variantScanIdx ? { ...r, barcode: finalCode } : r))
+            );
+            setVariantScanIdx(null);
+            setIsScannerOpen(false);
           } else if (scannerTarget === "FORM") {
             setBarcode(cleanCode);
             setIsScannerOpen(false);
