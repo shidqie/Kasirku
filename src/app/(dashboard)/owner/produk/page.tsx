@@ -479,9 +479,68 @@ function TabProduk() {
           </div>
         </div>
 
-        {/* Filter Bar Garis Bawah */}
-        <div className="pt-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
-          <div className="flex items-center gap-6 overflow-x-auto no-scrollbar text-xs">
+        {/* Search bar full-width */}
+        <div className="pt-4 relative">
+          <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Cari nama atau barcode"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-6 pr-10 h-9 bg-transparent border-b border-slate-200 dark:border-zinc-700 text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+          />
+          <button
+            type="button"
+            onClick={fetchData}
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
+            title="Muat ulang"
+            aria-label="Muat ulang"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-500" : ""}`} />
+          </button>
+        </div>
+
+        {/* Category tabs horizontal scroll */}
+        <div className="mt-3 flex items-center gap-0 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-zinc-800 text-xs">
+          {[
+            { value: "", label: "Semua", count: products.length },
+            ...categories.map((c) => ({
+              value: c.id,
+              label: c.nama,
+              count: products.filter((p) => p.kategori?.id === c.id).length,
+            })),
+          ].map((cat) => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => {
+                setSelectedKategori(cat.value);
+                setCurrentPage(1);
+              }}
+              className={`pb-2.5 pr-5 whitespace-nowrap transition-colors cursor-pointer focus:outline-none border-b-2 shrink-0 ${
+                selectedKategori === cat.value
+                  ? "border-slate-900 dark:border-white text-slate-900 dark:text-white font-semibold"
+                  : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
+              }`}
+            >
+              {cat.label}
+              {cat.count > 0 && (
+                <span className={`ml-1.5 text-[10px] font-semibold tabular-nums ${
+                  selectedKategori === cat.value
+                    ? "text-slate-900 dark:text-white"
+                    : "text-slate-400 dark:text-zinc-500"
+                }`}>{cat.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Filter stok tabs + count */}
+        <div className="mt-0 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 text-xs">
+          <div className="flex items-center gap-0 overflow-x-auto no-scrollbar">
             {[
               { id: "SEMUA", label: "Semua" },
               { id: "MENIPIS", label: "Stok menipis" },
@@ -495,7 +554,7 @@ function TabProduk() {
                   setFilterStok(f.id as any);
                   setCurrentPage(1);
                 }}
-                className={`pb-3 border-b-2 whitespace-nowrap transition-colors cursor-pointer focus:outline-none ${
+                className={`py-2.5 pr-5 border-b-2 whitespace-nowrap transition-colors cursor-pointer focus:outline-none shrink-0 ${
                   filterStok === f.id
                     ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
                     : "border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 font-medium"
@@ -505,47 +564,29 @@ function TabProduk() {
               </button>
             ))}
           </div>
-
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap pb-2.5">
-            <Dropdown
-              variant="underline"
-              ariaLabel="Filter kategori produk"
-              value={selectedKategori}
-              onChange={(val) => {
-                setSelectedKategori(val);
-                setCurrentPage(1);
-              }}
-              searchPlaceholder="Cari kategori..."
-              options={[
-                { value: "", label: "Semua kategori" },
-                ...categories.map((c) => ({ value: c.id, label: c.nama })),
-              ]}
-            />
-
-            <div className="relative flex-1 sm:w-52">
-              <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cari nama atau barcode"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-5 pr-6 h-8 bg-transparent border-b border-slate-300 dark:border-zinc-700 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={fetchData}
-              className="h-8 w-8 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors active:scale-95 shrink-0 cursor-pointer"
-              title="Muat ulang"
-              aria-label="Muat ulang"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
-            </button>
-          </div>
+          {!loading && (
+            <span className="text-slate-400 dark:text-zinc-500 text-[11px] tabular-nums shrink-0 pl-4 pb-px">
+              {Math.min(currentPage * pageSize, (() => {
+                const filtered = products.filter((p) => {
+                  const stok = Number(p.stokCache);
+                  if (filterStok === "MENIPIS") return stok > 0 && stok <= Number(p.stokMinimum);
+                  if (filterStok === "HABIS") return stok <= 0;
+                  if (filterStok === "TANPA_BARCODE") return !p.barcode;
+                  return true;
+                });
+                return filtered.length;
+              })())} dari {(() => {
+                const filtered = products.filter((p) => {
+                  const stok = Number(p.stokCache);
+                  if (filterStok === "MENIPIS") return stok > 0 && stok <= Number(p.stokMinimum);
+                  if (filterStok === "HABIS") return stok <= 0;
+                  if (filterStok === "TANPA_BARCODE") return !p.barcode;
+                  return true;
+                });
+                return filtered.length;
+              })()} produk
+            </span>
+          )}
         </div>
 
         <PopupAlert type="error" message={error} onClear={() => setError(null)} />
