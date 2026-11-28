@@ -114,7 +114,6 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
           title: "PENJUALAN & PIUTANG",
           collapsible: true,
           items: [
-            { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
             { label: "Piutang", href: "/member", icon: Users },
           ],
         },
@@ -182,7 +181,6 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
           collapsible: true,
           items: [
             { label: "Kasir", href: "/kasir", icon: ShoppingCart },
-            { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
             { label: "Piutang", href: "/member", icon: Users },
             { label: "Stok", href: "/stok/perlu-belanja", icon: AlertTriangle, badgeKey: "lowStock" },
             { label: "Opname", href: "/stok/opname", icon: ClipboardCheck, badgeKey: "pendingOpname" },
@@ -235,7 +233,6 @@ export function Sidebar({ user, storeName, isOpen = false, onClose }: SidebarPro
         title: "OPERASIONAL",
         items: [
           { label: "Kasir", href: "/kasir", icon: ShoppingCart },
-          { label: "Riwayat Penjualan", href: "/transaksi", icon: History },
           { label: "Piutang", href: "/member", icon: Users },
         ],
       },
