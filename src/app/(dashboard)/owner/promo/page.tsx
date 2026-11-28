@@ -13,7 +13,9 @@ import {
   Percent,
   Banknote,
   Package,
+  ScanBarcode,
 } from "lucide-react";
+import { BarcodeScannerModal } from "@/components/kasir/BarcodeScannerModal";
 import { formatRupiah } from "@/lib/formatters";
 import {
   PromoRuleDTO,
@@ -41,6 +43,7 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 interface ProductOption {
   id: string;
   nama: string;
+  barcode?: string | null;
   satuanDasar: string;
 }
 
@@ -121,6 +124,7 @@ export default function PromoPage() {
   const [berakhirPada, setBerakhirPada] = useState("");
   const [aktif, setAktif] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [scanTarget, setScanTarget] = useState<"TARGET" | "BONUS" | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<PromoRuleDTO | null>(null);
 
@@ -616,17 +620,32 @@ export default function PromoPage() {
                 </div>
 
                 {targetMode === "PRODUK" && (
-                  <Dropdown
-                    searchable
-                    searchPlaceholder="Cari produk target..."
-                    value={produkId}
-                    onChange={setProdukId}
-                    placeholder="Pilih produk..."
-                    options={products.map((pr) => ({
-                      value: pr.id,
-                      label: pr.nama,
-                    }))}
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 h-9 flex items-center bg-white dark:bg-zinc-800">
+                      <Dropdown
+                        searchable
+                        variant="underline"
+                        className="w-full"
+                        searchPlaceholder="Ketik nama atau barcode dari Data Master..."
+                        value={produkId}
+                        onChange={setProdukId}
+                        placeholder="Ketik / pilih produk dari Data Master..."
+                        options={products.map((pr) => ({
+                          value: pr.id,
+                          label: pr.barcode ? `${pr.nama} · ${pr.barcode}` : pr.nama,
+                        }))}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScanTarget("TARGET")}
+                      className="h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                      title="Scan barcode produk"
+                    >
+                      <ScanBarcode className="w-4 h-4" />
+                      <span>Scan</span>
+                    </button>
+                  </div>
                 )}
 
                 {targetMode === "KATEGORI" && (
@@ -729,20 +748,35 @@ export default function PromoPage() {
                     <label className="block font-semibold text-slate-600 dark:text-zinc-300 mb-1">
                       Produk Gratis (Opsional — kosongkan jika sama dengan produk yang dibeli)
                     </label>
-                    <Dropdown
-                      searchable
-                      searchPlaceholder="Cari produk bonus..."
-                      value={bonusProdukId}
-                      onChange={setBonusProdukId}
-                      placeholder="Sama dengan produk yang dibeli"
-                      options={[
-                        { value: "", label: "Sama dengan produk yang dibeli" },
-                        ...products.map((pr) => ({
-                          value: pr.id,
-                          label: pr.nama,
-                        })),
-                      ]}
-                    />
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 h-9 flex items-center bg-white dark:bg-zinc-900">
+                        <Dropdown
+                          searchable
+                          variant="underline"
+                          className="w-full"
+                          searchPlaceholder="Ketik nama atau barcode produk bonus..."
+                          value={bonusProdukId}
+                          onChange={setBonusProdukId}
+                          placeholder="Sama dengan produk yang dibeli"
+                          options={[
+                            { value: "", label: "Sama dengan produk yang dibeli" },
+                            ...products.map((pr) => ({
+                              value: pr.id,
+                              label: pr.barcode ? `${pr.nama} · ${pr.barcode}` : pr.nama,
+                            })),
+                          ]}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setScanTarget("BONUS")}
+                        className="h-9 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                        title="Scan barcode produk bonus"
+                      >
+                        <ScanBarcode className="w-4 h-4" />
+                        <span>Scan</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -828,6 +862,25 @@ export default function PromoPage() {
         description={`Yakin ingin menghapus promo "${deleteTarget?.nama}"?`}
         confirmText="Hapus"
         variant="danger"
+      />
+
+      <BarcodeScannerModal
+        isOpen={scanTarget !== null}
+        onClose={() => setScanTarget(null)}
+        onScanSuccess={(barcode) => {
+          const clean = barcode.trim();
+          const matched = products.find(
+            (pr) => pr.barcode && pr.barcode.trim().toLowerCase() === clean.toLowerCase()
+          );
+          if (!matched) {
+            setError(`Barcode "${clean}" tidak ditemukan di Data Master Produk.`);
+          } else if (scanTarget === "TARGET") {
+            setProdukId(matched.id);
+          } else if (scanTarget === "BONUS") {
+            setBonusProdukId(matched.id);
+          }
+          setScanTarget(null);
+        }}
       />
     </div>
   );
